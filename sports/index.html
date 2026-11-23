@@ -91,7 +91,7 @@ h2 small{font-size:12px;color:var(--tan);font-weight:700}
 <body>
 <div id="home">
   <div style="margin:2px 0 8px"><a class="tmg-back" href="../index.html" style="display:inline-block;font:800 14px/1 -apple-system,'Microsoft JhengHei',sans-serif;color:#3a1e0f;background:#ffd84d;border:2px solid #3a1e0f;border-radius:999px;padding:7px 12px;text-decoration:none;">← 動嘴做遊戲</a></div>
-  <div class="brand"><span>🎮 動嘴做遊戲 出品</span><b>每週開放新項目</b></div>
+  <div class="brand"><span>🎮 動嘴做遊戲 出品</span><b>陸續開放新項目</b></div>
   <div class="hero">
     <div class="flags"></div>
     <h1>薯懶懶人運動會</h1>
@@ -170,7 +170,7 @@ function renderHome(){
     const playable=!!e.game&&(i===0||P.res[EVENTS[i-1].id]);
     const r=P.res[e.id];
     let st='';
-    if(!e.game) st='<span>🔒 即將開放（第 '+(i+1)+' 週）</span>';
+    if(!e.game) st='<span>🔒 即將開放</span>';
     else if(!playable) st='<span>🔒 先完成上一項</span>';
     else if(r) st=r.win?'<span class="win">✓ 薯懶勝 '+(r.note||'')+'</span>':'<span class="lose">✗ 勤薯勝 '+(r.note||'')+'</span>';
     else st='<span>可以挑戰！</span>';
