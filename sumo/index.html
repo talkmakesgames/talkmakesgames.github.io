@@ -54,7 +54,7 @@ body.rec #rc{display:block;width:100%;max-width:calc(100vh*9/16);margin:0 auto}
   <div id="stage"><canvas id="c"></canvas></div>
 
   <div class="btns">
-    <button id="bSnd" onclick="sfx.init();this.textContent=sfx.toggle()?'🔊 聲音開':'🔇 聲音關'">🔇 聲音關</button>
+    <button id="bSnd" onclick="this.textContent=sfx.toggle()?'🔊 聲音開':'🔇 聲音關'">🔊 聲音開</button>
     <button id="bPause">暫停</button>
     <button id="bRand">隨機屬性</button>
     <button id="bReset">重新開始</button>
@@ -75,7 +75,7 @@ body.rec #rc{display:block;width:100%;max-width:calc(100vh*9/16);margin:0 auto}
 
 <script>
 
-const sfx=(()=>{let ac=null,on=false;
+const sfx=(()=>{let ac=null,on=true;try{on=localStorage.getItem('tmg-sound')!=='off';}catch(e){}
  function init(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} if(ac&&ac.state==='suspended')ac.resume();}
  function tone(f,d,type,vol,f2,delay){if(!on||!ac)return;const t=ac.currentTime+(delay||0),o=ac.createOscillator(),g=ac.createGain();
   o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
@@ -94,6 +94,7 @@ const sfx=(()=>{let ac=null,on=false;
   beep(){tone(520,0.1,'square',0.08);},
   win(){[523,659,784].forEach((f,i)=>tone(f,0.16,'triangle',0.16,0,i*0.1));tone(1047,0.35,'triangle',0.16,0,0.3);}};})();
 
+document.addEventListener('pointerdown',()=>sfx.init());
 (function(){
 const W=800, R=330, ROUND_SEC=30, STEP=1000/60, RAD=37, COFF=10;
 const REC=location.hash==='#record';
