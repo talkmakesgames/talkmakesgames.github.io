@@ -20,6 +20,8 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;height:5
 .nav-links a{text-decoration:none;font-weight:800;font-size:14px;padding:7px 12px;border-radius:999px}
 .nav-links a:hover{background:#f7e2c3}
 .yt{background:var(--red);color:#fff!important;border:2px solid var(--brown)}
+.tt{background:#111;color:#fff!important;border:2px solid var(--brown)}
+.ig{background:linear-gradient(45deg,#f9a03f,#d6249f 60%,#6a3cff);color:#fff!important;border:2px solid var(--brown)}
 /* hero */
 .hero{background:linear-gradient(180deg,var(--sky),#fff3dc 85%);border-bottom:3px solid var(--brown);overflow:hidden}
 .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:center;padding-top:34px;padding-bottom:30px}
@@ -94,7 +96,9 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
   .cast{grid-template-columns:1fr 1fr}
   .how{grid-template-columns:1fr}
   .req{flex-direction:column;text-align:center}
-  .nav-links a:not(.yt){display:none}
+  .nav-links a:not(.yt):not(.tt):not(.ig){display:none}
+  .nav-links a{padding:6px 9px!important;font-size:12px!important}
+  .logo{font-size:17px}
 }
 @media (max-width:440px){.grid{grid-template-columns:1fr}.card .th{height:150px}}
 </style>
@@ -102,7 +106,7 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
 <body>
 <nav><div class="wrap">
   <a class="logo" href="#top"><span class="mouth"><i></i></span>動嘴做遊戲</a>
-  <div class="nav-links"><a href="#games">遊戲</a><a href="#cast">角色</a><a href="#how">怎麼做的</a><a class="yt" href="https://www.youtube.com/channel/UCoO_qGmuNGStnO6dvqYL7GQ" target="_blank" rel="noopener">▶ YouTube</a></div>
+  <div class="nav-links"><a href="#games">遊戲</a><a href="#cast">角色</a><a href="#how">怎麼做的</a><a class="yt" href="https://www.youtube.com/@talkmakesgames" target="_blank" rel="noopener">▶ YouTube</a><a class="tt" href="https://www.tiktok.com/@talkmakesgames" target="_blank" rel="noopener">♪ TikTok</a><a class="ig" href="https://www.instagram.com/talkmakesgames/" target="_blank" rel="noopener">◎ IG</a></div>
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap">
@@ -111,7 +115,7 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
     <h1>不會寫程式，<br>只<span>動嘴</span>，<br>叫 AI 做遊戲。</h1>
     <p>每一款遊戲都是用講的做出來的。你留言點題，我叫 AI 做，做好了放在這裡給你玩。主角是一顆整天躺在沙發上的馬鈴薯——薯懶。</p>
     <div class="cta">
-      <a class="btn primary" href="sports/index.html">▶ 玩最新作：懶人運動會</a>
+      <a class="btn primary" href="chips/index.html">▶ 玩薯懶接洋芋片</a>
       <a class="btn ghost" href="#games">看所有遊戲</a>
     </div>
   </div>
@@ -125,20 +129,20 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
     <div class="feature">
       <div class="art"><img class="ref" data-a="hua_lecture" alt=""><img class="a" data-a="shu_smug" alt="薯懶"><span class="vs">VS</span><img class="b" data-a="qin_proud" alt="勤薯"></div>
       <div class="body">
-        <span class="badge">第一季開跑</span>
+        <span class="badge">即將開跑</span>
         <h3>薯懶懶人運動會</h3>
         <p>花椰長硬逼薯懶參加健康運動會，輸了就沒收沙發和洋芋片！幫薯懶用最懶的方式，一項一項贏過自律狂勤薯。</p>
         <ul><li>沙發相撲：三戰兩勝，把勤薯推出擂台</li><li>補給站大胃王：45 秒吃 25 片，躲開花椰長的蔬菜</li><li>還有 6 個項目陸續開放中</li></ul>
-        <a class="btn primary" href="sports/index.html">進入會場 →</a>
+        <span class="btn ghost" style="cursor:default">🔒 即將開放</span>
       </div>
     </div>
 
     <h2 style="margin-top:40px">所有遊戲</h2>
     <p class="sub">點了就能玩，手機電腦都可以</p>
     <div class="grid">
-      <a class="card" href="sports/index.html">
+      <div class="card soon">
         <div class="th" style="background:linear-gradient(180deg,#bfe3ff 50%,#8fd16a 50%)"><img data-a="shu_smug" alt=""></div>
-        <div class="tx"><b>薯懶懶人運動會</b><span class="chip">NEW</span><p>故事模式，八個比賽項目依序解鎖。</p><span class="go">開始玩 →</span></div></a>
+        <div class="tx"><b>薯懶懶人運動會</b><p>故事模式，八個比賽項目依序解鎖。</p><span class="go">即將開放…</span></div></div>
       <a class="card" href="chips/index.html">
         <div class="th" style="background:#ffe9c7"><img data-a="shu_chew" alt=""></div>
         <div class="tx"><b>薯懶接洋芋片</b><p>左右移動沙發，張嘴接洋芋片，吃到蔬菜扣心。</p><span class="go">開始玩 →</span></div></a>
@@ -177,8 +181,8 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
       <img data-a="shu_lazy" alt="">
       <div>
         <h3>下一款要做什麼，你決定。</h3>
-        <p>到頻道最新影片留言你想玩的遊戲，被選中的點子會做成下一款，片尾還會念出你的名字。</p>
-        <a class="btn primary" href="https://www.youtube.com/channel/UCoO_qGmuNGStnO6dvqYL7GQ" target="_blank" rel="noopener">▶ 去 YouTube 點題</a>
+        <p>到 YouTube、TikTok 或 IG 最新影片留言你想玩的遊戲，被選中的點子會做成下一款，片尾還會念出你的名字。</p>
+        <div class="cta"><a class="btn primary" href="https://www.youtube.com/@talkmakesgames" target="_blank" rel="noopener">▶ YouTube 點題</a><a class="btn ghost" href="https://www.tiktok.com/@talkmakesgames" target="_blank" rel="noopener">♪ TikTok</a><a class="btn ghost" href="https://www.instagram.com/talkmakesgames/" target="_blank" rel="noopener">◎ Instagram</a></div>
       </div>
     </div>
   </section>
@@ -186,7 +190,7 @@ footer{margin-top:50px;border-top:3px solid var(--brown);padding:24px 0 34px;tex
 
 <footer><div class="wrap">
   © 動嘴做遊戲・角色：薯懶、勤薯、花椰長、片片<br>
-  所有遊戲皆由 AI 協助製作
+  所有遊戲皆由 AI 協助製作<br><a href="https://www.youtube.com/@talkmakesgames" target="_blank" rel="noopener">YouTube</a>・<a href="https://www.tiktok.com/@talkmakesgames" target="_blank" rel="noopener">TikTok</a>・<a href="https://www.instagram.com/talkmakesgames/" target="_blank" rel="noopener">Instagram</a>　@talkmakesgames
 </div></footer>
 
 <script>
