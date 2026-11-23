@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HJVDZQNFML"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-HJVDZQNFML",{allow_google_signals:false,allow_ad_personalization_signals:false});window.tmgTrack=function(n,p){try{gtag("event",n,p||{});}catch(e){}};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>機器人相撲模擬賽</title>
@@ -67,6 +69,7 @@ body.rec #rc{display:block;width:100%;max-width:calc(100vh*9/16);margin:0 auto}
   <div class="note">
     物理引擎是自己寫的（不需連網）：機器人有質量、抓地力、側向摩擦和碰撞反彈。AI 會追著對手衝撞、偶爾繞側面，靠近邊緣時會想辦法退回中間。30 秒內都沒人出界，就判離中心比較近的一方獲勝。
   </div>
+  <div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:10px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。</div>
 </div>
 <canvas id="rc" width="1080" height="1920"></canvas>
 
@@ -193,12 +196,12 @@ function collide(A,B){
 }
 
 function endRound(msg,color){
-  state='end'; timer=110; roundsDone++; if(!REC)sfx.win(); showBanner(msg,color,100);
+  state='end'; timer=110; roundsDone++; if(!REC){sfx.win(); window.tmgTrack&&tmgTrack('game_end',{game_name:'機器人相撲',round:round,score:score.blue+':'+score.red,play_seconds:Math.round(roundTime),result:msg});} showBanner(msg,color,100);
   if(!REC){$('sb').textContent=score.blue; $('sr').textContent=score.red;}
 }
 
 function step(){
-  if(state==='ready'){ if(--timer<=0){state='fight'; showBanner('開始！','#fff',36); if(!REC)sfx.go();} }
+  if(state==='ready'){ if(--timer<=0){state='fight'; showBanner('開始！','#fff',36); if(!REC){sfx.go(); window.tmgTrack&&tmgTrack('game_start',{game_name:'機器人相撲',round:round});}} }
   else if(state==='fight'){
     ai(robots[0],robots[1]); ai(robots[1],robots[0]);
     roundTime+=1/60;

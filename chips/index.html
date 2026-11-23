@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HJVDZQNFML"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-HJVDZQNFML",{allow_google_signals:false,allow_ad_personalization_signals:false});window.tmgTrack=function(n,p){try{gtag("event",n,p||{});}catch(e){}};</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>薯懶接洋芋片</title>
@@ -33,6 +35,7 @@ button:active{transform:translateY(4px);box-shadow:0 1px 0 #8e2f28}
     <img id="startImg" alt="薯懶">
     <p>左右拖曳（或用方向鍵），讓薯懶張嘴接洋芋片！</p>
     <div class="legend"><span>洋芋片 +1</span><span>薯懶牌 +5</span><span>🥦🥕 蔬菜 扣一顆心</span></div>
+    <div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:4px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。</div>
     <button id="bStart">開始</button>
   </div>
   <div class="ov hidden" id="over">
@@ -238,10 +241,10 @@ window.addEventListener('keyup',e=>{keys[e.key]=false;});
 setInterval(()=>{if(!G||G.state!=='play')return; if(keys.ArrowLeft) G.tx=G.px-40; if(keys.ArrowRight) G.tx=G.px+40;},16);
 document.addEventListener('visibilitychange',()=>{paused=document.hidden;});
 
-function start(){sfx.init(); document.getElementById('start').classList.add('hidden'); document.getElementById('over').classList.add('hidden'); newGame();}
+function start(){sfx.init(); window.tmgTrack&&tmgTrack('game_start',{game_name:'薯懶接洋芋片'}); document.getElementById('start').classList.add('hidden'); document.getElementById('over').classList.add('hidden'); newGame();}
 function gameOver(){
   G.state='over'; sfx.over();
-  const s=G.score, nb=s>best; if(nb){best=s; try{localStorage.setItem('shulan-best',best);}catch(e){}}
+  const s=G.score, nb=s>best; window.tmgTrack&&tmgTrack('game_end',{game_name:'薯懶接洋芋片',score:s,play_seconds:Math.round(G.t/60),result:nb&&s>0?'new_record':'game_over'}); if(nb){best=s; try{localStorage.setItem('shulan-best',best);}catch(e){}}
   document.getElementById('final').textContent=s;
   document.getElementById('overImg').src=s>=30?SPR.smug:SPR.crash;
   document.getElementById('overTitle').textContent=nb&&s>0?'新紀錄！':'吃到蔬菜了…';
