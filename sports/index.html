@@ -271,8 +271,8 @@ let G=null, curEvent=null, paused=false;
 
 let tmgT0=0;
 // 2026-11-24：第 3 項沙發賽車是獨立的 3D 遊戲頁，比完會把結果寫回 shulan-sports-v1
-const COMEBACK_URL=/\.html$/.test(location.pathname)?'薯懶王者回歸.html':'../comeback/';
-const RACE_URL=/\.html$/.test(location.pathname)?'薯懶沙發賽車.html':'../race/';
+const COMEBACK_URL=(location.protocol === 'file:')?'薯懶王者回歸.html':'../comeback/';
+const RACE_URL=(location.protocol === 'file:')?'薯懶沙發賽車.html':'../race/';
 function enter(ev){
   if(ev.game==='race'){window.tmgTrack&&tmgTrack('select_content',{game_name:'薯懶懶人運動會',level_name:ev.t}); location.href=RACE_URL; return;}
   curEvent=ev; if(!tmgT0){tmgT0=Date.now(); window.tmgTrack&&tmgTrack('game_start',{game_name:'薯懶懶人運動會'});}

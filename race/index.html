@@ -297,7 +297,7 @@ const INTRO = [
   ['shu', '沙發有輪子……那我就躺著贏。'],
   ['hua', '路上的洋芋片可以加速。還有——我會丟蔬菜！'],
   ['pian', '薯懶大大加油！片片在終點等你！']];
-const SPORTS_URL = /\.html$/.test(location.pathname) ? '薯懶懶人運動會.html' : '../sports/';
+const SPORTS_URL = (location.protocol === 'file:') ? '薯懶懶人運動會.html' : '../sports/';
 let introI = 0, introT = 0, introSeen = location.hash === '#record' && !OPT.intro;
 let say = null, sayCD = 0, lastRank = 3, saidChip = false, saidThrow = false, saidSave = false;
 const pickLine = a => a[Math.floor(fxRand() * a.length)];
