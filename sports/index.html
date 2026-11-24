@@ -210,6 +210,11 @@ function renderHome(){
     if(tester){const s2=div.querySelector('.st');if(s2)s2.insertAdjacentHTML('beforeend',' <span>（🔓 試玩中）</span>');}
     box.appendChild(div);
   });
+  // 中場事件（不算總比分、不用解鎖）
+  const sp=document.createElement('div'); sp.className='ev'; sp.style.cssText='background:#fff3c4;border-color:#e0a800';
+  sp.innerHTML='<div class="no" style="background:#ff9f43">🛋️</div><div class="info"><div class="t">中場事件：搶回沙發</div><div class="d">沙發被花椰長沒收 11 天！薯懶要親自搶回來</div><div class="st"><span>不算總比分・隨時可以玩</span></div></div><button>去搶 →</button>';
+  sp.querySelector('button').onclick=()=>{window.tmgTrack&&tmgTrack('select_content',{game_name:'薯懶懶人運動會',level_name:'中場事件：搶回沙發'}); location.href=COMEBACK_URL;};
+  box.insertBefore(sp, box.children[3]||null);   // 放在第 3 項後面
   const next=EVENTS.find((e,i)=>e.game&&(!e.soon||isTester())&&(i===0||P.res[EVENTS[i-1].id])&&!P.res[e.id]);
   $('bGo').textContent=next?'出賽：'+next.t:'再挑戰一次';
   $('bGo').onclick=()=>enter(next||EVENTS[0]);
@@ -266,6 +271,7 @@ let G=null, curEvent=null, paused=false;
 
 let tmgT0=0;
 // 2026-11-24：第 3 項沙發賽車是獨立的 3D 遊戲頁，比完會把結果寫回 shulan-sports-v1
+const COMEBACK_URL=/\.html$/.test(location.pathname)?'薯懶王者回歸.html':'../comeback/';
 const RACE_URL=/\.html$/.test(location.pathname)?'薯懶沙發賽車.html':'../race/';
 function enter(ev){
   if(ev.game==='race'){window.tmgTrack&&tmgTrack('select_content',{game_name:'薯懶懶人運動會',level_name:ev.t}); location.href=RACE_URL; return;}
