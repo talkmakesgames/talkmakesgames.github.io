@@ -339,6 +339,7 @@ function drawMenu() {
     for (const btn of menuButtons()) drawBtn(btn, k);
     txt(TOWERS[t.type].name + ' LV' + (t.lv + 1), clamp(pad.x, 90, 450), pad.y + (pad.y < 300 ? -40 : 62), 15, '#fff', { stroke: 4 });
   } else { // 選道具
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pad.x, pad.y, TOWERS.chips.lv[0].range, 0, 7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(pad.x, pad.y, 26, 0, 7); ctx.fill();
     for (const btn of menuButtons()) drawBtn(btn, k);
   }
@@ -348,11 +349,17 @@ function menuButtons() {
   if (p.tower) { const t = p.tower, nx = TOWERS[t.type].lv[t.lv + 1];
     return [{ id: 'up', x: cx - 50, y: cy - 62 * dn, label: nx ? '升級' : '滿級', sub: nx ? nx.up + '⚡' : '', ok: !!nx && G.energy >= nx.up, col: '#9be36b' },
             { id: 'sell', x: cx + 50, y: cy - 62 * dn, label: '賣掉', sub: '+' + Math.round(t.invested * 0.6) + '⚡', ok: true, col: '#ffb4a8' }]; }
-  const ks = Object.keys(TOWERS); return ks.map((key, i) => ({ id: key, x: cx + (i - 1) * 82, y: cy - (70 + (i === 1 ? 14 : 0)) * dn, label: TOWERS[key].icon, sub: TOWERS[key].cost + '⚡', ok: G.energy >= TOWERS[key].cost, col: '#fff8ee', name: TOWERS[key].name }));
+  const ks = Object.keys(TOWERS); return ks.map((key, i) => ({ id: key, x: cx + (i - 1) * 82, y: cy - (70 + (i === 1 ? 14 : 0)) * dn, label: TOWERS[key].icon, sub: TOWERS[key].cost + '⚡', ok: G.energy >= TOWERS[key].cost, col: '#fff8ee', name: TOWERS[key].name, desc: TOWERS[key].desc }));
 }
 function drawBtn(b, k) { ctx.save(); ctx.translate(b.x, b.y); ctx.scale(k, k); ctx.globalAlpha = b.ok ? 1 : 0.5; ctx.fillStyle = b.col; ctx.strokeStyle = '#3a1e0f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fill(); ctx.stroke();
   txt(b.label, 0, -6, b.label.length > 2 ? 17 : 28, '#3a1e0f'); txt(b.sub, 0, 20, 12, b.ok ? '#3a1e0f' : '#a33', { w: 900 }); ctx.restore(); ctx.globalAlpha = 1;
-  if (b.name) txt(b.name, b.x, b.y + 46, 11, '#fff', { stroke: 3, w: 800 }); }
+  if (b.name) txt(b.name, b.x, b.y + 46, 11, '#fff', { stroke: 3, w: 800 }); if (b.desc) txt(b.desc, b.x, b.y + 61, 10, '#ffd84d', { stroke: 3, w: 800 }); }
+function drawTutorial() {   // 新手引導：第一個道具、按開始
+  if (G.wave > 0 || G.menu || G.state !== 'build') return; const b = Math.sin(G.t * 6) * 6;
+  if (G.towers.length === 0) { const p = G.pads[1]; ctx.strokeStyle = '#ff5a4f'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, 30 + b * 0.5, 0, 7); ctx.stroke();
+    txt('👇', p.x, p.y - 52 + b, 34, '#000'); txt('點空位，擺零食守沙發！', 270, 400, 24, '#fff', { stroke: 6 }); }
+  else { txt('👆', 452, 108 - b, 34, '#000'); txt('準備好了就按「開始」', 290, 118, 20, '#fff', { stroke: 5 }); }
+}
 function drawEnd() {
   const u = easeOutBack(G.endT / 0.4); if (G.endT < 0.3 && G.state === 'lose') return;
   ctx.fillStyle = 'rgba(42,29,20,' + clamp(G.endT * 1.5) * 0.55 + ')'; ctx.fillRect(0, 0, VW, VH);
@@ -374,7 +381,7 @@ function render() {
   for (const s of G.shots) drawShot(s);
   for (const f of G.fx) drawFx(f);
   if (G.freeze > 0) { ctx.fillStyle = 'rgba(159,227,255,.15)'; ctx.fillRect(0, 0, VW, VH); }
-  drawHUD(); drawMenu();
+  drawHUD(); drawMenu(); drawTutorial();
   if (G.state === 'win' || G.state === 'lose') drawEnd();
   ctx.restore();
 }
