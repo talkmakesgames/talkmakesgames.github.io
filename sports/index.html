@@ -180,22 +180,25 @@ function save(){try{localStorage.setItem('shulan-sports-v1',JSON.stringify(P));}
 const EVENTS=[
  {id:'sumo',t:'沙發相撲',d:'薯懶 vs 勤薯，把對手推出擂台，三戰兩勝',game:'sumo'},
  {id:'chips',t:'補給站大胃王',d:'45 秒吃到 25 片洋芋片，小心花椰長丟蔬菜',game:'chips'},
- {id:'race',t:'沙發賽車',d:'坐著沙發比賽跑，路上有障礙'},
+ {id:'race',t:'沙發賽車',d:'薯懶開沙發、勤薯騎健身車、花椰長推蔬菜車，三圈定勝負',game:'race',soon:true},
  {id:'dodge',t:'蔬菜躲避球',d:'花椰長丟蔬菜，薯懶要躲'},
  {id:'tug',t:'拔河',d:'薯懶 vs 勤薯，連打按鈕比力氣'},
  {id:'jump',t:'懶人跳遠',d:'從沙發彈出去，看誰飛得遠'},
  {id:'marathon',t:'馬拉松',d:'勤薯認真跑，薯懶想辦法搭便車'},
  {id:'final',t:'總決賽',d:'由觀眾投票決定項目'}
 ];
+function isTester(){try{return localStorage.getItem('tmg-tester')==='1';}catch(_){return false;}}
 function renderHome(){
   let a=0,b=0; for(const k in P.res){if(P.res[k].win)a++; else b++;}
   $('scShu').textContent=a; $('scQin').textContent=b;
   const box=$('events'); box.innerHTML='';
   EVENTS.forEach((e,i)=>{
-    const playable=!!e.game&&(i===0||P.res[EVENTS[i-1].id]);
+    const tester=e.soon&&isTester();   // 即將上線：一般人鎖住；連點 10 下解鎖的手機可以試玩
+    const playable=!!e.game&&(!e.soon||tester)&&(tester||i===0||P.res[EVENTS[i-1].id]);
     const r=P.res[e.id];
     let st='';
     if(!e.game) st='<span>🔒 即將開放</span>';
+    else if(e.soon&&!tester) st='<span>🔒 即將上線</span>';
     else if(!playable) st='<span>🔒 先完成上一項</span>';
     else if(r) st=r.win?'<span class="win">✓ 薯懶勝 '+(r.note||'')+'</span>':'<span class="lose">✗ 勤薯勝 '+(r.note||'')+'</span>';
     else st='<span>可以挑戰！</span>';
@@ -203,9 +206,11 @@ function renderHome(){
     div.innerHTML='<div class="no">'+(i+1)+'</div><div class="info"><div class="t">'+e.t+'</div><div class="d">'+e.d+'</div><div class="st">'+st+'</div></div>'+
       (playable?'<button>'+(r?'再挑戰':'出賽')+'</button>':'');
     if(playable) div.querySelector('button').onclick=()=>enter(e);
+    if(e.soon&&!tester){div.style.touchAction='manipulation';let n=0,t0=0;div.onclick=()=>{const now=Date.now();if(now-t0>1500)n=0;t0=now;if(++n>=10){try{localStorage.setItem('tmg-tester','1');}catch(_){}renderHome();}};}
+    if(tester){const s2=div.querySelector('.st');if(s2)s2.insertAdjacentHTML('beforeend',' <span>（🔓 試玩中）</span>');}
     box.appendChild(div);
   });
-  const next=EVENTS.find((e,i)=>e.game&&(i===0||P.res[EVENTS[i-1].id])&&!P.res[e.id]);
+  const next=EVENTS.find((e,i)=>e.game&&(!e.soon||isTester())&&(i===0||P.res[EVENTS[i-1].id])&&!P.res[e.id]);
   $('bGo').textContent=next?'出賽：'+next.t:'再挑戰一次';
   $('bGo').onclick=()=>enter(next||EVENTS[0]);
 }
@@ -260,7 +265,10 @@ window.addEventListener('resize',fit);
 let G=null, curEvent=null, paused=false;
 
 let tmgT0=0;
+// 2026-11-24：第 3 項沙發賽車是獨立的 3D 遊戲頁，比完會把結果寫回 shulan-sports-v1
+const RACE_URL=/\.html$/.test(location.pathname)?'薯懶沙發賽車.html':'../race/';
 function enter(ev){
+  if(ev.game==='race'){window.tmgTrack&&tmgTrack('select_content',{game_name:'薯懶懶人運動會',level_name:ev.t}); location.href=RACE_URL; return;}
   curEvent=ev; if(!tmgT0){tmgT0=Date.now(); window.tmgTrack&&tmgTrack('game_start',{game_name:'薯懶懶人運動會'});}
   const go=()=>talk(PRE[ev.game],()=>startGame(ev));
   if(!P.seenIntro){P.seenIntro=true; save(); talk(INTRO,go);} else go();
@@ -442,7 +450,7 @@ function sumoGame(){
     // joystick
     if(g.joy){ctx.globalAlpha=0.5; ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(g.joy.ox,g.joy.oy,60,0,7); ctx.stroke();
       let dx=g.joy.x-g.joy.ox,dy=g.joy.y-g.joy.oy,d=Math.hypot(dx,dy),k=d>60?60/d:1; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(g.joy.ox+dx*k,g.joy.oy+dy*k,26,0,7); ctx.fill(); ctx.globalAlpha=1;}
-    else if(g.phase==='fight'&&g.t<400){ctx.font='800 20px '+FONT; ctx.textAlign='center'; ctx.fillStyle='rgba(58,30,15,.7)'; ctx.fillText('按住螢幕往想去的方向拖曳',W/2-60,H-40);}
+    else if(g.phase==='fight'&&g.t<400&&!window.__REC){ctx.font='800 20px '+FONT; ctx.textAlign='center'; ctx.fillStyle='rgba(58,30,15,.7)'; ctx.fillText('按住螢幕往想去的方向拖曳',W/2-60,H-40);}
   };
   return g;
 }
@@ -565,10 +573,31 @@ let last=performance.now(),acc=0;
 function loop(now){
   let dt=now-last; last=now; if(dt>100) dt=100;
   const blocked=!$('dlg').classList.contains('hidden');
-  if(G&&!paused&&!blocked){acc+=dt; while(acc>=1000/60){G.step(); acc-=1000/60;}} else acc=0;
+  if(G&&!paused&&!blocked&&!window.__REC){acc+=dt; while(acc>=1000/60){G.step(); acc-=1000/60;}} else acc=0;
   if(G){ctx.setTransform(scale*dpr,0,0,scale*dpr,0,0); G.draw();}
   requestAnimationFrame(loop);
 }
+
+if(location.hash==='#record'){window.__REC=true;
+ let pw=0.8,ph=0,evs=[],last=null;
+ window.__rec={
+  sumo(power){pw=power||0.8; P.seenIntro=true; curEvent=EVENTS[0]; startGame(EVENTS[0]); evs=[]; last=null;},
+  frame(n){for(let i=0;i<(n||2);i++){
+     if(G&&G.type==='sumo'&&G.phase!=='done'){
+       const s=G.shu,q=G.qin; if(G.phase==='fight'){ph+=0.045;
+         let dx=q.x-s.x+Math.sin(ph)*60, dy=q.y-s.y+Math.cos(ph*0.7)*60, d=Math.hypot(dx,dy)||1;
+         G.joy={ox:0,oy:0,x:dx/d*60*pw,y:dy/d*60*pw};} else G.joy=null;
+       const before={sh:G.shake,ph:G.phase,ws:G.wins.shu,wq:G.wins.qin};
+       G.step(); G.joy=null;
+       if(G.shake>before.sh+3) evs.push(['hit',G.t,Math.round(G.shake)]);
+       if(before.ph!==G.phase) evs.push(['phase',G.t,G.phase,G.round]);
+       if(G.wins.shu!==before.ws) evs.push(['shu_win',G.t]); if(G.wins.qin!==before.wq) evs.push(['qin_win',G.t]);
+     }}
+   if(G){ctx.setTransform(scale*dpr,0,0,scale*dpr,0,0); G.draw();}},
+  url(){return cv.toDataURL('image/jpeg',0.92);},
+  state(){return G?{phase:G.phase,round:G.round,wins:G.wins,t:G.t,over:!!G.over}:null;},
+  events(){return evs;}
+ };}
 window.__site={G:()=>G,P:()=>P,enter:id=>enter(EVENTS.find(e=>e.id===id))};
 renderHome(); requestAnimationFrame(loop);
 })();
