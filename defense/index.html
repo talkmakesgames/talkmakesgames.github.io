@@ -56,19 +56,17 @@ const ENEMIES = {
 };
 // 客廳路線（殭屍從左上的門進來，彎彎曲曲走到下面的沙發）
 const PATH = [[-24, 262], [442, 262], [442, 432], [108, 432], [108, 602], [432, 602], [432, 742], [270, 742], [270, 806]];
-const PADS = [[165, 188], [292, 188], [418, 188], [172, 347], [292, 347], [506, 347], [36, 517], [205, 517], [330, 517], [236, 672], [352, 672], [503, 672], [96, 742], [446, 818]];
+// 地圖規則：入口附近空位少、中後段多 → 殭屍會走得比較深，比較緊張
+const PADS = [[292, 188], [418, 188], [292, 347], [506, 347], [36, 517], [205, 517], [330, 517], [470, 517], [236, 672], [352, 672], [503, 672], [96, 742], [446, 818]];
 // 第 1 關的 10 波：[殭屍, 數量, 間隔秒, 第幾秒開始]
-const WAVES = [
+const WAVES = [   // 第 1 關：7 波（約 3～4 分鐘）
   [['broc', 6, 1.4, 0]],
-  [['broc', 10, 1.0, 0]],
-  [['broc', 6, 1.1, 0], ['carrot', 4, 1.2, 3]],
+  [['broc', 10, 1.0, 0], ['carrot', 3, 1.2, 6]],
   [['carrot', 9, 0.8, 0], ['broc', 6, 1.0, 2]],
-  [['broc', 14, 0.7, 0], ['carrot', 5, 1.0, 5]],
-  [['pumpkin', 1, 1, 0], ['broc', 10, 0.8, 2]],
-  [['carrot', 14, 0.55, 0], ['pumpkin', 1, 1, 6]],
-  [['pumpkin', 3, 3.5, 0], ['broc', 16, 0.6, 1]],
-  [['broc', 18, 0.45, 0], ['carrot', 12, 0.6, 4], ['pumpkin', 2, 4, 6]],
-  [['pumpkin', 5, 2.6, 0], ['carrot', 16, 0.5, 2], ['broc', 22, 0.4, 5]],
+  [['pumpkin', 1, 1, 0], ['broc', 12, 0.75, 2]],
+  [['broc', 16, 0.5, 0], ['carrot', 10, 0.6, 3], ['pumpkin', 1, 1, 7]],
+  [['pumpkin', 3, 3, 0], ['carrot', 14, 0.5, 1], ['broc', 12, 0.5, 4]],
+  [['pumpkin', 5, 2.4, 0], ['carrot', 16, 0.45, 2], ['broc', 22, 0.38, 5]],
 ];
 const DIFF = { hp: 1.25, grow: 0.17, count: 1.35 };   // 難度旋鈕（機器人測試會改）
 const START_ENERGY = 130, INCOME = 1.3, HEARTS = 10, EARLY_BONUS = 25;
@@ -97,7 +95,7 @@ function startWave() {
   if (early) { G.energy += early; addFx('text', 470, 70, { text: '+' + early + '⚡ 提早叫', col: '#ffd84d' }); }
   for (const [type, n0, gap0, start] of WAVES[G.wave]) { const n = Math.round(n0 * DIFF.count), gap = gap0 / DIFF.count; for (let i = 0; i < n; i++) G.spawns.push({ type, at: G.t + start + i * gap }); }
   G.wave++; G.state = 'wave';
-  if (G.wave === 6) say('hua', '南瓜殭屍上場！看你擋不擋得住～', 2.5);
+  if (G.wave === 4) say('hua', '南瓜殭屍上場！看你擋不擋得住～', 2.5);
   if (G.wave === WAVES.length) say('hua', '最後一波！全員衝啊！', 2.5);
 }
 function spawn(type) { const E = ENEMIES[type]; const hpMul = DIFF.hp * (1 + DIFF.grow * Math.max(0, G.wave - 1)); /* 越後面的波，殭屍越硬 */ G.enemies.push({ type, hp: E.hp * hpMul, max: E.hp * hpMul, d: 0, slow: 0, slowT: 0, hitT: 0, dashT: rnd() * 3, x: PATH[0][0], y: PATH[0][1], ph: rnd() * 6, id: Math.random(), lane: (rnd() - 0.5) * 26 }); }
