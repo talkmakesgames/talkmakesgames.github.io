@@ -24,7 +24,7 @@
 <div id="gl"></div>
 <canvas id="game"></canvas>
 <canvas id="rc" width="1080" height="1920"></canvas>
-<a id="backS" href="../sports/">← 運動會</a>
+<a id="backS" href="../sports/">← 會場</a>
 <!-- 第 16 輪：3D 用 Three.js（MIT 授權，THREE_LICENSE.txt） -->
 <script>/* three.js r1xx MIT License (c) 2010-2024 three.js authors */
 (function(){/**
@@ -1155,7 +1155,7 @@ function overlay4(ctx, W, H, RV) {
     }
     if (cars[0].chipN || cars[0].hitN) { ctx.font = '800 24px ' + F4; ctx.fillStyle = '#ffe9a8'; ctx.fillText('🍟 吃到洋芋片 ' + (cars[0].chipN || 0) + ' 次　🥦 被蔬菜打中 ' + (cars[0].hitN || 0) + ' 次', W / 2, base + 112); }
     if (resT > 1) { const U = resultUI(W, H);
-      for (const [b, t, col] of [[U.again, '↻ 再玩一次', '#ffd84d'], [U.back, '🏟 回運動會', '#9be36b']]) {
+      for (const [b, t, col] of [[U.again, '↻ 再玩一次', '#ffd84d'], [U.back, '🏟 回到會場', '#9be36b']]) {
         ctx.fillStyle = col; ctx.strokeStyle = '#3a1e0f'; ctx.lineWidth = 6; rr4(ctx, b.x - b.w / 2, b.y - b.h / 2, b.w, b.h, 24); ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#3a1e0f'; ctx.font = '900 34px ' + F4; ctx.fillText(t, b.x, b.y + 12); } }
     ctx.restore();
@@ -1364,12 +1364,22 @@ if (REC) {
   const canPause = () => state === 'count' || state === 'race';
   addEventListener('keydown', e => { if (state === 'menu' && ['1', '2', '3'].includes(e.key)) chooseDiff(['easy', 'normal', 'hard'][+e.key - 1]); });
   addEventListener('keydown', e => { if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && (paused || canPause())) paused = !paused; });
+  // 手指位置 → 遊戲畫面座標：用畫布實際在螢幕上的位置和大小換算（有些手機瀏覽器 innerWidth 跟畫布不一樣）
+  const toXY = e => { const r = cv.getBoundingClientRect(), sc = Math.min(cv.width / W, cv.height / H), k = (cv.width / (r.width || innerWidth)) / sc;
+    return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
+  // 選難度：點按鈕附近（含按鈕之間的空隙）就算，挑最近的那個
+  const menuPick = (x, y) => { let best = null, bd = 1e9; for (const b of menuUI()) { const d = Math.abs(y - b.y); if (Math.abs(x - b.x) < b.w / 2 + 60 && d < 75 && d < bd) { bd = d; best = b; } } return best; };
+  // 備用：有些手機瀏覽器 pointerdown 沒送到 → 放開手指／click 時再檢查一次選單和結算按鈕
+  const backup = e => { const p = e.changedTouches ? e.changedTouches[0] : e; if (!p) return; const [x, y] = toXY(p);
+    if (state === 'menu' && menuT > 0.3) { const b = menuPick(x, y); if (b) chooseDiff(b.k); }
+    else if (state === 'result' && STAGE >= 4 && resT > 1) { const U = resultUI(VW, VH), ib = b => Math.abs(x - b.x) < b.w / 2 && Math.abs(y - b.y) < b.h / 2; if (ib(U.again)) reset(); else if (ib(U.back)) location.href = SPORTS_URL; } };
+  addEventListener('touchend', backup, { passive: true }); addEventListener('click', backup);
   addEventListener('pointerdown', e => {
-    const x = e.clientX * toView, y = e.clientY * toView, U = pauseUI();
+    const [x, y] = toXY(e), U = pauseUI();
     const inBox = b => Math.abs(x - b.x) < b.w / 2 && Math.abs(y - b.y) < b.h / 2;
     if (state === 'intro') { const S = introUI(VW, VH).skip; if (inBox(S)) { introI = INTRO.length - 1; } introNext(); return; }
     if (state === 'result' && STAGE >= 4) { if (resT > 1) { const U = resultUI(VW, VH); if (inBox(U.again)) reset(); else if (inBox(U.back)) location.href = SPORTS_URL; } return; }
-    if (state === 'menu') { for (const b of menuUI()) if (inBox(b)) chooseDiff(b.k); return; }   // 第 20 輪：點難度
+    if (state === 'menu') { const b = menuPick(x, y); if (b) chooseDiff(b.k); return; }   // 第 20 輪：點難度
     if (paused) {
       if (inBox(U.go)) paused = false; else if (inBox(U.re)) restartRace();
       else if (inBox(U.df)) { reset(); paused = false; camReady = false; }   // 第 21 輪：回到選難度
