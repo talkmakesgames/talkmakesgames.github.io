@@ -140,7 +140,7 @@ function newGame(s) {
   if (s != null) seed = s;
   G = {
     state: 'title', t: 0, board: [], held: null, dragX: 0, dragY: 0, swapped: false, timer: 0, timeLimit: 6,
-    wave: 0, enemies: [], armor: ARMOR0, armorMax: ARMOR0, hitstop: 0, critSfxT: 0, tutTurn: -1, tutPath: null, energy: 0, combo: 0, maxCombo: 0, totalDmg: 0, turns: 0, parts: 0,
+    wave: 0, enemies: [], armor: ARMOR0, armorMax: ARMOR0, hitstop: 0, critSfxT: 0, tutKey: '', tutPath: null, moves: 0, maxHit: 0, energy: 0, combo: 0, maxCombo: 0, totalDmg: 0, turns: 0, parts: 0,
     queue: [], groups: [], phaseT: 0, attackIdx: 0, enemyIdx: 0,
     mods: { light: 1, burn: false, time: 0, plus: 5, energy: 1, steel: false },
     fx: [], parts_: [], texts: [], shake: 0, slow: 0, flash: 0, comboShow: 0,
@@ -404,6 +404,7 @@ function endDrag() {
   const hp = G.board[G.held.r][G.held.c]; hp.s = 1.25;
   G.held = null;
   if (!G.swapped) { G.state = 'player'; return; }
+  G.moves++;
   G.state = 'resolve'; G.phaseT = 0; G.queue = findGroups(G.board); G.subPhase = 'pop';
 }
 function stepResolve() {
@@ -475,7 +476,7 @@ function dealDamage(e, dmg, color, kind) {
   if (!e || e.dead) return 0;
   const crit = kind && kind !== 'burn' && kind !== 'emp' && rnd() < critRate();
   if (crit) dmg *= 2;
-  dmg = Math.round(dmg); e.hp -= dmg; e.hit = 1; G.totalDmg += dmg;
+  dmg = Math.round(dmg); e.hp -= dmg; e.hit = 1; G.totalDmg += dmg; if (dmg > G.maxHit) G.maxHit = dmg;
   const tier = dmg >= 10000 ? 2 : crit ? 1 : 0;
   G.texts.push({ x: e.x + (rnd() - 0.5) * 30, y: e.y - 60, s: dmg, t: 0, life: tier ? 1.15 : 0.9, color: tier === 2 ? '#ff7a2a' : crit ? '#ffe14d' : (color || '#fff'), tier, crit });
   if (kind) hitFX(e, kind);
@@ -1084,10 +1085,11 @@ function findDemoPath() {
   let best = null;
   for (let k = 0; k < 600; k++) {
     const b = G.board.map(row => row.map(p => ({ t: p.t, plus: p.plus })));
-    let c = ri(COLS), r = ri(ROWS); const path = [[c, r]]; const len = 1 + ri(4);
+    const mr = n => Math.floor(Math.random() * n);
+    let c = mr(COLS), r = mr(ROWS); const path = [[c, r]]; const len = 1 + mr(4);
     for (let i = 0; i < len; i++) {
       const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [c + dx, r + dy]).filter(([x, y]) => x >= 0 && y >= 0 && x < COLS && y < ROWS && !(path.length > 1 && x === path[path.length - 2][0] && y === path[path.length - 2][1]));
-      const [nx, ny] = opts[ri(opts.length)]; const t = b[r][c]; b[r][c] = b[ny][nx]; b[ny][nx] = t; c = nx; r = ny; path.push([c, r]);
+      const [nx, ny] = opts[mr(opts.length)]; const t = b[r][c]; b[r][c] = b[ny][nx]; b[ny][nx] = t; c = nx; r = ny; path.push([c, r]);
     }
     const gs = findGroups(b); if (!gs.length) continue;
     const score = gs.length * 10 - path.length * 3;
@@ -1102,15 +1104,17 @@ const TUT = [
 ];
 let tutDone = false; try { tutDone = localStorage.getItem('zw-tut') === 'done'; } catch (e) {}
 function drawTutorial() {
-  if (tutDone || G.turns > 2) return;
+  const k = G.moves;   // 第幾次操作（不管有沒有照教學、有沒有清掉一波，都會往下走）
+  if (tutDone || k > 2) return;
   if (G.state !== 'player') return;
-  const step = TUT[G.turns];
-  if (G.tutTurn !== G.turns) { G.tutTurn = G.turns; G.tutPath = findDemoPath(); }
-  if (G.turns === 2) { try { localStorage.setItem('zw-tut', 'done'); } catch (e) {} }
+  const step = TUT[k];
+  const key = k + ':' + G.board.map(row => row.map(p => p.t).join('')).join('');   // 盤面變了就重找示範路徑
+  if (G.tutKey !== key) { G.tutKey = key; G.tutPath = findDemoPath(); }
+  if (k === 2) { try { localStorage.setItem('zw-tut', 'done'); } catch (e) {} }
   const path = G.tutPath;
   ctx.save();
   if (path && path.length > 1) {   // 路徑：發亮的格子＋手指沿路徑移動
-    ctx.globalAlpha = G.turns === 0 ? 1 : 0.6;
+    ctx.globalAlpha = k === 0 ? 1 : 0.6;
     ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 6; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -G.t * 40;
     ctx.beginPath(); path.forEach(([c, r], i) => { const p = cellPos(c, r); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }); ctx.stroke(); ctx.setLineDash([]);
     const p0 = cellPos(path[0][0], path[0][1]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.shadowColor = '#fff'; ctx.shadowBlur = 16 + 8 * Math.sin(G.t * 6);
@@ -1121,7 +1125,7 @@ function drawTutorial() {
     ctx.globalAlpha = u > 0.92 ? (1 - u) / 0.08 : 1; ctx.font = '44px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('👆', fx + 6, fy - 4);
   }
   ctx.globalAlpha = 1;
-  if (G.turns === 1) {   // 指向最前面敵人的攻擊倒數
+  if (k === 1) {   // 指向最前面敵人的攻擊倒數
     const e = frontEnemy();
     if (e && e.bx != null) {   // 黃色箭頭從右邊指向倒數圓圈＋外圈閃爍
       const bob = Math.sin(G.t * 6) * 5, ax = e.bx + 18 + bob, ay = e.by + 1;
@@ -1134,7 +1138,7 @@ function drawTutorial() {
   ctx.fillStyle = 'rgba(4,14,18,0.94)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 2; roundRect(bx, by, bw, 60, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.fillText(step.t, W / 2, by + 21);
   ctx.fillStyle = '#9fdfe8'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillText(step.s, W / 2, by + 43);
-  ctx.fillStyle = '#6f8592'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(`教學 ${G.turns + 1}/3`, bx + bw - 10, by + 10);
+  ctx.fillStyle = '#6f8592'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(`教學 ${k + 1}/3`, bx + bw - 10, by + 10);
   ctx.restore();
 }
 function drawCombo() {
@@ -1188,9 +1192,9 @@ function drawResult() {
   ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
   ctx.font = '900 150px "Arial Black",sans-serif'; ctx.fillStyle = '#fff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 40; ctx.fillText(G.maxCombo, W / 2, 370); ctx.shadowBlur = 0;
   ctx.font = '900 30px "Arial Black",sans-serif'; ctx.fillStyle = CYAN; ctx.fillText('COMBO', W / 2, 460);
-  const rows = [['總傷害', fmt(G.totalDmg)], ['回合數', G.turns + (win ? 1 : 0)], ['收集零件', G.parts]];
+  const rows = [['最高傷害', fmt(G.maxHit)], ['總傷害', fmt(G.totalDmg)], ['回合數', G.turns + (win ? 1 : 0)], ['收集零件', G.parts]];
   rows.forEach(([k, v], i) => {
-    const y = 540 + i * 46; ctx.fillStyle = 'rgba(63,240,255,0.08)'; roundRect(90, y - 18, W - 180, 36, 8); ctx.fill();
+    const y = 522 + i * 42; ctx.fillStyle = 'rgba(63,240,255,0.08)'; roundRect(90, y - 18, W - 180, 36, 8); ctx.fill();
     ctx.font = '700 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#a9c4cc'; ctx.fillText(k, 110, y);
     ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillText(v, W - 110, y);
   });
