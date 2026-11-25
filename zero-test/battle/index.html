@@ -1382,14 +1382,25 @@ function drawResult() {
   ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
   ctx.fillText(OT ? '加班結束' : win ? '淨化完成' : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
   ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜撐過 ${G.wave} 波` + (G.otNew ? '｜新紀錄！' : `｜今天最佳 ${Math.max(G.wave, (G.otPrev && G.otPrev.today) || 0)} 波`) : STAGE ? `第一章 ${STAGE === ZN ? '頭目' : '1-' + STAGE}` + (win ? ' 過關' : CHASE ? `｜撐了 ${G.turns} 回合` : `｜撐到第 ${G.wave + 1} 波`) : (win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`), W / 2, 196);
-  ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
-  ctx.font = '900 150px "Arial Black",sans-serif'; ctx.fillStyle = '#fff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 40; ctx.fillText(G.maxCombo, W / 2, 370); ctx.shadowBlur = 0;
-  ctx.font = '900 30px "Arial Black",sans-serif'; ctx.fillStyle = CYAN; ctx.fillText('COMBO', W / 2, 460);
+  if (!(STAGE && G.reward)) {
+    ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
+    ctx.font = '900 150px "Arial Black",sans-serif'; ctx.fillStyle = '#fff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 40; ctx.fillText(G.maxCombo, W / 2, 370); ctx.shadowBlur = 0;
+    ctx.font = '900 30px "Arial Black",sans-serif'; ctx.fillStyle = CYAN; ctx.fillText('COMBO', W / 2, 460);
+  }
   let rows = [['最高傷害', fmt(G.maxHit)], ['總傷害', fmt(G.totalDmg)], ['回合數', G.turns + (win ? 1 : 0)], ['收集零件', G.parts]];
   if (STAGE && G.reward) {
     const R = G.reward.r, st = G.reward.stars;
-    ctx.font = '900 34px sans-serif'; ctx.fillStyle = '#ffd23f'; ctx.fillText('★'.repeat(st) + '☆'.repeat(3 - st), W / 2, 232);
-    if (win) { const cond = [['過關', true], ['裝甲剩一半', G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, G.maxCombo >= STAR_COMBO]]; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText((ok ? '★ ' : '☆ ') + t, W / 2 + (i - 1) * 110, 252); }); }
+    // 大星星（一顆一顆跳出來）
+    for (let i = 0; i < 3; i++) { const k = clamp((G.phaseT - 0.3 - i * 0.25) * 4, 0, 1), on = i < st, sc = on ? easeOutBack(k) : 1;
+      ctx.save(); ctx.translate(W / 2 + (i - 1) * 96, 288); ctx.scale(sc, sc); ctx.font = '900 76px sans-serif'; ctx.fillStyle = on ? '#ffd23f' : '#2c3640'; if (on) { ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 24; } ctx.fillText('★', 0, 0); ctx.restore(); }
+    const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
+    ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
+    // 零的一句評語
+    const q = !win ? '下次記得先動腦。車子比你的面子重要。' : st === 3 ? '……數據異常。你今天居然沒有拖後腿。' : st === 2 ? '還行。離「可靠」還差一點。' : '活著回來就好。我是說車子。';
+    ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
+    ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
+    ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
     const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
