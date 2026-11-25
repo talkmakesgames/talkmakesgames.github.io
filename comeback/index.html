@@ -267,7 +267,7 @@ let shake = 0, flashAll = 0;
 const G = {};   // 遊戲中的東西
 function go(s) { state = s; st = 0; layout(); }
 // 排行榜：搶回沙發後跳出（共用 tmg-leaderboard.js，只有贏才能上榜）
-function showLB(v) {
+function showLB(v, why) {
   if (!window.TMGLB) return;
   const m = document.createElement('div');
   m.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(40,20,8,.6);display:flex;align-items:center;justify-content:center;padding:14px;font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif';
@@ -275,7 +275,7 @@ function showLB(v) {
   for (const ev of ['pointerdown', 'pointerup', 'pointermove', 'click', 'touchstart', 'touchend', 'keydown', 'keyup']) m.addEventListener(ev, e => e.stopPropagation());
   m.querySelector('button').onclick = () => m.remove();
   document.body.appendChild(m);
-  TMGLB.mount(m.firstChild.firstChild, { game: 'comeback', v });
+  TMGLB.mount(m.firstChild.firstChild, { game: 'comeback', v, why });
 }
 const SEC = f => f / 60;
 const STORY_LEN = { drop: 2.6, ago: 3.4, fans: 2.8 };
@@ -315,7 +315,7 @@ function step() {
   else if (state === 'count') { if (st === 1) resetGame(); if (st % 40 === 1 && st < 120) ev('hit'); if (st >= 120) { go('play'); ev('whistle'); } }
   else if (state === 'play') updatePlay();
   else if (state === 'win') { if (st === 40) ev('ding'); if (st === 200) layout(); if (st === 230 && !REC) showLB(G.score); }
-  else if (state === 'lose') { if (st === 10) ev('sad'); }
+  else if (state === 'lose') { if (st === 10) ev('sad'); if (st === 110 && !REC) showLB(null, '搶回沙發才能上榜，再試一次！'); }
 }
 let autoStory = false;
 function startStory() { autoStory = true; go('ago'); }
