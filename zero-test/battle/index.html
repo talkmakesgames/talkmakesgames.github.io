@@ -163,7 +163,7 @@ const CARDS = [
   { id: 'light', t: '閃電砲強化', d: '閃電砲傷害 +30%' },
   { id: 'burn', t: '燃燒彈', d: '火焰砲附加燃燒\n敵人每回合再受傷' },
   { id: 'time', t: '神經加速', d: '轉珠時間 +1 秒' },
-  { id: 'armor', t: '加厚裝甲', d: '房車裝甲上限 +2,000\n並且補滿' },
+  { id: 'armor', t: '加厚裝甲', d: '車子裝甲上限 +2,000\n並且補滿' },
   { id: 'plus', t: '精密合成', d: '高級零件門檻\n從 5 個降為 4 個' },
   { id: 'energy', t: 'AI 超頻', d: 'AI 充能速度 +50%' },
   { id: 'steel', t: '鋼鐵尖刺', d: '鋼鐵零件也會\n造成少量傷害' },
@@ -177,7 +177,7 @@ const AI_LINES = {
   emp: ['過載 EMP。看好，這才叫效率。'],
   full: ['能量滿了。點我。別讓我說第二次。'],
   win: ['……你居然活下來了。數據異常。'],
-  lose: ['房車失去機能。下次記得先動腦。'],
+  lose: ['車子失去機能。下次記得先動腦。'],
   wave: ['這波清除。下一波更麻煩，別鬆懈。'],
 };
 const pick = a => a[ri(a.length)];
@@ -332,12 +332,12 @@ function drawMusicBtn() {
 
 // ── 波次 ──
 function spawnWave() {
-  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.36 * (STAGE === ZN ? Math.pow(0.88, Math.min(2, (SV && SV.bossFails) || 0)) : 1) : 1;
+  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.41 * (STAGE === ZN ? Math.pow(0.88, Math.min(2, (SV && SV.bossFails) || 0)) : 1) : 1;
   G.enemies = list.map((k, i) => {
     const K = KINDS[k], boss = k === 'boss';
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
     const y = boss ? (SPRITE_ON ? 228 : 185) : 150 + ((i % 2) ? 60 : 0) + (k === 'heavy' ? -10 : 0) + (k === 'dasher' ? 20 : 0);
-    return { k, K, hp: Math.round(K.hp * (boss ? bsc : sc)), maxHp: Math.round(K.hp * (boss ? bsc : sc)), cd: K.cd, cdMax: K.cd, atk: Math.round(K.atk * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
+    return { k, K, hp: Math.round(K.hp * (boss ? bsc : sc)), maxHp: Math.round(K.hp * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
       x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6 };
   });
   G.bannerText = BOSS_WAVE() ? '⚠ 頭目來襲' : CHASE ? '又追上來了！' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1} 波`; G.bannerT = 1.6;
@@ -606,7 +606,7 @@ function stepEnemy() {
   if (G.enemyIdx >= list.length) {
     if (G.armor <= 0) { finish(false); return; }
     if (G.dogBlocked) { G.dogBlocked = false; G.dogArmed = false; G.dogUsed = true; }
-    if (RUST_ON) { const nR = G.board.flat().filter(p => p && p.t === RUST).length; if (nR) { const rd = nR * 60; G.armor = Math.max(0, G.armor - rd); G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 46, s: `鏽蝕 -${rd}`, t: 0, life: 1.1, color: '#d08a50' }); if (G.armor <= 0) { finish(false); return; } } }
+    if (RUST_ON) { const nR = G.board.flat().filter(p => p && p.t === RUST).length; if (nR) { const rd = nR * 40; G.armor = Math.max(0, G.armor - rd); G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 46, s: `鏽蝕 -${rd}`, t: 0, life: 1.1, color: '#d08a50' }); if (G.armor <= 0) { finish(false); return; } } }
     G.turns++; G.state = 'player'; G.phaseT = 0;
     if (G.tipPending) { G.tipPending = false; G.tipShown = true; G.state = 'tip'; G.tipT = 0; }
     if (CHASE) { if (G.turns >= CHASE) { finish(true); return; } const left = CHASE - G.turns; G.bannerText = left === 1 ? '入口就在前面！' : `入口還有 ${left} 回合`; G.bannerT = 1.2; if (left === 3) sayV('c1_chase'); }
@@ -1469,7 +1469,7 @@ function drawTitle() {
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 24 * pulse; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 35); ctx.fill(); ctx.shadowBlur = 0;
   ctx.fillStyle = '#00262c'; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillText(STAGE ? '出發' : '開始', W / 2, btnRect.y + 36);
   ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592';
-  ['按住零件拖動，經過的零件會交換位置', '橫排或直排 3 個以上相同 → 合成攻擊', '敵人頭上的數字歸零就會攻擊房車'].forEach((s, i) => ctx.fillText(s, W / 2, (IMG.bg ? 775 : 700) + i * 26));
+  ['按住零件拖動，經過的零件會交換位置', '橫排或直排 3 個以上相同 → 合成攻擊', '敵人頭上的數字歸零就會攻擊車子'].forEach((s, i) => ctx.fillText(s, W / 2, (IMG.bg ? 775 : 700) + i * 26));
   ctx.restore();
 }
 const TIPS = {
@@ -1553,7 +1553,7 @@ function drawC1() {
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(q.x, q.y, 38, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
       ctx.font = '900 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff6a74'; ctx.fillText('報告', q.x, q.y);
       ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.5 * pu})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, 48 + 8 * pu, 0, 7); ctx.stroke();
-      ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText('點一下，把它按掉', q.x, q.y + 80);
+      ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; if (!o.rec) ctx.fillText('點一下，把它按掉', q.x, q.y + 80);
     }
   }
   ctx.restore();
