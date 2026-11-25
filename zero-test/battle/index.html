@@ -169,7 +169,7 @@ const CARDS = [
   { id: 'steel', t: '鋼鐵尖刺', d: '鋼鐵零件也會\n造成少量傷害' },
 ];
 const AI_LINES = {
-  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : STAGE ? ['出發。別把車弄壞，零件很貴。', '敵人接近。建議你動手，而不是發呆。'] : ['第 247 天。你的手速總算能看了。', '敵人接近。青晶房車全武裝，別浪費。'],
+  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : ({ 2: ['那隻狗在發抖。先把追兵打掉。'], 3: ['踩油門。別回頭看。'], 4: ['她在看。別丟我的臉。', '證明給她看：你比 AI 有用。'], 5: ['……那個東西，在等我們。'] })[STAGE] || (STAGE ? ['出發。別把車弄壞，零件很貴。', '敵人接近。建議你動手，而不是發呆。'] : ['第 247 天。你的手速總算能看了。', '敵人接近。青晶房車全武裝，別浪費。']),
   combo: ['不錯。你的手比你的腦袋有用。', '連擊有效。繼續保持，別得意。', '這種程度……勉強及格。'],
   hurt: ['裝甲受損。我建議你認真一點。', '再被打幾下，我們就一起變廢鐵。'],
   low: ['裝甲剩 30%。我建議你認真一點。'],
@@ -1220,7 +1220,7 @@ function bar(x, y, w, h, v, col, label) {
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(x, y, w, h, h / 2); ctx.fill();
   ctx.save(); roundRect(x, y, w, h, h / 2); ctx.clip(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.fillRect(x, y, w * clamp(v, 0, 1), h); ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1; roundRect(x, y, w, h, h / 2); ctx.stroke();
-  ctx.fillStyle = '#e6eef5'; ctx.font = '800 12px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 8, y + h / 2 + 0.5);
+  ctx.fillStyle = '#ffffff'; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.shadowColor = '#000'; ctx.shadowBlur = 3; ctx.fillText(label, x + 8, y + h / 2 + 0.5); ctx.shadowBlur = 0;
 }
 function drawUI() {
   // 中間欄底色
@@ -1236,13 +1236,13 @@ function drawUI() {
   bar(x0, FIELD_H + 42, 250, 18, G.energy / 100, G.energy >= 100 ? '#ffd23f' : '#a35cff', G.energy >= 100 ? 'AI 能量 滿（點 AI 小頭）' : `AI 能量 ${Math.floor(G.energy)}%`);
   ctx.fillStyle = '#e6eef5'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText(BOSS_WAVE() ? '頭目戰' : CHASE ? '追逐中' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1}/${WAVES.length} 波`, W - 14, FIELD_H + 14);
-  ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
+  ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#a9b6c2'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
   // 轉珠時間條
   const tl = G.timeLimit + G.mods.time;
   const tv = G.state === 'drag' && G.swapped ? G.timer / tl : 1;
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
   ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
-  ctx.fillStyle = '#8fa0ae'; ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#a9b6c2'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' ? (STAGE === 1 && !G.empUsed ? '先點右邊的零，放出大招' : '按住零件拖動，連成 3 個以上就合成') : '', x0, FIELD_H + 88);
   // 零件盤底
   const pg = ctx.createLinearGradient(0, BY - 6, 0, H); pg.addColorStop(0, '#15191e'); pg.addColorStop(1, '#07090b');
@@ -1464,6 +1464,11 @@ function drawC1() {
     ctx.strokeStyle = full ? '#ffb35c' : '#a9b3bd'; if (full) { ctx.shadowColor = '#ffb35c'; ctx.shadowBlur = 12 + 12 * pu; }
     ctx.beginPath(); ctx.arc(cx, cy, 35, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * G.he / 100); ctx.stroke(); ctx.shadowBlur = 0;
     ctx.font = '800 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = full ? '#ffd29a' : '#9aa6b2'; ctx.fillText(full ? '點我改裝' : '小禾', cx, b.y + b.h + 8);
+  }
+  if (STAGE === 2 && G.state !== 'result' && ICON.dog) {   // 1-2：被追的狗縮在主角後面發抖（還是紅眼）
+    const sx = 16 + Math.sin(G.t * 30) * 1.5, sy = 448; ctx.save(); ctx.beginPath(); ctx.arc(sx + 18, sy, 18, 0, 7); ctx.fillStyle = '#2a2018'; ctx.fill(); ctx.clip(); ctx.drawImage(ICON.dog, sx, sy - 18, 36, 36);
+    ctx.fillStyle = `rgba(255,40,40,${0.25 + 0.2 * Math.sin(G.t * 6)})`; ctx.fillRect(sx, sy - 18, 36, 36); ctx.restore();
+    ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText('發抖中', sx + 18, sy + 28);
   }
   if (DOG_ON) {   // 鐵鏽小頭像：擋過攻擊就變暗
     const x = 30, y = 300, used = G.dogUsed, armed = G.dogArmed;   // 左側、主角頭上，不擋敵人
