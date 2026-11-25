@@ -630,7 +630,7 @@ function stepEnemy() {
     for (let i = 0; i < 12; i++) G.parts_.push({ x: RV.x + 40 + rnd() * (RV.w - 80), y: RV.y + rnd() * 30, vx: (rnd() - 0.5) * 300, vy: -100 - rnd() * 260, t: 0, life: 0.6, color: rnd() < 0.5 ? '#ffb347' : '#ff4a3d', size: 3 + rnd() * 4, rot: 0, vr: 0 });
     SFX.hit();
     if (G.armor <= G.armorMax * 0.3 && !G.ai.lowSaid) { G.ai.lowSaid = true; say(AI_LINES.low[0]); }
-    else if (rnd() < 0.35) say(pick(AI_LINES.hurt));
+    else if (rnd() < 0.35 && G.armor < G.armorMax * 0.6) say(pick(AI_LINES.hurt)); else if (rnd() < 0.2) say(pick(['擦傷而已。繼續。', '這點傷，車子還撐得住。']));
   }
 }
 function rustify(n) {   // 頭目攻擊時把幾顆零件鏽掉（同時最多 5 格）
@@ -713,7 +713,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   if (DOG_ON) r.scrap += 20;   // 鐵鏽多撿的一份   // 打輸退一半燃料
   const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= STAR_COMBO ? 1 : 0) : 0;
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
-  for (const key in r) { if (key === 'scrap' || key === 'chip') S0.res[key] = Math.min(cap, (S0.res[key] || 0) + r[key]); else if (key === 'fuel') S0.res.fuel = Math.min(100 + ((S0.fac.tank || 1) - 1) * 20, S0.res.fuel + r.fuel); else S0.res[key] = (S0.res[key] || 0) + r[key]; }
+  for (const key in r) { if (key === 'scrap' || key === 'chip') S0.res[key] = Math.min(cap, (S0.res[key] || 0) + r[key]); else if (key === 'fuel') { const f0 = S0.res.fuel; S0.res.fuel = Math.min(100 + ((S0.fac.tank || 1) - 1) * 20, S0.res.fuel + r.fuel); r.fuel = Math.max(0, S0.res.fuel - f0); /* 油箱滿了就不顯示 +N */ } else S0.res[key] = (S0.res[key] || 0) + r[key]; }
   S0.codex = S0.codex || { seen: {}, kills: {} };
   for (const kk in G.kills) { const id = kk === 'boss' ? 'mech' : kk; S0.codex.kills[id] = (S0.codex.kills[id] || 0) + G.kills[kk]; S0.codex.seen[id] = 1; }
   S0.stats.maxCombo = Math.max(S0.stats.maxCombo || 0, G.maxCombo); S0.stats.maxHit = Math.max(S0.stats.maxHit || 0, G.maxHit); S0.stats.clears = (S0.stats.clears || 0) + (win ? 1 : 0);
@@ -826,12 +826,26 @@ const BG = document.createElement('canvas'); BG.width = W; BG.height = FIELD_H +
   b.fillStyle = fog; b.fillRect(0, 200, W, 120);
 })();
 
+// 每關不同的戰場：1-2 巷弄、1-4 白天的公路；1-3 追逐有速度線；頭目關偏紅
+const FIELD_ALT = { 2: ['../img/story/bg_alley.webp', 0.50], 4: ['../img/story/bg_road.webp', 0.52] }[STAGE];
+if (FIELD_ALT) { const im = new Image(); im.onload = () => { IMG.field = im; }; im.src = FIELD_ALT[0]; }
 function drawField() {
-  if (IMG.bg) {
+  if (IMG.field) {   // 直式背景圖：裁一條橫的當戰場
+    const im = IMG.field, sh = im.width * FIELD_H / W, sy = (im.height - sh) * FIELD_ALT[1];
+    ctx.drawImage(im, 0, sy, im.width, sh, 0, 0, W, FIELD_H);
+    const v = ctx.createLinearGradient(0, 0, 0, FIELD_H); v.addColorStop(0, 'rgba(5,7,11,0.45)'); v.addColorStop(0.5, 'rgba(5,7,11,0.15)'); v.addColorStop(1, 'rgba(5,7,11,0.55)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, FIELD_H);
+  } else if (IMG.bg) {
     ctx.drawImage(IMG.bg, 0, 0, W, FIELD_H);
     const v = ctx.createLinearGradient(0, 0, 0, FIELD_H); v.addColorStop(0, 'rgba(5,7,11,0.35)'); v.addColorStop(0.5, 'rgba(5,7,11,0.05)'); v.addColorStop(1, 'rgba(5,7,11,0.45)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, FIELD_H);
   } else ctx.drawImage(BG, 0, 0);
+  if (STAGE === ZN) { ctx.fillStyle = 'rgba(120,0,10,0.18)'; ctx.fillRect(0, 0, W, FIELD_H); }
+  if (CHASE && G.state !== 'result') {   // 追逐：往後飛的速度線
+    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 2;
+    for (let i = 0; i < 14; i++) { const y = 40 + ((i * 53) % (FIELD_H - 60)), x = W - ((G.t * 900 + i * 157) % (W + 200)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 60 + (i % 3) * 30, y); ctx.stroke(); }
+    ctx.restore();
+  }
 }
 function glowLine(x0, y0, x1, y1, col, w, blur) {
   ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.shadowColor = col; ctx.shadowBlur = blur || 12; ctx.lineCap = 'round';
@@ -1382,7 +1396,7 @@ function drawResult() {
   ctx.fillStyle = `rgba(2,6,8,${0.85 * t})`; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = t; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
-  ctx.fillText(OT ? '加班結束' : win ? '淨化完成' : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
+  ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? '第一章　完' : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
   ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜撐過 ${G.wave} 波` + (G.otNew ? '｜新紀錄！' : `｜今天最佳 ${Math.max(G.wave, (G.otPrev && G.otPrev.today) || 0)} 波`) : STAGE ? `第一章 ${STAGE === ZN ? '頭目' : '1-' + STAGE}` + (win ? ' 過關' : CHASE ? `｜撐了 ${G.turns} 回合` : `｜撐到第 ${G.wave + 1} 波`) : (win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`), W / 2, 196);
   if (!(STAGE && G.reward)) {
     ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
@@ -1399,7 +1413,8 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : st === 3 ? '……數據異常。你今天居然沒有拖後腿。' : st === 2 ? '還行。離「可靠」還差一點。' : '活著回來就好。我是說車子。';
+    const QW = { 1: ['第一戰。你沒有尖叫，進步了。', '……運氣成分很高。'], 2: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 3: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 4: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 5: ['……第一章，結束。下一站：冰港。', '……第一章，結束。下一站：冰港。'] }[STAGE] || ['還行。'];
+    const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
