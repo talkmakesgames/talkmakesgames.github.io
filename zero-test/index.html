@@ -294,6 +294,7 @@ function runIntro() {
   else if (S.intro === 'explainA' && QUICK2 && window.Story && window.STORY_INTRO) Story.play('introA', { data: window.STORY_INTRO, name: '我', base: '', onDone: () => { S.intro = 'naming'; save(); startNaming(); } });   // ?quick=2：互動版
   else if (S.intro === 'explainA') playVideo('video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
   else if (S.intro === 'naming') startNaming();
+  else if (S.intro === 'explainB' && QUICK2 && window.Story && window.STORY_INTRO) Story.play('introB', { data: window.STORY_INTRO, name: S.hero, base: '', onDone: finishIntro });   // ?quick=2：互動版
   else if (S.intro === 'explainB') playVideo('video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
   else goHome();
 }
