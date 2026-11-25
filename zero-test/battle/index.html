@@ -657,7 +657,7 @@ function heConvert(t) {   // 小禾改裝：玩家點的那一排（沒點就挑
   else for (let r = 0; r < ROWS; r++) { const n = G.board[r].filter(p => p && (p.t === 3 || p.t === RUST)).length * 10 + (G.board[r].some(p => p && p.t === RUST) ? 5 : 0); if (n > bestN) { bestN = n; best = r; } }
   let k = 0;
   for (let c = 0; c < COLS; c++) { const p = G.board[best][c]; if (p && (p.t === 3 || p.t === RUST)) { p.t = t; p.s = 1.5; k++; const q = cellPos(c, best); G.fx.push({ type: 'forge', x: q.x, y: q.y, t: -c * 0.04, dur: 0.6, color: TYPES[t].color }); } }
-  G.he = 0; G.state = 'player'; SFX.charge(); SFX.card();
+  G.state = 'player'; if (k) { G.he = 0; SFX.charge(); SFX.card(); }
   G.heLine = k ? pick(['改好了。別浪費。', '這排給你。', '……還行吧。']) : '這排沒什麼好改的。'; G.heLineT = 2.4; G.ai.lineT = 0;
 }
 function useEMP() {
@@ -1474,7 +1474,7 @@ function drawC1() {
     ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText('發抖中', sx + 18, sy + 28);
   }
   if (DOG_ON) {   // 鐵鏽小頭像：擋過攻擊就變暗
-    const x = 30, y = 300, used = G.dogUsed, armed = G.dogArmed;   // 左側、主角頭上，不擋敵人
+    const x = 34, y = 178, used = G.dogUsed, armed = G.dogArmed;   // 左上、小禾頭像上方
     const danger = !used && !armed && G.state === 'player' && alive().some(e => e.k !== 'boss' && e.cd <= 1);
     if (danger) { ctx.save(); ctx.strokeStyle = `rgba(255,90,90,${0.5 + 0.5 * Math.sin(G.t * 10)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 27, 0, 7); ctx.stroke(); ctx.restore(); }
     if (armed) { ctx.save(); ctx.strokeStyle = '#ffd28a'; ctx.shadowColor = '#ffd28a'; ctx.shadowBlur = 16; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 26 + 3 * Math.sin(G.t * 8), 0, 7); ctx.stroke(); ctx.restore(); }
@@ -1568,9 +1568,9 @@ cv.addEventListener('pointerdown', ev => {
     if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
-  if (G.state === 'heRow') { const cell = boardCellAt(p.x, p.y); if (cell.inside) { G.heRowSel = cell.r; G.state = 'hePick'; SFX.card(); } else G.state = 'player'; return; }
+  if (G.state === 'heRow') { const cell = boardCellAt(p.x, p.y); if (cell.inside) { if (!G.board[cell.r].some(q => q && (q.t === 3 || q.t === RUST))) { G.heLine = '這排沒有灰零件。選亮的那幾排。'; G.heLineT = 1.8; return; } G.heRowSel = cell.r; G.state = 'hePick'; SFX.card(); } else G.state = 'player'; return; }
   if (G.state === 'hePick') { const r = pickRects.find(r => inRect(p, r)); if (r) heConvert(r.t); else { G.state = 'player'; G.heRowSel = null; } return; }
-  if (G.state === 'player' && DOG_ON && !G.dogUsed && Math.hypot(p.x - 30, p.y - 300) < 30) { G.dogArmed = !G.dogArmed; SFX.card(); say(G.dogArmed ? '鐵鏽待命。這回合的小攻擊牠會擋。' : '鐵鏽退下了。'); return; }
+  if (G.state === 'player' && DOG_ON && !G.dogUsed && Math.hypot(p.x - 34, p.y - 178) < 26) { G.dogArmed = !G.dogArmed; SFX.card(); say(G.dogArmed ? '鐵鏽待命。這回合的小攻擊牠會擋。' : '鐵鏽退下了。'); return; }
   if (G.state === 'player' && HE_ON && Math.hypot(p.x - (HE_BTN.x + HE_BTN.w / 2), p.y - (HE_BTN.y + HE_BTN.h / 2)) < 42) { if (G.he >= 100) { G.state = 'heRow'; SFX.card(); } else { G.heLine = `灰色零件再多一點（${Math.floor(G.he)}%）`; G.heLineT = 1.8; } return; }
   if (G.state === 'player') {
     if (G.ai.drawX && Math.hypot(p.x - G.ai.drawX, p.y - G.ai.drawY) < 48 && G.energy >= 100) { useEMP(); return; }
@@ -1590,7 +1590,14 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 newGame(); requestAnimationFrame(loop);
-if (STAGE && PRE[STAGE] && window.Story && !storySeen(PRE[STAGE])) {
+const CLEARED = (SV && SV.cleared && SV.cleared.zero) || 0;
+if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[STAGE])) {   // 上次過關後的劇情沒看完 → 補播
+  G.state = 'story';
+  Story.play(POST[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(POST[STAGE]); G.state = 'title'; } });
+} else if (STAGE === ZN && window.Story && CLEARED >= ZN && !storySeen('c1s9')) {   // 頭目後的結局沒看完 → 補播短劇＋營火
+  G.state = 'story';
+  Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s8'); storyMark('c1s9'); G.state = 'title'; } }));
+} else if (STAGE && PRE[STAGE] && window.Story && !storySeen(PRE[STAGE])) {
   G.state = 'story';
   Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); } });
 }

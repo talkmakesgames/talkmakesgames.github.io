@@ -40,7 +40,7 @@
   const TIERS = [[5, '準時下班的傳說'], [20, '正常社畜'], [45, '資深社畜'], [80, '加班戰士'], [120, '人形伺服器'], [1e9, '人形伺服器 Pro']];
   const tierOf = h => TIERS.findIndex(t => h <= t[0]);
   let hours = 46, phrase = 0;
-  const cardBtn = btn('cardBtn', 206, '📇', '傳送資格', true);
+  const cardBtn = btn('cardBtn', 206, '📇', '傳送資格', !((getS() || {}).flags || {}).card);
   cardBtn.onclick = () => { track('zw_card_open'); cardForm(); };
   if (cleared() < 1) cardBtn.style.display = 'none';
   function cardForm() {

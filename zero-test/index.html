@@ -286,7 +286,7 @@ $('vid').onended = endVideo; $('skip').onclick = endVideo;
 
 function runIntro() {
   if (S.intro === 'opening') playVideo('video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
-  else if (S.intro === 'trial') location.href = 'battle/?trial=1';
+  else if (S.intro === 'trial') location.replace('battle/?trial=1');
   else if (S.intro === 'explainA') playVideo(QUICK ? 'video/explainA_short.mp4' : 'video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
   else if (S.intro === 'naming') startNaming();
   else if (S.intro === 'explainB') playVideo(QUICK ? 'video/explainB_short.mp4' : 'video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });

@@ -118,7 +118,9 @@
       let music = null;
       if (sc.bgm) { try { music = new Audio(base + 'story/bgm_' + sc.bgm + '.mp3'); music.loop = true; music.volume = 0; const pm = music.play(); if (pm && pm.catch) pm.catch(() => {}); let vv = 0; const fi = setInterval(() => { vv = Math.min(0.24, vv + 0.02); if (music) music.volume = vv; if (vv >= 0.24) clearInterval(fi); }, 80); } catch (e) {} }
       function stopMusic() { if (!music) return; const m = music; music = null; let vv = m.volume; const fo = setInterval(() => { vv -= 0.03; if (vv <= 0) { clearInterval(fo); m.pause(); } else m.volume = vv; }, 60); }
-      function finish() { if (done) return; done = true; stopAudio(); stopMusic(); clearInterval(typing); unmount(); o.onDone && o.onDone(); }
+      function finish() { if (done) return; done = true; stopAudio(); stopMusic(); clearInterval(typing); unmount();
+        const guard = document.createElement('div'); guard.style.cssText = 'position:fixed;inset:0;z-index:49'; document.body.appendChild(guard); setTimeout(() => guard.remove(), 450);   // 點太快不會點穿
+        o.onDone && o.onDone(); }
       function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms); }
       function show(L) {
         if (L.cg || L.bg) setBg(L.cg || L.bg);
@@ -146,7 +148,7 @@
           audio.onended = () => scheduleAuto(650);
           const pr = audio.play(); if (pr && pr.catch) pr.catch(() => scheduleAuto(wait));
         } else scheduleAuto(L.end ? 2600 : L.phone ? 2200 : wait);
-        waitOrb = !!L.orb;
+        waitOrb = !!(L.orb && o.onOrb);
         if (L.hold) {   // 按住畫面（淨化）：要親手按住才會往下
           waitAct = true; hold.classList.add('on'); const pg = hold.querySelector('.pg');
           const tick = () => { const k = Math.min(1, (performance.now() - holdStart) / 1400); pg.style.strokeDashoffset = 276.5 * (1 - k); glow.style.opacity = k * 0.7;
