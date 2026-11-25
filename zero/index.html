@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HJVDZQNFML"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-HJVDZQNFML",{allow_google_signals:false,allow_ad_personalization_signals:false});window.tmgTrack=function(n,p){try{gtag("event",n,p||{});}catch(e){}};</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#05070b">
+<title>零號廢域｜試玩原型</title>
+<style>
+html,body{margin:0;height:100%;background:#05070b;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+canvas{display:block;margin:0 auto;touch-action:none}
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="動嘴做遊戲">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#1a1d2e">
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+// ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
+const W = 540, H = 960;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let SCALE = 1, DPR = 1;
+function fit() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  SCALE = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = (W * SCALE) + 'px'; cv.style.height = (H * SCALE) + 'px';
+  cv.width = Math.round(W * SCALE * DPR); cv.height = Math.round(H * SCALE * DPR);
+  cv.style.marginTop = Math.max(0, (innerHeight - H * SCALE) / 2) + 'px';
+}
+addEventListener('resize', fit); fit();
+
+// ── 亂數（可設種子，給模擬試玩用） ──
+let seed = (Date.now() % 100000) | 0;
+function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+const ri = n => Math.floor(rnd() * n);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeOutBack = t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+
+// ── 版面 ──
+const COLS = 6, ROWS = 5, CELL = 86, BX = (W - COLS * CELL) / 2, BY = 506;
+const FIELD_H = 392;               // 戰場高度
+const RV = { x: 28, y: 300, w: 270, h: 74 };
+const TURRETS = [{ x: 78, kind: 0 }, { x: 160, kind: 1 }, { x: 242, kind: 2 }];   // 閃電、火焰、機槍
+const HERO = { x: 70, y: 470 };
+const CYAN = '#3ff0ff', RED = '#ff2d3c';
+
+const TYPES = [
+  { name: '電路', fx: '閃電砲', color: '#3ff0ff', dark: '#0b4a55' },
+  { name: '燃料', fx: '火焰砲', color: '#ff5240', dark: '#5a1410' },
+  { name: '彈藥', fx: '機槍', color: '#ffd23f', dark: '#5a4608' },
+  { name: '鋼鐵', fx: '修補', color: '#a9b3bd', dark: '#2c3238' },
+  { name: '能量', fx: 'AI 充能', color: '#b46bff', dark: '#33155a' },
+];
+
+const KINDS = {
+  zombie: { name: '機械殭屍', hp: 115, cd: 2, atk: 9, s: 1.0 },
+  dasher: { name: '衝刺型', hp: 62, cd: 1, atk: 6, s: 0.9 },
+  heavy: { name: '重裝型', hp: 260, cd: 3, atk: 16, s: 1.15 },
+  boss: { name: '巨型機甲', hp: 1250, cd: 3, atk: 22, s: 1.0 },
+};
+const WAVES = [
+  ['zombie', 'zombie', 'dasher'],
+  ['zombie', 'dasher', 'heavy', 'dasher'],
+  ['heavy', 'zombie', 'dasher', 'zombie', 'heavy'],
+  ['boss'],
+];
+const CARDS = [
+  { id: 'light', t: '閃電砲強化', d: '閃電砲傷害 +30%' },
+  { id: 'burn', t: '燃燒彈', d: '火焰砲附加燃燒\n敵人每回合再受傷' },
+  { id: 'time', t: '神經加速', d: '轉珠時間 +1 秒' },
+  { id: 'armor', t: '加厚裝甲', d: '房車裝甲上限 +20\n並且補滿' },
+  { id: 'plus', t: '精密合成', d: '高級零件門檻\n從 5 個降為 4 個' },
+  { id: 'energy', t: 'AI 超頻', d: 'AI 充能速度 +50%' },
+  { id: 'steel', t: '鋼鐵尖刺', d: '鋼鐵零件也會\n造成少量傷害' },
+];
+const AI_LINES = {
+  start: ['連線完成。別期待我會安慰你。', '敵人接近。建議你動手，而不是發呆。'],
+  combo: ['不錯。你的手比你的腦袋有用。', '連擊有效。繼續保持，別得意。', '這種程度……勉強及格。'],
+  hurt: ['裝甲受損。我建議你認真一點。', '再被打幾下，我們就一起變廢鐵。'],
+  low: ['裝甲剩 30%。我建議你認真一點。'],
+  boss: ['存活機率 3%。不過你的運氣一向很差。'],
+  emp: ['過載 EMP。看好，這才叫效率。'],
+  full: ['能量滿了。點我。別讓我說第二次。'],
+  win: ['……你居然活下來了。數據異常。'],
+  lose: ['房車失去機能。下次記得先動腦。'],
+  wave: ['這波清除。下一波更麻煩，別鬆懈。'],
+};
+const pick = a => a[ri(a.length)];
+
+// ── 遊戲狀態 ──
+let G;
+function newGame(s) {
+  if (s != null) seed = s;
+  G = {
+    state: 'title', t: 0, board: [], held: null, dragX: 0, dragY: 0, swapped: false, timer: 0, timeLimit: 6,
+    wave: 0, enemies: [], armor: 120, armorMax: 120, energy: 0, combo: 0, maxCombo: 0, totalDmg: 0, turns: 0, parts: 0,
+    queue: [], groups: [], phaseT: 0, attackIdx: 0, enemyIdx: 0,
+    mods: { light: 1, burn: false, time: 0, plus: 5, energy: 1, steel: false },
+    fx: [], parts_: [], texts: [], shake: 0, slow: 0, flash: 0, comboShow: 0,
+    hero: { pose: 0, poseT: 0, glow: 0, hurt: 0 },
+    ai: { x: 330, y: 292, ox: 0, line: '', lineT: 0, hurtMove: 0, lowSaid: false, fullSaid: false },
+    turretAng: [-1.2, -1.4, -1.6], turretKick: [0, 0, 0],
+    cards: null, cardT: 0, bannerText: '', bannerT: 0, bossTaunt: 0, result: null, empT: 0,
+  };
+  G.board = makeBoard();
+}
+function makeCell(t, c, r, fromY) {
+  const p = cellPos(c, r);
+  return { t, plus: false, x: p.x, y: fromY != null ? fromY : p.y, vy: 0, s: 1, born: 0 };
+}
+function cellPos(c, r) { return { x: BX + c * CELL + CELL / 2, y: BY + r * CELL + CELL / 2 }; }
+function makeBoard() {
+  const b = [];
+  for (let r = 0; r < ROWS; r++) {
+    b.push([]);
+    for (let c = 0; c < COLS; c++) {
+      let t;
+      do { t = ri(5); } while ((c >= 2 && b[r][c - 1].t === t && b[r][c - 2].t === t) || (r >= 2 && b[r - 1][c].t === t && b[r - 2][c].t === t));
+      b[r].push(makeCell(t, c, r));
+    }
+  }
+  return b;
+}
+
+// ── 找出可以合成的組合 ──
+function findGroups(b) {
+  const mark = [...Array(ROWS)].map(() => Array(COLS).fill(false));
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS - 2; c++) {
+    const a = b[r][c]; if (!a) continue;
+    if (b[r][c + 1] && b[r][c + 2] && b[r][c + 1].t === a.t && b[r][c + 2].t === a.t) { mark[r][c] = mark[r][c + 1] = mark[r][c + 2] = true; }
+  }
+  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS - 2; r++) {
+    const a = b[r][c]; if (!a) continue;
+    if (b[r + 1][c] && b[r + 2][c] && b[r + 1][c].t === a.t && b[r + 2][c].t === a.t) { mark[r][c] = mark[r + 1][c] = mark[r + 2][c] = true; }
+  }
+  const seen = [...Array(ROWS)].map(() => Array(COLS).fill(false)), groups = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (!mark[r][c] || seen[r][c]) continue;
+    const t = b[r][c].t, cells = [], st = [[c, r]]; seen[r][c] = true;
+    while (st.length) {
+      const [x, y] = st.pop(); cells.push([x, y]);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS || seen[ny][nx] || !mark[ny][nx] || b[ny][nx].t !== t) continue;
+        seen[ny][nx] = true; st.push([nx, ny]);
+      }
+    }
+    groups.push({ t, cells, plus: cells.some(([x, y]) => b[y][x].plus) });
+  }
+  // 由下往上、由左往右結算（看起來比較自然）
+  groups.sort((g1, g2) => Math.max(...g2.cells.map(c => c[1])) - Math.max(...g1.cells.map(c => c[1])));
+  return groups;
+}
+
+// ── 音效（Web Audio 程式合成） ──
+let AC = null, MASTER = null, NOISE = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MASTER = AC.createGain(); MASTER.gain.value = 0.55; MASTER.connect(AC.destination);
+    NOISE = AC.createBuffer(1, AC.sampleRate * 1.5, AC.sampleRate);
+    const d = NOISE.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  } catch (e) { AC = null; }
+}
+function tone(f0, f1, dur, type, vol, delay) {
+  if (!AC) return; const t = AC.currentTime + (delay || 0);
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + dur + 0.05);
+}
+function noise(dur, vol, fLo, fHi, delay) {
+  if (!AC) return; const t = AC.currentTime + (delay || 0);
+  const s = AC.createBufferSource(); s.buffer = NOISE;
+  const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.setValueAtTime(fHi || 1200, t); f.frequency.exponentialRampToValueAtTime(fLo || 200, t + dur); f.Q.value = 0.8;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol || 0.4, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(MASTER); s.start(t); s.stop(t + dur + 0.05);
+}
+const SFX = {
+  swap: () => tone(520, 600, 0.04, 'triangle', 0.06),
+  pop: k => { const f = 330 * Math.pow(2, Math.min(k, 14) / 12 * 1.5); tone(f, f * 1.5, 0.12, 'square', 0.12); tone(f * 2, f * 2.2, 0.08, 'sine', 0.08); },
+  charge: () => tone(300, 1200, 0.18, 'sawtooth', 0.07),
+  zap: () => { noise(0.18, 0.35, 800, 6000); tone(1400, 300, 0.15, 'square', 0.08); },
+  fire: () => noise(0.35, 0.4, 150, 1500),
+  mg: () => { for (let i = 0; i < 4; i++) { noise(0.05, 0.35, 400, 3000, i * 0.06); } },
+  heal: () => { tone(520, 780, 0.15, 'triangle', 0.12); tone(780, 1040, 0.15, 'triangle', 0.1, 0.08); },
+  energy: () => tone(400, 900, 0.2, 'sine', 0.12),
+  boom: () => { noise(0.5, 0.6, 60, 900); tone(120, 40, 0.4, 'sine', 0.35); },
+  hit: () => { tone(90, 40, 0.25, 'sine', 0.45); noise(0.2, 0.4, 100, 800); },
+  card: () => { tone(660, 990, 0.12, 'triangle', 0.15); },
+  emp: () => { tone(80, 1600, 0.5, 'sawtooth', 0.15); noise(0.6, 0.5, 200, 5000, 0.1); },
+  win: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, f, 0.3, 'triangle', 0.18, i * 0.13)),
+  lose: () => [392, 330, 262, 196].forEach((f, i) => tone(f, f * 0.98, 0.35, 'sawtooth', 0.12, i * 0.18)),
+  boss: () => { tone(60, 45, 1.2, 'sawtooth', 0.3); noise(1.0, 0.4, 60, 400); },
+};
+
+// ── 波次 ──
+function spawnWave() {
+  const list = WAVES[G.wave], n = list.length, sc = 1 + 0.12 * G.wave;
+  G.enemies = list.map((k, i) => {
+    const K = KINDS[k], boss = k === 'boss';
+    const x = boss ? W / 2 : lerp(80, W - 80, n === 1 ? 0.5 : i / (n - 1));
+    const y = boss ? 185 : 150 + ((i % 2) ? 60 : 0) + (k === 'heavy' ? -10 : 0) + (k === 'dasher' ? 20 : 0);
+    return { k, K, hp: Math.round(K.hp * (boss ? 1 : sc)), maxHp: Math.round(K.hp * (boss ? 1 : sc)), cd: K.cd, cdMax: K.cd, atk: K.atk,
+      x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6 };
+  });
+  G.bannerText = G.wave === 3 ? '⚠ 頭目來襲' : `第 ${G.wave + 1} 波`; G.bannerT = 1.6;
+  if (G.wave === 3) {
+    G.shake = 18; SFX.boss(); G.bossTaunt = 3.2; G.ai.lineT = 0;
+    setTimeout(() => say(AI_LINES.boss[0]), 1800);
+  }
+}
+function alive() { return G.enemies.filter(e => !e.dead); }
+function frontEnemy() {
+  const a = alive(); if (!a.length) return null;
+  return a.slice().sort((p, q) => q.ty - p.ty || p.tx - q.tx)[0];
+}
+function say(s) { G.ai.line = s; G.ai.lineT = 2.8; }
+
+// ── 主流程 ──
+function startGame() {
+  newGame(); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start));
+}
+function update(dt) {
+  G.t += dt;
+  const ts = G.slow > 0 ? 0.35 : 1; if (G.slow > 0) G.slow -= dt;
+  const d = dt * ts;
+  // 動畫：盤面零件落下、縮放
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const p = G.board[r][c]; if (!p) continue;
+    const tp = cellPos(c, r);
+    if (G.held && G.held.c === c && G.held.r === r && G.state === 'drag') continue;
+    if (p.y < tp.y) { p.vy += 2600 * d; p.y = Math.min(tp.y, p.y + p.vy * d); if (p.y === tp.y) { p.vy = 0; p.s = 1.18; } }
+    else { p.y = lerp(p.y, tp.y, 1 - Math.pow(0.0001, d)); p.vy = 0; }
+    p.x = lerp(p.x, tp.x, 1 - Math.pow(0.00001, d));
+    p.s = lerp(p.s, 1, 1 - Math.pow(0.001, d));
+    if (p.born < 1) p.born = Math.min(1, p.born + d * 4);
+  }
+  // 敵人進場、受擊
+  for (const e of G.enemies) {
+    e.x = lerp(e.x, e.tx, 1 - Math.pow(0.02, d)); e.y = lerp(e.y, e.ty, 1 - Math.pow(0.02, d));
+    if (e.hit > 0) e.hit -= d * 4; if (e.lunge > 0) e.lunge -= d * 2.2;
+    if (e.dead) e.dieT += d;
+  }
+  G.enemies = G.enemies.filter(e => !e.dead || e.dieT < 1.2);
+  // 特效
+  for (const f of G.fx) f.t += d; G.fx = G.fx.filter(f => f.t < f.dur);
+  for (const p of G.parts_) { p.t += d; p.x += p.vx * d; p.y += p.vy * d; p.vy += (p.g || 900) * d; p.rot += p.vr * d; }
+  G.parts_ = G.parts_.filter(p => p.t < p.life);
+  for (const t of G.texts) { t.t += d; t.y -= 40 * d; }
+  G.texts = G.texts.filter(t => t.t < t.life);
+  G.shake = Math.max(0, G.shake - dt * 40); G.flash = Math.max(0, G.flash - dt * 3);
+  G.comboShow = Math.max(0, G.comboShow - dt);
+  G.hero.poseT = Math.max(0, G.hero.poseT - d); if (G.hero.poseT <= 0) G.hero.pose = 0;
+  G.hero.glow = Math.max(0, G.hero.glow - d * 1.5); G.hero.hurt = Math.max(0, G.hero.hurt - d * 2);
+  G.ai.lineT = Math.max(0, G.ai.lineT - dt); G.ai.hurtMove = Math.max(0, G.ai.hurtMove - d * 1.4);
+  for (let i = 0; i < 3; i++) G.turretKick[i] = Math.max(0, G.turretKick[i] - d * 6);
+  G.bannerT = Math.max(0, G.bannerT - dt); G.bossTaunt = Math.max(0, G.bossTaunt - dt); G.empT = Math.max(0, G.empT - dt);
+  if (G.energy >= 100 && !G.ai.fullSaid && G.state === 'player') { G.ai.fullSaid = true; say(AI_LINES.full[0]); }
+
+  G.phaseT += d;
+  switch (G.state) {
+    case 'intro': if (G.phaseT > 1.4) { G.state = 'player'; } break;
+    case 'drag':
+      if (G.swapped) { G.timer -= dt; if (G.timer <= 0) endDrag(); }
+      break;
+    case 'resolve': stepResolve(); break;
+    case 'attack': stepAttack(); break;
+    case 'enemy': stepEnemy(); break;
+    case 'clear':
+      if (G.phaseT > 1.0) {
+        if (G.wave >= 3) { finish(true); }
+        else { openCards(); }
+      }
+      break;
+  }
+}
+
+// ── 轉珠操作 ──
+function boardCellAt(x, y) {
+  const c = Math.floor((x - BX) / CELL), r = Math.floor((y - BY) / CELL);
+  return { c: clamp(c, 0, COLS - 1), r: clamp(r, 0, ROWS - 1), inside: x >= BX && x < BX + COLS * CELL && y >= BY && y < BY + ROWS * CELL };
+}
+function swapCells(a, b) {
+  const t = G.board[a.r][a.c]; G.board[a.r][a.c] = G.board[b.r][b.c]; G.board[b.r][b.c] = t;
+}
+function beginDrag(x, y) {
+  const cell = boardCellAt(x, y); if (!cell.inside) return false;
+  G.held = { c: cell.c, r: cell.r }; G.dragX = x; G.dragY = y; G.swapped = false;
+  G.timer = G.timeLimit + G.mods.time; G.state = 'drag'; G.combo = 0; G.groups = [];
+  return true;
+}
+function moveDrag(x, y) {
+  G.dragX = clamp(x, BX + 8, BX + COLS * CELL - 8); G.dragY = clamp(y, BY + 8, BY + ROWS * CELL - 8);
+  let target = boardCellAt(G.dragX, G.dragY), guard = 0;
+  while ((target.c !== G.held.c || target.r !== G.held.r) && guard++ < 12) {
+    const step = { c: G.held.c + Math.sign(target.c - G.held.c), r: G.held.r + Math.sign(target.r - G.held.r) };
+    swapCells(G.held, step); G.held = step;
+    if (!G.swapped) { G.swapped = true; }
+    SFX.swap();
+  }
+}
+function endDrag() {
+  if (G.state !== 'drag') return;
+  const hp = G.board[G.held.r][G.held.c]; hp.s = 1.25;
+  G.held = null;
+  if (!G.swapped) { G.state = 'player'; return; }
+  G.state = 'resolve'; G.phaseT = 0; G.queue = findGroups(G.board); G.subPhase = 'pop';
+}
+function stepResolve() {
+  if (G.subPhase === 'pop') {
+    if (G.phaseT < 0.2) return;
+    if (G.queue.length) { popGroup(G.queue.shift()); G.phaseT = 0; return; }
+    G.subPhase = 'fall'; G.phaseT = 0; gravity(); return;
+  }
+  if (G.subPhase === 'fall') {
+    if (G.phaseT < 0.38) return;
+    const more = findGroups(G.board);
+    if (more.length) { G.queue = more; G.subPhase = 'pop'; G.phaseT = 0.1; return; }
+    if (!G.groups.length) { G.state = 'enemy'; G.phaseT = 0; G.enemyIdx = 0; return; }
+    G.state = 'attack'; G.phaseT = 0; G.attackIdx = 0;
+    if (G.combo >= 3) say(pick(AI_LINES.combo));
+  }
+}
+function popGroup(g) {
+  G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.comboShow = 1.3;
+  const T = TYPES[g.t], hand = heroHand();
+  let plusAt = null;
+  if (g.cells.length >= G.mods.plus) { plusAt = g.cells[Math.floor(g.cells.length / 2)]; }
+  for (const [c, r] of g.cells) {
+    const p = cellPos(c, r);
+    for (let i = 0; i < 7; i++) {
+      const a = rnd() * Math.PI * 2, s = 120 + rnd() * 320;
+      G.parts_.push({ x: p.x, y: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 120, t: 0, life: 0.5 + rnd() * 0.4, color: T.color, size: 4 + rnd() * 6, rot: rnd() * 6, vr: (rnd() - 0.5) * 14, shard: true });
+    }
+    G.fx.push({ type: 'orb', x0: p.x, y0: p.y, x1: hand.x, y1: hand.y, t: -rnd() * 0.12, dur: 0.42, color: T.color });
+    G.board[r][c] = null; G.parts++;
+  }
+  if (plusAt) {
+    const [c, r] = plusAt; const cell = makeCell(g.t, c, r); cell.plus = true; cell.s = 1.6; G.board[r][c] = cell;
+    G.fx.push({ type: 'forge', x: cellPos(c, r).x, y: cellPos(c, r).y, t: 0, dur: 0.6, color: T.color });
+  }
+  G.groups.push({ t: g.t, n: g.cells.length, plus: g.plus });
+  // 主角合成動作：連擊越高動作越大
+  const pose = plusAt ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 2 : 1;
+  G.hero.pose = pose; G.hero.poseT = 0.45; G.hero.glow = Math.min(1.6, 0.5 + G.combo * 0.1);
+  if (G.combo === 10) { G.slow = 0.6; G.flash = 0.6; }
+  G.shake = Math.max(G.shake, 3 + Math.min(G.combo, 10));
+  SFX.pop(G.combo); if (plusAt) SFX.charge();
+}
+function gravity() {
+  for (let c = 0; c < COLS; c++) {
+    const col = [];
+    for (let r = ROWS - 1; r >= 0; r--) if (G.board[r][c]) col.push(G.board[r][c]);
+    let k = 0;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (k < col.length) G.board[r][c] = col[k++];
+      else { const nc = makeCell(ri(5), c, r, BY - CELL * (ROWS - r) * 0.9 - 30); nc.born = 0.2; G.board[r][c] = nc; }
+    }
+  }
+}
+
+// ── 攻擊 ──
+function heroHand() { return { x: HERO.x + 34, y: HERO.y - 52 }; }
+function mult() { return 1 + 0.25 * (G.combo - 1); }
+function dealDamage(e, dmg, color) {
+  if (!e || e.dead) return 0;
+  dmg = Math.round(dmg); e.hp -= dmg; e.hit = 1; G.totalDmg += dmg;
+  G.texts.push({ x: e.x + (rnd() - 0.5) * 30, y: e.y - 60, s: dmg, t: 0, life: 0.9, color: color || '#fff', big: dmg >= 120 });
+  if (e.hp <= 0) killEnemy(e);
+  else if (e.k === 'boss' && !e.enraged && e.hp < e.maxHp / 2) { e.enraged = true; e.cdMax = 2; e.cd = Math.min(e.cd, 2); G.bannerText = '⚠ 巨型機甲 暴走'; G.bannerT = 1.4; G.shake = 14; SFX.boss(); }
+  return dmg;
+}
+function killEnemy(e) {
+  e.dead = true; e.dieT = 0; e.hp = 0; SFX.boom(); G.shake = Math.max(G.shake, e.k === 'boss' ? 26 : 10);
+  // 淨化：零件碎片
+  for (let i = 0; i < (e.k === 'boss' ? 60 : 22); i++) {
+    const a = rnd() * Math.PI * 2, s = 100 + rnd() * 380;
+    G.parts_.push({ x: e.x, y: e.y - 30, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 200, t: 0, life: 0.8 + rnd() * 0.6, color: rnd() < 0.5 ? '#4a4f57' : CYAN, size: 4 + rnd() * 8, rot: rnd() * 6, vr: (rnd() - 0.5) * 16, shard: true, delay: 0.25 });
+  }
+}
+function stepAttack() {
+  if (G.phaseT < 0.3) return;
+  if (G.attackIdx >= G.groups.length) {
+    if (!alive().length) { G.state = 'clear'; G.phaseT = 0; say(G.wave >= 3 ? AI_LINES.win[0] : pick(AI_LINES.wave)); return; }
+    G.state = 'enemy'; G.phaseT = 0; G.enemyIdx = 0; return;
+  }
+  const g = G.groups[G.attackIdx++]; G.phaseT = 0;
+  const m = mult() * (g.plus ? 2 : 1), hand = heroHand();
+  G.hero.pose = G.combo >= 5 ? 2 : 1; G.hero.poseT = 0.3; G.hero.glow = Math.max(G.hero.glow, 0.8);
+  const targets = alive();
+  if (g.t <= 2) {
+    const tr = TURRETS[g.t];
+    G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: tr.x, y1: RV.y - 18, t: 0, dur: 0.16, color: CYAN });
+    const f = frontEnemy(); if (!f) return;
+    G.turretAng[g.t] = Math.atan2(f.y - 30 - (RV.y - 26), f.x - tr.x); G.turretKick[g.t] = 1;
+    if (g.t === 0) {   // 閃電砲：打最前面，再跳 2 隻
+      const chain = [f, ...targets.filter(e => e !== f).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y)).slice(0, 2)];
+      const base = 9 * g.n * m * G.mods.light;
+      let px = tr.x, py = RV.y - 30;
+      chain.forEach((e, i) => { G.fx.push({ type: 'light', x0: px, y0: py, x1: e.x, y1: e.y - 30, t: -i * 0.06, dur: 0.3 }); px = e.x; py = e.y - 30; dealDamage(e, base * (i ? 0.6 : 1), CYAN); });
+      SFX.zap();
+    } else if (g.t === 1) {   // 火焰砲：全體
+      for (const e of targets) { G.fx.push({ type: 'flame', x0: tr.x, y0: RV.y - 30, x1: e.x, y1: e.y - 30, t: 0, dur: 0.45 }); dealDamage(e, 5 * g.n * m, '#ff8a4a'); if (G.mods.burn && !e.dead) e.burn = 2; }
+      SFX.fire();
+    } else {   // 機槍：最前面一隻高傷害
+      for (let i = 0; i < 6; i++) G.fx.push({ type: 'tracer', x0: tr.x, y0: RV.y - 30, x1: f.x + (rnd() - 0.5) * 24, y1: f.y - 30 + (rnd() - 0.5) * 30, t: -i * 0.04, dur: 0.12 });
+      dealDamage(f, 15 * g.n * m, '#ffe066'); SFX.mg();
+    }
+  } else if (g.t === 3) {   // 鋼鐵：修補
+    const heal = Math.round(3 * g.n * (g.plus ? 2 : 1) * (0.5 + 0.5 * mult()));
+    G.armor = Math.min(G.armorMax, G.armor + heal);
+    G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 30, s: '+' + heal, t: 0, life: 0.9, color: '#9fffb0' });
+    G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: RV.x + RV.w / 2, y1: RV.y + 20, t: 0, dur: 0.18, color: CYAN });
+    if (G.mods.steel) { const f = frontEnemy(); if (f) dealDamage(f, 4 * g.n * m, '#cfd6dd'); }
+    SFX.heal();
+  } else {   // 能量：AI 充能
+    G.energy = Math.min(100, G.energy + 5 * g.n * (g.plus ? 2 : 1) * G.mods.energy);
+    G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: G.ai.x, y1: G.ai.y, t: 0, dur: 0.2, color: '#b46bff' });
+    SFX.energy();
+  }
+}
+function stepEnemy() {
+  if (G.phaseT < 0.32) return;
+  if (G.enemyIdx === 0) G.elist = alive();   // 回合開始時固定順序，中途有人倒下也不會跳過別人
+  const list = G.elist;
+  if (G.enemyIdx >= list.length) {
+    if (G.armor <= 0) { finish(false); return; }
+    G.turns++; G.state = 'player'; G.phaseT = 0; return;
+  }
+  const e = list[G.enemyIdx++]; G.phaseT = 0;
+  if (e.dead) return;
+  if (e.burn > 0) { e.burn--; dealDamage(e, 6 + 2 * G.wave, '#ff8a4a'); if (e.dead) return; }
+  if (e.stun) { e.stun = false; G.texts.push({ x: e.x, y: e.y - 90, s: '暈眩', t: 0, life: 0.8, color: '#b46bff' }); return; }
+  e.cd--;
+  if (e.cd <= 0) {
+    e.cd = e.cdMax; e.lunge = 1;
+    const dmg = e.atk + (e.enraged ? 4 : 0);
+    G.armor = Math.max(0, G.armor - dmg); G.shake = Math.max(G.shake, 12); G.flash = 0.25;
+    G.hero.hurt = 1; G.hero.pose = 4; G.hero.poseT = 0.5; G.ai.hurtMove = 1;
+    G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 20, s: '-' + dmg, t: 0, life: 0.9, color: '#ff5a5a', big: true });
+    for (let i = 0; i < 12; i++) G.parts_.push({ x: RV.x + 40 + rnd() * (RV.w - 80), y: RV.y + rnd() * 30, vx: (rnd() - 0.5) * 300, vy: -100 - rnd() * 260, t: 0, life: 0.6, color: rnd() < 0.5 ? '#ffb347' : '#ff4a3d', size: 3 + rnd() * 4, rot: 0, vr: 0 });
+    SFX.hit();
+    if (G.armor <= G.armorMax * 0.3 && !G.ai.lowSaid) { G.ai.lowSaid = true; say(AI_LINES.low[0]); }
+    else if (rnd() < 0.35) say(pick(AI_LINES.hurt));
+  }
+}
+function useEMP() {
+  if (G.energy < 100 || G.state !== 'player') return;
+  G.energy = 0; G.ai.fullSaid = false; G.empT = 0.8; G.flash = 0.7; G.shake = 16; SFX.emp(); say(AI_LINES.emp[0]);
+  for (const e of alive()) { dealDamage(e, 70 + 25 * G.wave, '#d9a6ff'); if (!e.dead) e.stun = true; }
+  if (!alive().length) { G.state = 'clear'; G.phaseT = 0; }
+}
+function openCards() {
+  const pool = CARDS.filter(c => !(c.id === 'burn' && G.mods.burn) && !(c.id === 'steel' && G.mods.steel) && !(c.id === 'plus' && G.mods.plus <= 4));
+  const out = []; while (out.length < 3 && pool.length) out.push(pool.splice(ri(pool.length), 1)[0]);
+  G.cards = out; G.cardT = 0; G.state = 'cards';
+}
+function chooseCard(i) {
+  const c = G.cards[i]; if (!c) return; SFX.card();
+  if (c.id === 'light') G.mods.light += 0.3;
+  if (c.id === 'burn') G.mods.burn = true;
+  if (c.id === 'time') G.mods.time += 1;
+  if (c.id === 'armor') { G.armorMax += 20; G.armor = G.armorMax; }
+  if (c.id === 'plus') G.mods.plus = 4;
+  if (c.id === 'energy') G.mods.energy += 0.5;
+  if (c.id === 'steel') G.mods.steel = true;
+  G.picked = (G.picked || []).concat(c.t);
+  G.cards = null; G.wave++; G.state = 'intro'; G.phaseT = 0; spawnWave();
+}
+function finish(win) {
+  G.state = 'result'; G.result = { win }; G.phaseT = 0;
+  if (win) { SFX.win(); say(AI_LINES.win[0]); } else { SFX.lose(); say(AI_LINES.lose[0]); }
+}
+
+// ═══════════════ 繪圖 ═══════════════
+const BG = document.createElement('canvas'); BG.width = W; BG.height = FIELD_H + 120;
+(function paintBG() {
+  const b = BG.getContext('2d');
+  const sky = b.createLinearGradient(0, 0, 0, FIELD_H);
+  sky.addColorStop(0, '#0a0f17'); sky.addColorStop(0.55, '#141a24'); sky.addColorStop(1, '#1d1a1c');
+  b.fillStyle = sky; b.fillRect(0, 0, W, BG.height);
+  // 遠方的母核塔
+  b.save(); b.globalAlpha = 0.9;
+  const tg = b.createLinearGradient(0, 30, 0, 260); tg.addColorStop(0, 'rgba(255,45,60,0.55)'); tg.addColorStop(1, 'rgba(255,45,60,0)');
+  b.fillStyle = tg; b.fillRect(W * 0.62, 20, 26, 240);
+  b.fillStyle = '#1a0a0e'; b.beginPath(); b.moveTo(W * 0.62 - 10, 260); b.lineTo(W * 0.62 + 6, 40); b.lineTo(W * 0.62 + 20, 40); b.lineTo(W * 0.62 + 36, 260); b.fill();
+  b.restore();
+  // 廢墟天際線（兩層）
+  const layer = (yBase, col, hMin, hMax, seedOff) => {
+    let s = seedOff; const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    b.fillStyle = col; let x = -10;
+    while (x < W + 10) {
+      const w = 26 + r() * 50, h = hMin + r() * (hMax - hMin);
+      b.beginPath(); b.moveTo(x, yBase); b.lineTo(x, yBase - h);
+      const broken = r() < 0.5;
+      if (broken) { b.lineTo(x + w * 0.3, yBase - h - 10 * r()); b.lineTo(x + w * 0.55, yBase - h + 14); b.lineTo(x + w * 0.8, yBase - h - 6); }
+      b.lineTo(x + w, yBase - h * (0.8 + r() * 0.2)); b.lineTo(x + w, yBase); b.fill();
+      // 霓虹殘光窗戶
+      for (let k = 0; k < 4; k++) if (r() < 0.35) { b.fillStyle = r() < 0.6 ? 'rgba(63,240,255,0.35)' : 'rgba(255,45,60,0.35)'; b.fillRect(x + 4 + r() * (w - 10), yBase - h + 10 + r() * (h - 20), 4, 3); b.fillStyle = col; }
+      x += w + 2;
+    }
+  };
+  layer(250, '#121820', 70, 170, 7);
+  layer(300, '#0d1117', 40, 120, 19);
+  // 地面（鏽鐵、裂縫）
+  const gg = b.createLinearGradient(0, 290, 0, FIELD_H + 120); gg.addColorStop(0, '#231d1a'); gg.addColorStop(1, '#0e0c0c');
+  b.fillStyle = gg; b.fillRect(0, 290, W, BG.height - 290);
+  b.strokeStyle = 'rgba(0,0,0,0.5)'; b.lineWidth = 2;
+  for (let i = 0; i < 14; i++) { b.beginPath(); let x = Math.random() * W, y = 300 + Math.random() * 80; b.moveTo(x, y); for (let k = 0; k < 4; k++) { x += (Math.random() - 0.5) * 60; y += Math.random() * 18; b.lineTo(x, y); } b.stroke(); }
+  for (let i = 0; i < 40; i++) { b.fillStyle = `rgba(${120 + Math.random() * 60},${60 + Math.random() * 30},30,${0.15 + Math.random() * 0.2})`; b.fillRect(Math.random() * W, 295 + Math.random() * 100, 2 + Math.random() * 10, 2 + Math.random() * 4); }
+  // 霧
+  const fog = b.createLinearGradient(0, 200, 0, 320); fog.addColorStop(0, 'rgba(120,140,160,0)'); fog.addColorStop(0.6, 'rgba(120,140,160,0.10)'); fog.addColorStop(1, 'rgba(120,140,160,0)');
+  b.fillStyle = fog; b.fillRect(0, 200, W, 120);
+})();
+
+function glowLine(x0, y0, x1, y1, col, w, blur) {
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.shadowColor = col; ctx.shadowBlur = blur || 12; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+// AI 光帶符號（伏筆）：橫向細光帶＋中間暗點
+function sigil(x, y, s, col, a) {
+  ctx.save(); ctx.globalAlpha = a == null ? 1 : a; ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
+  ctx.fillRect(x - 7 * s, y - 1.2 * s, 14 * s, 2.4 * s); ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,20,25,0.9)'; ctx.fillRect(x - 1.3 * s, y - 1.2 * s, 2.6 * s, 2.4 * s); ctx.restore();
+}
+
+// ── 零件（不同形狀＋顏色） ──
+function drawPiece(p, x, y, s) {
+  const T = TYPES[p.t], r = CELL * 0.38 * s;
+  ctx.save(); ctx.translate(x, y);
+  if (p.plus) { ctx.shadowColor = T.color; ctx.shadowBlur = 18 + 6 * Math.sin(G.t * 6); }
+  ctx.lineWidth = 3; ctx.strokeStyle = '#05070b';
+  const fillG = (c1, c2) => { const g = ctx.createLinearGradient(0, -r, 0, r); g.addColorStop(0, c1); g.addColorStop(1, c2); return g; };
+  if (p.t === 0) {   // 電路板：方形晶片＋線路
+    ctx.fillStyle = fillG(T.color, '#0e8fa0'); roundRect(-r, -r, r * 2, r * 2, r * 0.25); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.strokeStyle = '#04343c'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(-r * 0.6, -r * 0.2); ctx.lineTo(-r * 0.1, -r * 0.2); ctx.lineTo(r * 0.1, r * 0.3); ctx.lineTo(r * 0.6, r * 0.3);
+    ctx.moveTo(-r * 0.6, r * 0.45); ctx.lineTo(-r * 0.25, r * 0.45); ctx.moveTo(r * 0.2, -r * 0.55); ctx.lineTo(r * 0.2, -r * 0.1); ctx.stroke();
+    ctx.fillStyle = '#04343c'; ctx.fillRect(-r * 0.25, -r * 0.62, r * 0.32, r * 0.32);
+  } else if (p.t === 1) {   // 燃料罐：圓角罐＋蓋子
+    ctx.fillStyle = fillG('#ff7a63', '#a3180f'); roundRect(-r * 0.75, -r * 0.8, r * 1.5, r * 1.75, r * 0.3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#2a0b08'; ctx.fillRect(-r * 0.3, -r * 1.05, r * 0.6, r * 0.3);
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,230,200,0.85)'; ctx.beginPath(); ctx.moveTo(0, -r * 0.35); ctx.lineTo(r * 0.28, r * 0.15); ctx.lineTo(-r * 0.05, r * 0.1); ctx.lineTo(r * 0.05, r * 0.55); ctx.lineTo(-r * 0.3, 0); ctx.lineTo(0, 0.02); ctx.closePath(); ctx.fill();
+  } else if (p.t === 2) {   // 彈匣：梯形＋子彈頭
+    ctx.fillStyle = fillG('#ffe27a', '#a8820a'); ctx.beginPath(); ctx.moveTo(-r * 0.55, -r * 0.6); ctx.lineTo(r * 0.55, -r * 0.6); ctx.lineTo(r * 0.8, r * 0.95); ctx.lineTo(-r * 0.3, r * 0.95); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c98a2a'; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.ellipse(i * r * 0.32, -r * 0.78, r * 0.12, r * 0.24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(60,40,0,0.5)'; ctx.fillRect(-r * 0.3, -r * 0.1, r * 0.75, r * 0.12); ctx.fillRect(-r * 0.22, r * 0.3, r * 0.75, r * 0.12);
+  } else if (p.t === 3) {   // 鋼板：六角形＋鉚釘
+    ctx.fillStyle = fillG('#d4dbe2', '#5d6670'); ctx.beginPath();
+    for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(Math.cos(a) * r * 1.02, Math.sin(a) * r * 1.02); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#3b4249';
+    for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; ctx.beginPath(); ctx.arc(Math.cos(a) * r * 0.66, Math.sin(a) * r * 0.66, r * 0.09, 0, 7); ctx.fill(); }
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-r * 0.4, -r * 0.2); ctx.lineTo(r * 0.3, r * 0.25); ctx.stroke();
+  } else {   // 能量核心：菱形＋發光芯
+    ctx.fillStyle = fillG('#d9a6ff', '#5b23a8'); ctx.beginPath(); ctx.moveTo(0, -r * 1.05); ctx.lineTo(r * 0.9, 0); ctx.lineTo(0, r * 1.05); ctx.lineTo(-r * 0.9, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.shadowColor = '#f0d8ff'; ctx.shadowBlur = 14; ctx.fillStyle = '#f6e9ff'; ctx.beginPath(); ctx.arc(0, 0, r * 0.28 * (1 + 0.12 * Math.sin(G.t * 5)), 0, 7); ctx.fill();
+  }
+  if (p.plus) {   // 高級零件：外框光環＋符號
+    ctx.shadowBlur = 0; ctx.strokeStyle = T.color; ctx.lineWidth = 3; ctx.globalAlpha = 0.8 + 0.2 * Math.sin(G.t * 6);
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.22, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff'; ctx.font = `900 ${Math.round(r * 0.7)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', r * 0.82, -r * 0.82);
+  }
+  ctx.restore();
+}
+
+// ── 房車 ──
+function drawRV() {
+  const { x, y, w, h } = RV, hitShake = G.hero.hurt > 0 ? Math.sin(G.t * 70) * 4 * G.hero.hurt : 0;
+  ctx.save(); ctx.translate(hitShake, 0);
+  // 影子
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h + 12, w * 0.55, 10, 0, 0, 7); ctx.fill();
+  // 車身
+  const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#6a4a34'); g.addColorStop(0.5, '#4a3020'); g.addColorStop(1, '#24170f');
+  ctx.fillStyle = g; ctx.strokeStyle = '#0a0705'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + 10); ctx.lineTo(x + 18, y); ctx.lineTo(x + w - 50, y); ctx.lineTo(x + w - 10, y + 22); ctx.lineTo(x + w, y + 30); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 補丁鋼板、鉚釘、鏽斑
+  ctx.fillStyle = '#5b636b'; ctx.fillRect(x + 30, y + 14, 46, 26); ctx.fillStyle = '#3d2a1d'; ctx.fillRect(x + 150, y + 30, 40, 28);
+  ctx.fillStyle = '#2a1c13'; for (let i = 0; i < 9; i++) { ctx.beginPath(); ctx.arc(x + 12 + i * 28, y + 8, 2, 0, 7); ctx.fill(); }
+  ctx.fillStyle = 'rgba(160,80,30,0.35)'; ctx.fillRect(x + 90, y + 46, 30, 12); ctx.fillRect(x + 200, y + 12, 18, 30);
+  // 車窗（駕駛座）
+  ctx.fillStyle = '#0b1218'; ctx.beginPath(); ctx.moveTo(x + w - 46, y + 6); ctx.lineTo(x + w - 14, y + 26); ctx.lineTo(x + w - 46, y + 26); ctx.closePath(); ctx.fill();
+  // 青色光帶（好 AI）
+  ctx.save(); ctx.shadowColor = CYAN; ctx.shadowBlur = 12; ctx.fillStyle = CYAN; ctx.globalAlpha = 0.75 + 0.25 * Math.sin(G.t * 3);
+  ctx.fillRect(x + 8, y + h - 16, w - 16, 3); ctx.restore();
+  sigil(x + w - 30, y + h - 24, 1.2, CYAN, 0.9);
+  // 輪子
+  for (const wx of [x + 50, x + w - 50]) { ctx.fillStyle = '#0a0a0b'; ctx.beginPath(); ctx.arc(wx, y + h, 17, 0, 7); ctx.fill(); ctx.fillStyle = '#3b3f45'; ctx.beginPath(); ctx.arc(wx, y + h, 7, 0, 7); ctx.fill(); }
+  // 車頂砲塔
+  TURRETS.forEach((t, i) => {
+    const tx = t.x, ty = y - 6, a = G.turretAng[i], k = G.turretKick[i];
+    ctx.fillStyle = '#33373d'; ctx.strokeStyle = '#0a0b0c'; ctx.lineWidth = 2; roundRect(tx - 16, ty - 8, 32, 14, 4); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.translate(tx, ty - 10); ctx.rotate(a);
+    ctx.fillStyle = ['#2c6f7a', '#7a2c22', '#7a6a22'][i]; ctx.fillRect(-6 - k * 6, -5, 30, 10); ctx.strokeRect(-6 - k * 6, -5, 30, 10);
+    ctx.fillStyle = TYPES[i].color; ctx.shadowColor = TYPES[i].color; ctx.shadowBlur = 8 + k * 20; ctx.fillRect(18 - k * 6, -3, 6, 6);
+    ctx.restore();
+    ctx.fillStyle = '#4a4f57'; ctx.beginPath(); ctx.arc(tx, ty - 10, 9, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = TYPES[i].color; ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(tx, ty - 10, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  });
+  ctx.restore();
+}
+
+// ── AI 小頭（戰損機械頭，單眼光帶） ──
+function drawAI() {
+  const a = G.ai, full = G.energy >= 100;
+  const front = easeOut(Math.min(1, a.hurtMove * 2)) * (a.hurtMove > 0 ? 1 : 0);
+  const x = a.x - front * 40, y = a.y + Math.sin(G.t * 2.2) * 6 - front * 50;
+  // 線纜
+  ctx.strokeStyle = '#1c2228'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 10, y + 18); ctx.quadraticCurveTo(x - 30, y + 40, RV.x + RV.w - 20, RV.y + 10); ctx.stroke();
+  ctx.strokeStyle = 'rgba(63,240,255,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = '#1c2228'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 8, y + 18); ctx.quadraticCurveTo(x + 14, y + 34, x + 6, y + 44); ctx.stroke();
+  // 天線
+  ctx.strokeStyle = '#555c64'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 8, y - 20); ctx.lineTo(x + 14, y - 38); ctx.stroke();
+  ctx.fillStyle = full ? '#ffd23f' : CYAN; ctx.beginPath(); ctx.arc(x + 14, y - 39, 2.5, 0, 7); ctx.fill();
+  // 頭殼（有稜有角）
+  const g = ctx.createLinearGradient(0, y - 22, 0, y + 22); g.addColorStop(0, '#8d959e'); g.addColorStop(1, '#3a4047');
+  ctx.fillStyle = g; ctx.strokeStyle = '#0b0d0f'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(x - 22, y - 12); ctx.lineTo(x - 12, y - 22); ctx.lineTo(x + 16, y - 22); ctx.lineTo(x + 24, y - 10); ctx.lineTo(x + 22, y + 14); ctx.lineTo(x + 10, y + 22); ctx.lineTo(x - 14, y + 22); ctx.lineTo(x - 24, y + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 刮痕、裂縫
+  ctx.strokeStyle = 'rgba(20,20,20,0.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x - 16, y - 16); ctx.lineTo(x - 6, y - 8); ctx.lineTo(x - 9, y - 2); ctx.moveTo(x + 12, y + 10); ctx.lineTo(x + 18, y + 18); ctx.stroke();
+  // 光帶
+  ctx.save(); const bandCol = full ? (Math.sin(G.t * 12) > 0 ? '#ffd23f' : CYAN) : CYAN;
+  ctx.fillStyle = '#05080a'; ctx.fillRect(x - 18, y - 4, 38, 9);
+  ctx.shadowColor = bandCol; ctx.shadowBlur = full ? 22 : 12; ctx.fillStyle = bandCol; ctx.fillRect(x - 16, y - 2, 34, 5);
+  ctx.shadowBlur = 0; ctx.fillStyle = '#05080a'; ctx.fillRect(x - 1, y - 2, 4, 5); ctx.restore();
+  if (full) { ctx.save(); ctx.strokeStyle = '#ffd23f'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(G.t * 8); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 34 + 4 * Math.sin(G.t * 8), 0, 7); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#ffd23f'; ctx.font = '800 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('點我 EMP', x, y + 44); }
+  a.drawX = x; a.drawY = y;
+  // 台詞泡泡
+  if (a.lineT > 0 && G.state !== 'result' && G.state !== 'cards') {
+    const al = Math.min(1, a.lineT * 3, (2.8 - a.lineT) * 6 + 0.01);
+    ctx.save(); ctx.globalAlpha = al; ctx.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif';
+    const lines = wrap(a.line, 190); const bw = 214, bh = 16 + lines.length * 20, bx = clamp(x - bw + 40, 8, W - bw - 8), by = y - 60 - bh;
+    ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(bx, by, bw, bh, 8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 6, by + bh); ctx.lineTo(x + 2, by + bh + 12); ctx.lineTo(x + 10, by + bh); ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.fill();
+    ctx.fillStyle = '#c8fbff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; lines.forEach((l, i) => ctx.fillText(l, bx + 10, by + 9 + i * 20));
+    ctx.restore();
+  }
+}
+function wrap(s, maxW) {
+  const out = []; let line = '';
+  for (const ch of s) { if (ctx.measureText(line + ch).width > maxW) { out.push(line); line = ch; } else line += ch; }
+  if (line) out.push(line); return out;
+}
+
+// ── 主角（剪影＋青色電路紋，4 種姿勢＋鍛造） ──
+function drawHero() {
+  const h = G.hero, x = HERO.x - h.hurt * 10, y = HERO.y, breathe = Math.sin(G.t * 2.5) * 1.5;
+  const pose = h.pose, k = pose === 0 ? 0 : 1;
+  const glow = Math.min(1, h.glow) + (pose === 2 ? 0.4 : 0);
+  ctx.save(); ctx.translate(x, y);
+  if (pose === 4) ctx.rotate(-0.15 * h.hurt);
+  // 全身爆青光（10 連以上）
+  if (G.combo >= 10 && h.glow > 0.3) { const gg = ctx.createRadialGradient(0, -60, 10, 0, -60, 110); gg.addColorStop(0, 'rgba(63,240,255,0.45)'); gg.addColorStop(1, 'rgba(63,240,255,0)'); ctx.fillStyle = gg; ctx.fillRect(-120, -180, 240, 220); }
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(0, 4, 26, 6, 0, 0, 7); ctx.fill();
+  // 腿
+  ctx.fillStyle = '#23262c'; ctx.fillRect(-12, -40, 10, 42); ctx.fillRect(3, -40, 10, 42);
+  ctx.fillStyle = '#121316'; ctx.fillRect(-14, -2, 14, 6); ctx.fillRect(2, -2, 15, 6);
+  // 身體（白襯衫、領帶、廢鐵肩甲）
+  ctx.save(); ctx.translate(0, breathe * 0.4);
+  ctx.fillStyle = '#c3c7cf'; ctx.strokeStyle = '#0a0b0d'; ctx.lineWidth = 2; roundRect(-16, -86, 32, 48, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1c2a4d'; ctx.beginPath(); ctx.moveTo(-3, -84); ctx.lineTo(3, -84); ctx.lineTo(5, -56); ctx.lineTo(0, -50); ctx.lineTo(-5, -56); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#7a2a22'; ctx.beginPath(); ctx.moveTo(-20, -86); ctx.lineTo(-6, -90); ctx.lineTo(-6, -76); ctx.lineTo(-22, -72); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#2a5a3a'; ctx.fillRect(4, -76, 9, 8);   // 胸前電路板
+  ctx.fillStyle = '#d8dce4'; ctx.fillRect(-12, -64, 7, 10);   // 員工證
+  // 左手
+  ctx.strokeStyle = '#c3c7cf'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-14, -80);
+  if (pose === 3) { ctx.lineTo(4, -78); ctx.lineTo(18, -86); } else ctx.lineTo(-20, -52 - k * 6);
+  ctx.stroke();
+  // 頭（亂髮、裂眼鏡）
+  ctx.fillStyle = '#d9b493'; ctx.strokeStyle = '#0a0b0d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(1, -104, 14, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#0b0c0e'; ctx.beginPath(); ctx.moveTo(-15, -104); for (let i = 0; i < 8; i++) { const a = Math.PI + i * Math.PI / 7; ctx.lineTo(1 + Math.cos(a) * (18 + (i % 2) * 6), -108 + Math.sin(a) * (16 + (i % 2) * 6)); } ctx.lineTo(16, -104); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#0a0b0d'; ctx.lineWidth = 2; ctx.strokeRect(-9, -106, 8, 6); ctx.strokeRect(3, -106, 8, 6); ctx.beginPath(); ctx.moveTo(-1, -103); ctx.lineTo(3, -103); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(5, -106); ctx.lineTo(9, -101); ctx.stroke();   // 裂痕
+  if (pose === 4) { ctx.strokeStyle = '#0a0b0d'; ctx.beginPath(); ctx.arc(1, -95, 3, 0, Math.PI); ctx.stroke(); }
+  // 右手（合成手）
+  let ang = pose === 0 ? 0.25 + Math.sin(G.t * 2) * 0.05 : pose === 1 ? -1.1 : pose === 2 ? -1.9 : pose === 3 ? -1.4 : 0.9;
+  ctx.save(); ctx.translate(14, -80); ctx.rotate(ang);
+  ctx.strokeStyle = '#c3c7cf'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 34); ctx.stroke();
+  // 電路紋路（平常淡、合成時亮）
+  ctx.save(); ctx.shadowColor = CYAN; ctx.shadowBlur = 6 + glow * 18; ctx.strokeStyle = `rgba(63,240,255,${0.35 + glow * 0.65})`; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-2, 6); ctx.lineTo(1, 14); ctx.lineTo(-1, 22); ctx.lineTo(2, 30); ctx.moveTo(2, 10); ctx.lineTo(3, 18); ctx.stroke();
+  if (pose === 2 || glow > 1) { ctx.strokeStyle = `rgba(63,240,255,${0.5 * glow})`; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 34); ctx.stroke(); }
+  // 手掌（抓、握）
+  ctx.fillStyle = '#d9b493'; ctx.beginPath(); ctx.arc(0, 38, pose && pose !== 4 ? 5 : 6, 0, 7); ctx.fill();
+  if (pose === 1 || pose === 2 || pose === 3) { ctx.shadowBlur = 20; ctx.fillStyle = `rgba(160,255,255,${0.6 + 0.4 * Math.sin(G.t * 30)})`; ctx.beginPath(); ctx.arc(0, 42, 6 + glow * 4, 0, 7); ctx.fill(); }
+  ctx.restore(); ctx.restore();
+  ctx.restore();
+  ctx.restore();
+}
+HERO.handAt = () => { return heroHand(); };
+
+// ── 敵人（剪影＋紅色發光眼） ──
+function drawEnemy(e) {
+  const K = e.K, s = K.s, boss = e.k === 'boss';
+  const dieA = e.dead ? Math.max(0, 1 - e.dieT / 0.35) : 1;
+  if (dieA <= 0) return;
+  const lungeY = e.lunge > 0 ? Math.sin((1 - e.lunge) * Math.PI) * 60 : 0;
+  const x = e.x + (e.hit > 0 ? Math.sin(G.t * 90) * 4 * e.hit : 0), y = e.y + lungeY + Math.sin(G.t * 3 + e.bob) * 2;
+  const eye = e.dead ? CYAN : (e.hit > 0.5 ? '#ffffff' : RED);   // 淨化：紅眼閃成青色
+  ctx.save(); ctx.globalAlpha = dieA; ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 4, boss ? 80 : 26, boss ? 12 : 6, 0, 0, 7); ctx.fill();
+  const body = e.hit > 0.5 ? '#3a3f46' : '#15181d', rim = 'rgba(120,130,145,0.35)';
+  ctx.fillStyle = body; ctx.strokeStyle = rim; ctx.lineWidth = 2;
+  const seam = (pts) => { ctx.save(); ctx.strokeStyle = e.dead ? CYAN : 'rgba(255,45,60,0.8)'; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 8; ctx.lineWidth = 1.5; ctx.beginPath(); pts.forEach(([a, b], i) => i ? ctx.lineTo(a, b) : ctx.moveTo(a, b)); ctx.stroke(); ctx.restore(); };
+  const eyes = (pts, r) => { ctx.save(); ctx.fillStyle = eye; ctx.shadowColor = eye; ctx.shadowBlur = 14; pts.forEach(([a, b]) => { ctx.beginPath(); ctx.arc(a, b, r, 0, 7); ctx.fill(); }); ctx.restore(); };
+  if (e.k === 'zombie') {
+    ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(-10, -38); ctx.lineTo(-20, -62); ctx.lineTo(-6, -78); ctx.lineTo(14, -74); ctx.lineTo(18, -50); ctx.lineTo(12, -36); ctx.lineTo(14, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(4, -86, 12, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 6; ctx.strokeStyle = body; ctx.beginPath(); ctx.moveTo(10, -66); ctx.lineTo(30, -56); ctx.lineTo(42, -60); ctx.moveTo(-14, -60); ctx.lineTo(4, -48); ctx.lineTo(24, -46); ctx.stroke();
+    seam([[-6, -70], [2, -60], [-2, -46]]); eyes([[0, -88], [9, -87]], 2.6);
+  } else if (e.k === 'dasher') {
+    ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-2, -36); ctx.lineTo(-8, -66); ctx.lineTo(10, -74); ctx.lineTo(18, -44); ctx.lineTo(8, -30); ctx.lineTo(10, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6, -76); ctx.lineTo(24, -86); ctx.lineTo(18, -70); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#6b737d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(14, -58); ctx.lineTo(40, -40); ctx.stroke();   // 刀臂
+    seam([[2, -64], [8, -50]]); eyes([[16, -80]], 2.6);
+  } else if (e.k === 'heavy') {
+    roundRect(-30, -80, 60, 66, 8); ctx.fill(); ctx.stroke();
+    ctx.fillRect(-22, -14, 16, 14); ctx.fillRect(6, -14, 16, 14);
+    ctx.fillStyle = '#262a31'; ctx.fillRect(-26, -76, 52, 12); ctx.fillRect(-26, -48, 52, 10);
+    ctx.fillStyle = body; ctx.beginPath(); ctx.arc(0, -90, 11, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#2b2f36'; ctx.fillRect(-46, -74, 16, 40); ctx.fillRect(30, -74, 16, 40);
+    seam([[-20, -60], [20, -60]]); seam([[-10, -36], [10, -30]]); eyes([[-4, -92], [5, -92]], 2.6);
+  } else {   // 頭目：巨型機甲
+    ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(-50, -60); ctx.lineTo(-90, -110); ctx.lineTo(-70, -150); ctx.lineTo(70, -150); ctx.lineTo(90, -110); ctx.lineTo(50, -60); ctx.lineTo(60, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#23272e'; ctx.fillRect(-40, -140, 80, 50); roundRect(-30, -185, 60, 40, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#30353d'; ctx.fillRect(-120, -125, 40, 24); ctx.fillRect(80, -125, 50, 18);   // 砲管手臂
+    ctx.fillStyle = '#0d0f12'; ctx.fillRect(126, -122, 14, 12);
+    seam([[-40, -100], [0, -90], [40, -100]]); seam([[-50, -40], [-20, -50]]); seam([[20, -50], [50, -40]]);
+    const ec = e.enraged ? 4 : 3; eyes([[-14, -168], [0, -170], [14, -168]].slice(0, ec), 4.5);
+    if (e.enraged) { ctx.save(); ctx.globalAlpha = 0.25 + 0.15 * Math.sin(G.t * 10); ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(0, -90, 110, 0, 7); ctx.fill(); ctx.restore(); }
+  }
+  ctx.restore();
+  if (e.dead) return;
+  // 血條＋攻擊倒數
+  const top = y - (boss ? 200 : 105) * s, bw = boss ? 200 : 64;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x - bw / 2, top, bw, 8);
+  ctx.fillStyle = e.hp / e.maxHp > 0.35 ? '#ff4a4a' : '#ff9a3a'; ctx.fillRect(x - bw / 2 + 1, top + 1, (bw - 2) * Math.max(0, e.hp / e.maxHp), 6);
+  const cx = x + bw / 2 + 14, cy = top + 4, danger = e.cd <= 1 && !e.stun;
+  ctx.save(); ctx.fillStyle = e.stun ? '#4a2a7a' : danger ? '#b3121e' : '#2a2f36'; ctx.strokeStyle = danger ? '#ff6670' : '#8a929c'; ctx.lineWidth = 2;
+  if (danger) { ctx.shadowColor = RED; ctx.shadowBlur = 10 + 6 * Math.sin(G.t * 10); }
+  ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 7); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff'; ctx.font = '900 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.stun ? 'Z' : e.cd, cx, cy + 1);
+  ctx.restore();
+  if (e.burn > 0) { ctx.fillStyle = '#ff8a4a'; ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🔥', x - bw / 2 - 10, top + 6); }
+}
+
+// ── 特效 ──
+function drawFX() {
+  for (const f of G.fx) {
+    if (f.t < 0) continue; const p = f.t / f.dur;
+    if (f.type === 'orb') {   // 零件化成光點飛向主角的手
+      const e = easeOut(p), x = lerp(f.x0, f.x1, e), y = lerp(f.y0, f.y1, e) - Math.sin(e * Math.PI) * 40;
+      ctx.save(); ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 14; ctx.globalAlpha = 1 - p * 0.3; ctx.beginPath(); ctx.arc(x, y, 6 * (1 - p * 0.5), 0, 7); ctx.fill(); ctx.restore();
+    } else if (f.type === 'bolt') {   // 合成出的青色能量彈（帶 AI 符號）
+      const e = easeOut(p), x = lerp(f.x0, f.x1, e), y = lerp(f.y0, f.y1, e);
+      ctx.save(); ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 20; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill(); ctx.restore();
+      sigil(x, y, 0.9, '#e8ffff', 1);
+      glowLine(lerp(f.x0, f.x1, Math.max(0, e - 0.25)), lerp(f.y0, f.y1, Math.max(0, e - 0.25)), x, y, f.color, 3, 10);
+    } else if (f.type === 'light') {   // 閃電
+      ctx.save(); ctx.strokeStyle = '#e8ffff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 18; ctx.lineWidth = 3 * (1 - p); ctx.globalAlpha = 1 - p;
+      ctx.beginPath(); ctx.moveTo(f.x0, f.y0); const n = 7;
+      for (let i = 1; i < n; i++) { const t = i / n; ctx.lineTo(lerp(f.x0, f.x1, t) + (Math.random() - 0.5) * 26, lerp(f.y0, f.y1, t) + (Math.random() - 0.5) * 26); }
+      ctx.lineTo(f.x1, f.y1); ctx.stroke(); ctx.restore();
+    } else if (f.type === 'flame') {   // 火焰
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 6; i++) { const t = clamp(p * 1.4 - i * 0.08, 0, 1); const x = lerp(f.x0, f.x1, t), y = lerp(f.y0, f.y1, t) - Math.sin(t * Math.PI) * 50; ctx.fillStyle = `rgba(255,${120 + i * 15},40,${0.5 * (1 - p)})`; ctx.beginPath(); ctx.arc(x, y, 14 + i * 2, 0, 7); ctx.fill(); }
+      ctx.restore();
+    } else if (f.type === 'tracer') {
+      const x = lerp(f.x0, f.x1, p), y = lerp(f.y0, f.y1, p);
+      glowLine(lerp(f.x0, f.x1, Math.max(0, p - 0.3)), lerp(f.y0, f.y1, Math.max(0, p - 0.3)), x, y, '#ffe066', 3, 10);
+    } else if (f.type === 'forge') {   // 鍛造高級零件
+      ctx.save(); ctx.strokeStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 20; ctx.lineWidth = 4 * (1 - p); ctx.globalAlpha = 1 - p;
+      ctx.beginPath(); ctx.arc(f.x, f.y, 20 + p * 60, 0, 7); ctx.stroke(); ctx.restore();
+    }
+  }
+  for (const p of G.parts_) {
+    if (p.delay && p.t < p.delay) continue;
+    const a = 1 - p.t / p.life; ctx.save(); ctx.globalAlpha = a; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+    if (p.shard) { ctx.beginPath(); ctx.moveTo(-p.size, -p.size * 0.4); ctx.lineTo(p.size, -p.size * 0.2); ctx.lineTo(0, p.size * 0.6); ctx.closePath(); ctx.fill(); }
+    else ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    ctx.restore();
+  }
+  for (const t of G.texts) {
+    const a = 1 - t.t / t.life, sc = t.t < 0.12 ? 1 + (0.12 - t.t) * 5 : 1;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(t.x, t.y); ctx.scale(sc, sc);
+    ctx.font = `900 ${t.big ? 30 : 22}px "Microsoft JhengHei",sans-serif`; ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = '#000'; ctx.strokeText(t.s, 0, 0); ctx.fillStyle = t.color; ctx.fillText(t.s, 0, 0);
+    ctx.restore();
+  }
+}
+
+// ── 介面：中間欄、零件盤、連擊、選卡、結算 ──
+function bar(x, y, w, h, v, col, label) {
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(x, y, w, h, h / 2); ctx.fill();
+  ctx.save(); roundRect(x, y, w, h, h / 2); ctx.clip(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.fillRect(x, y, w * clamp(v, 0, 1), h); ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1; roundRect(x, y, w, h, h / 2); ctx.stroke();
+  ctx.fillStyle = '#e6eef5'; ctx.font = '800 12px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 8, y + h / 2 + 0.5);
+}
+function drawUI() {
+  // 中間欄底色
+  const g = ctx.createLinearGradient(0, FIELD_H, 0, BY - 4); g.addColorStop(0, '#0d0f12'); g.addColorStop(1, '#07090b');
+  ctx.fillStyle = g; ctx.fillRect(0, FIELD_H, W, BY - FIELD_H);
+  ctx.fillStyle = CYAN; ctx.globalAlpha = 0.5; ctx.fillRect(0, FIELD_H, W, 2); ctx.globalAlpha = 1;
+  const x0 = 140;
+  bar(x0, FIELD_H + 16, 250, 18, G.armor / G.armorMax, '#3fd0a0', `房車裝甲 ${Math.ceil(G.armor)}/${G.armorMax}`);
+  bar(x0, FIELD_H + 42, 250, 18, G.energy / 100, G.energy >= 100 ? '#ffd23f' : '#a35cff', G.energy >= 100 ? 'AI 能量 滿（點 AI 小頭）' : `AI 能量 ${Math.floor(G.energy)}%`);
+  ctx.fillStyle = '#e6eef5'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(G.wave >= 3 ? '頭目戰' : `第 ${G.wave + 1}/4 波`, W - 14, FIELD_H + 14);
+  ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
+  // 轉珠時間條
+  const tl = G.timeLimit + G.mods.time;
+  const tv = G.state === 'drag' && G.swapped ? G.timer / tl : 1;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
+  ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
+  ctx.fillStyle = '#8fa0ae'; ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' ? '按住零件拖動，連成 3 個以上就合成' : '', x0, FIELD_H + 88);
+  // 零件盤底
+  ctx.fillStyle = '#0a0d10'; ctx.fillRect(0, BY - 6, W, H - BY + 6);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    ctx.fillStyle = (r + c) % 2 ? '#12161b' : '#0f1317'; ctx.fillRect(BX + c * CELL + 1, BY + r * CELL + 1, CELL - 2, CELL - 2);
+  }
+  ctx.strokeStyle = 'rgba(63,240,255,0.25)'; ctx.lineWidth = 2; ctx.strokeRect(BX - 2, BY - 2, COLS * CELL + 4, ROWS * CELL + 4);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const p = G.board[r][c]; if (!p) continue;
+    if (G.held && G.held.c === c && G.held.r === r && G.state === 'drag') continue;
+    if (p.y < BY - CELL / 2) continue;
+    const a = G.state === 'drag' ? 0.9 : 1; ctx.globalAlpha = a * Math.min(1, 0.4 + p.born);
+    drawPiece(p, p.x, p.y, p.s); ctx.globalAlpha = 1;
+  }
+  if (G.state === 'drag' && G.held) {
+    const p = G.board[G.held.r][G.held.c];
+    ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = 20; drawPiece(p, G.dragX, G.dragY - 10, 1.18); ctx.restore();
+  }
+  if (G.state !== 'player' && G.state !== 'drag' && G.state !== 'title') { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(BX, BY, COLS * CELL, ROWS * CELL); }
+}
+function drawCombo() {
+  if (G.comboShow <= 0 || G.combo < 1) return;
+  const t = 1.3 - G.comboShow, sc = t < 0.15 ? easeOutBack(t / 0.15) * 1.25 : 1.25 - Math.min(0.25, (t - 0.15) * 0.6);
+  const big = G.combo >= 10, mid = G.combo >= 5;
+  ctx.save(); ctx.globalAlpha = Math.min(1, G.comboShow * 2); ctx.translate(W / 2, FIELD_H - 70); ctx.scale(sc * (1 + Math.sin(G.t * 40) * 0.01 * G.combo), sc);
+  ctx.font = `900 ${big ? 64 : mid ? 54 : 46}px "Arial Black","Microsoft JhengHei",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 8; ctx.strokeStyle = '#001418'; ctx.strokeText(`${G.combo} COMBO`, 0, 0);
+  ctx.fillStyle = big ? '#ffffff' : CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = big ? 40 : 20; ctx.fillText(`${G.combo} COMBO`, 0, 0);
+  ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.shadowBlur = 0; ctx.fillStyle = '#c8fbff'; ctx.fillText(`傷害 ×${mult().toFixed(2)}`, 0, 40);
+  ctx.restore();
+}
+let cardRects = [], btnRect = null;
+function drawCards() {
+  if (G.state !== 'cards') { cardRects = []; return; }
+  G.cardT += 1 / 60;
+  ctx.fillStyle = 'rgba(2,6,8,0.82)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = CYAN; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = CYAN; ctx.shadowBlur = 16; ctx.fillText('這波清除！選一張改裝卡', W / 2, 230); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#8fa0ae'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillText('用撿到的零件改裝房車', W / 2, 268);
+  cardRects = [];
+  G.cards.forEach((c, i) => {
+    const w = 152, h = 230, x = 18 + i * (w + 9), t = clamp((G.cardT - i * 0.08) * 4, 0, 1), y = 320 + (1 - easeOutBack(t)) * 200;
+    cardRects.push({ x, y, w, h });
+    ctx.save(); ctx.globalAlpha = t;
+    const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#13262b'); g.addColorStop(1, '#0a1114');
+    ctx.fillStyle = g; ctx.strokeStyle = CYAN; ctx.lineWidth = 2; roundRect(x, y, w, h, 12); ctx.fill(); ctx.stroke();
+    sigil(x + w / 2, y + 28, 2, CYAN, 0.9);
+    ctx.fillStyle = '#e8ffff'; ctx.font = '900 21px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(c.t, x + w / 2, y + 74);
+    ctx.fillStyle = '#a9c4cc'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif';
+    c.d.split('\n').forEach((l, k) => ctx.fillText(l, x + w / 2, y + 120 + k * 24));
+    ctx.fillStyle = CYAN; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.fillText('點這張', x + w / 2, y + h - 22);
+    ctx.restore();
+  });
+}
+function drawResult() {
+  if (G.state !== 'result') { btnRect = null; return; }
+  const t = clamp(G.phaseT * 2, 0, 1), win = G.result.win;
+  ctx.fillStyle = `rgba(2,6,8,${0.85 * t})`; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = t; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
+  ctx.fillText(win ? '淨化完成' : '房車失守', W / 2, 150); ctx.shadowBlur = 0;
+  ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`, W / 2, 196);
+  ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
+  ctx.font = '900 150px "Arial Black",sans-serif'; ctx.fillStyle = '#fff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 40; ctx.fillText(G.maxCombo, W / 2, 370); ctx.shadowBlur = 0;
+  ctx.font = '900 30px "Arial Black",sans-serif'; ctx.fillStyle = CYAN; ctx.fillText('COMBO', W / 2, 460);
+  const rows = [['總傷害', G.totalDmg.toLocaleString()], ['回合數', G.turns + (win ? 1 : 0)], ['收集零件', G.parts]];
+  rows.forEach(([k, v], i) => {
+    const y = 540 + i * 46; ctx.fillStyle = 'rgba(63,240,255,0.08)'; roundRect(90, y - 18, W - 180, 36, 8); ctx.fill();
+    ctx.font = '700 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#a9c4cc'; ctx.fillText(k, 110, y);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillText(v, W - 110, y);
+  });
+  if (G.picked && G.picked.length) { ctx.textAlign = 'center'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('改裝：' + G.picked.join('、'), W / 2, 690); }
+  btnRect = { x: W / 2 - 120, y: 730, w: 240, h: 64 };
+  ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 20; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 32); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText('再玩一次', W / 2, btnRect.y + 33);
+  ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('零號廢域 試玩原型｜動嘴做遊戲', W / 2, 860);
+  ctx.restore();
+}
+function drawTitle() {
+  ctx.drawImage(BG, 0, 0); ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#07090b'; ctx.fillRect(0, FIELD_H + 120, W, H);
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const pulse = 0.85 + 0.15 * Math.sin(G.t * 3);
+  ctx.font = '900 88px "Microsoft JhengHei","PingFang TC",sans-serif'; ctx.fillStyle = '#e8ffff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 30 * pulse;
+  ctx.fillText('零號廢域', W / 2, 300); ctx.shadowBlur = 0;
+  ctx.fillStyle = RED; ctx.globalAlpha = 0.6; ctx.fillRect(W / 2 - 170, 352, 340, 2); ctx.globalAlpha = 1;
+  sigil(W / 2, 380, 3, CYAN, 1);
+  ctx.font = '700 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText('動嘴做遊戲 出品', W / 2, 420);
+  ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#5f7380'; ctx.fillText('試玩原型｜一關戰鬥', W / 2, 450);
+  btnRect = { x: W / 2 - 120, y: 560, w: 240, h: 70 };
+  ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 24 * pulse; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 35); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#00262c'; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillText('開始', W / 2, btnRect.y + 36);
+  ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592';
+  ['按住零件拖動，經過的零件會交換位置', '橫排或直排 3 個以上相同 → 合成攻擊', '敵人頭上的數字歸零就會攻擊房車'].forEach((s, i) => ctx.fillText(s, W / 2, 700 + i * 26));
+  ctx.restore();
+}
+function render() {
+  ctx.setTransform(SCALE * DPR, 0, 0, SCALE * DPR, 0, 0);
+  if (G.state === 'title') { drawTitle(); return; }
+  const sx = G.shake > 0 ? (Math.random() - 0.5) * G.shake : 0, sy = G.shake > 0 ? (Math.random() - 0.5) * G.shake : 0;
+  ctx.save(); ctx.translate(sx, sy);
+  ctx.save(); ctx.beginPath(); ctx.rect(-20, -20, W + 40, FIELD_H + 20); ctx.clip();
+  ctx.drawImage(BG, 0, 0);
+  const es = G.enemies.slice().sort((a, b) => a.y - b.y); for (const e of es) drawEnemy(e);
+  drawRV(); drawAI();
+  if (G.bossTaunt > 0) {
+    const b = G.enemies.find(e => e.k === 'boss');
+    if (b) { ctx.save(); ctx.globalAlpha = Math.min(1, G.bossTaunt * 2); ctx.font = '800 17px "Microsoft JhengHei",sans-serif'; const s = '又一個不自量力的碳基生物。'; const w = ctx.measureText(s).width + 24;
+      ctx.fillStyle = 'rgba(30,4,8,0.92)'; ctx.strokeStyle = RED; ctx.lineWidth = 1.5; roundRect(W / 2 - w / 2, 20, w, 36, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffd0d4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, W / 2, 38); ctx.restore(); }
+  }
+  ctx.restore();
+  drawUI(); drawHero(); drawFX(); drawCombo();
+  if (G.bannerT > 0) {
+    const t = G.bannerT, a = Math.min(1, t * 3, (1.6 - t) * 5);
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 150, W, 70);
+    ctx.font = '900 40px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = G.wave >= 3 ? '#ff5a5a' : '#e8ffff'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20; ctx.fillText(G.bannerText, W / 2, 186); ctx.restore();
+  }
+  if (G.empT > 0) { ctx.save(); ctx.globalAlpha = G.empT; ctx.strokeStyle = '#d9a6ff'; ctx.lineWidth = 8; ctx.shadowColor = '#b46bff'; ctx.shadowBlur = 30; ctx.beginPath(); ctx.arc(G.ai.x, G.ai.y, (0.8 - G.empT) * 900, 0, 7); ctx.stroke(); ctx.restore(); }
+  ctx.restore();
+  if (G.flash > 0) { ctx.fillStyle = `rgba(200,255,255,${G.flash * 0.35})`; ctx.fillRect(0, 0, W, H); }
+  if (G.slow > 0) { ctx.fillStyle = 'rgba(63,240,255,0.06)'; ctx.fillRect(0, 0, W, H); }
+  drawCards(); drawResult();
+}
+
+// ── 輸入（觸控＋滑鼠） ──
+function toXY(ev) { const r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) / SCALE, y: (ev.clientY - r.top) / SCALE }; }
+const inRect = (p, r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+let pid = null;
+cv.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); audioInit(); const p = toXY(ev);
+  if (G.state === 'title') { if (inRect(p, btnRect)) startGame(); return; }
+  if (G.state === 'result') { if (inRect(p, btnRect)) startGame(); return; }
+  if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
+  if (G.state === 'player') {
+    if (G.ai.drawX && Math.hypot(p.x - G.ai.drawX, p.y - G.ai.drawY) < 48 && G.energy >= 100) { useEMP(); return; }
+    if (beginDrag(p.x, p.y)) { pid = ev.pointerId; try { cv.setPointerCapture(pid); } catch (e) {} }
+  }
+}, { passive: false });
+cv.addEventListener('pointermove', ev => { if (G.state === 'drag' && ev.pointerId === pid) { const p = toXY(ev); moveDrag(p.x, p.y); } });
+const up = ev => { if (G.state === 'drag' && ev.pointerId === pid) { endDrag(); pid = null; } };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ── 主迴圈 ──
+let last = performance.now(), running = true;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (running) { update(dt); render(); }
+  requestAnimationFrame(loop);
+}
+newGame(); requestAnimationFrame(loop);
+
+// ═══════════════ 模擬試玩用介面（不影響遊戲） ═══════════════
+window.__dev = {
+  get G() { return G; },
+  pause() { running = false; }, resume() { running = true; last = performance.now(); },
+  start(s) { newGame(s); startGame(); },
+  step(n) { for (let i = 0; i < n; i++) update(1 / 60); },
+  render() { render(); },
+  findGroups,
+  // 找一條轉珠路徑（隨機搜尋 tries 條，選連擊最多的），直接執行
+  autoMove(tries) {
+    if (G.state !== 'player') return null;
+    let best = null;
+    for (let k = 0; k < (tries || 300); k++) {
+      const b = G.board.map(row => row.map(p => ({ t: p.t, plus: p.plus })));
+      let c = ri(COLS), r = ri(ROWS); const path = [[c, r]]; const len = 3 + ri(14);
+      for (let i = 0; i < len; i++) {
+        const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [c + dx, r + dy]).filter(([x, y]) => x >= 0 && y >= 0 && x < COLS && y < ROWS && !(path.length > 1 && x === path[path.length - 2][0] && y === path[path.length - 2][1]));
+        const [nx, ny] = opts[ri(opts.length)]; const t = b[r][c]; b[r][c] = b[ny][nx]; b[ny][nx] = t; c = nx; r = ny; path.push([c, r]);
+      }
+      const gs = findGroups(b); const score = gs.length * 10 + gs.reduce((s, g) => s + g.cells.length, 0);
+      if (!best || score > best.score) best = { score, path };
+    }
+    // 執行：開始拖曳 → 依路徑交換 → 放開
+    const [c0, r0] = best.path[0], p0 = cellPos(c0, r0);
+    beginDrag(p0.x, p0.y);
+    for (let i = 1; i < best.path.length; i++) { const p = cellPos(best.path[i][0], best.path[i][1]); moveDrag(p.x, p.y); }
+    endDrag();
+    return best.score;
+  },
+  chooseCard(i) { chooseCard(i || 0); },
+  emp() { useEMP(); },
+};
+</script>
+<div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:10px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。</div>
+</body>
+</html>
