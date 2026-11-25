@@ -124,7 +124,7 @@ const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
 const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1))) : 120;
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB)) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const STAGE_HP = [0, 0.62, 1.0, 0.85, 1.1, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 1.0, 0.68][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const STAGE_HP = [0, 0.62, 1.0, 0.85, 1.1, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 1.0, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = 5;   // 第一章（零號廢域）：4 關＋第 5 關頭目
 const STAGE_WAVES = {
   1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 上路：第一波零的大招、第二波教轉珠
@@ -604,6 +604,7 @@ function stepEnemy() {
   if (G.enemyIdx >= list.length) {
     if (G.armor <= 0) { finish(false); return; }
     if (G.dogBlocked) { G.dogBlocked = false; G.dogArmed = false; G.dogUsed = true; }
+    if (RUST_ON) { const nR = G.board.flat().filter(p => p && p.t === RUST).length; if (nR) { const rd = nR * 60; G.armor = Math.max(0, G.armor - rd); G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 46, s: `鏽蝕 -${rd}`, t: 0, life: 1.1, color: '#d08a50' }); if (G.armor <= 0) { finish(false); return; } } }
     G.turns++; G.state = 'player'; G.phaseT = 0;
     if (CHASE) { if (G.turns >= CHASE) { finish(true); return; } const left = CHASE - G.turns; G.bannerText = left === 1 ? '入口就在前面！' : `入口還有 ${left} 回合`; G.bannerT = 1.2; if (left === 3) sayV('c1_chase'); }
     return;

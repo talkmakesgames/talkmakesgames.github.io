@@ -9,9 +9,9 @@
   #sty{position:fixed;inset:0;z-index:50;background:#000;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   #sty.over{background:rgba(0,0,0,.35)}
   #sty .box{position:relative;width:540px;height:960px;overflow:hidden;transform-origin:50% 50%}
-  #sty .bg{position:absolute;inset:0;background:#05070b center/cover no-repeat;transition:opacity .6s;transform:scale(1.04);animation:stykb 14s ease-out forwards}
+  #sty .sbg{position:absolute;inset:0;background:#05070b center/cover no-repeat;transition:opacity .6s;transform:scale(1.04);animation:stykb 14s ease-out forwards}
   @keyframes stykb{to{transform:scale(1.12)}}
-  #sty.over .bg{display:none}
+  #sty.over .sbg{display:none}
   #sty .shade{position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(transparent,rgba(0,0,0,.85) 55%,#000)}
   #sty .pt{position:absolute;bottom:236px;height:210px;width:210px;object-fit:cover;object-position:top;border-radius:16px;border:2px solid rgba(63,240,255,.55);background:linear-gradient(#26313c,#0c1117);box-shadow:0 8px 22px rgba(0,0,0,.7);transition:opacity .25s,transform .25s;opacity:0;transform:translateY(14px)}
   #sty .pt.L{left:22px}#sty .pt.R{right:22px}
@@ -80,9 +80,9 @@
       o = o || {};
       const data = o.data || window.STORY_C1, sc = data && data.scenes[key];
       if (!sc) { o.onDone && o.onDone(); return; }
-      const base = o.base || '../', name = o.name || '我';
+      const base = o.base != null ? o.base : '../', name = o.name || '我';
       mount(sc.over);
-      const bg = el('div', 'bg'); el('div', 'shade');
+      const bg = el('div', 'sbg'); el('div', 'shade');
       const ptL = el('img', 'pt L'), ptR = el('img', 'pt R');
       ptL.onerror = ptR.onerror = function () { this.style.visibility = 'hidden'; };
       const ttl = el('div', 'ttl'); ttl.textContent = sc.title ? '— ' + sc.title + ' —' : '';
@@ -96,6 +96,8 @@
       const lines = sc.lines.slice(); let waitAct = false, holdT = null, holdStart = 0;
       let i = -1, typing = null, full = '', audio = null, autoT = null, done = false, waitOrb = false;
       const setBg = src => { if (!src) return; bg.style.backgroundImage = `url("${base}img/${src}")`; bg.style.animation = 'none'; void bg.offsetWidth; bg.style.animation = ''; };
+      // 先把這一段會用到的圖都載入，換圖時才不會黑一下
+      [sc.cg, sc.bg, ...sc.lines.map(L => L.cg || L.bg)].filter(Boolean).forEach(src => { const im = new Image(); im.src = base + 'img/' + src; });
       setBg(sc.cg || sc.bg);
       function stopAudio() { if (audio) { audio.pause(); audio = null; } clearTimeout(autoT); }
       function finish() { if (done) return; done = true; stopAudio(); clearInterval(typing); unmount(); o.onDone && o.onDone(); }

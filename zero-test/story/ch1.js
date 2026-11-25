@@ -105,7 +105,8 @@ window.STORY_C1={
 },
 {
 "w": "narr",
-"t": "狗站起來，走到{名字}的左前方，回頭看他。"
+"t": "狗站起來，走到{名字}的左前方，回頭看他。",
+"cg": "story/c1_dog_ok.webp"
 },
 {
 "w": "zero",
@@ -218,28 +219,50 @@ window.STORY_C1={
 "bg": "story/bg_workbench.webp",
 "lines": [
 {
+"w": "narr",
+"t": "小禾蹲在車底下，敲敲打打了很久。忽然停下來。"
+},
+{
+"w": "he",
+"t": "……我不是相信 AI。",
+"e": "cold",
+"v": "voice/c1/c1s6_1.mp3"
+},
+{
+"w": "he",
+"t": "我是相信，會擋在 AI 前面的那個笨蛋。",
+"e": "cold",
+"v": "voice/c1/c1s6_2.mp3"
+},
+{
+"w": "hero",
+"t": "……謝謝？",
+"e": "1",
+"v": "voice/c1/c1s6_3.mp3"
+},
+{
 "w": "he",
 "t": "這台車能跑到現在，是奇蹟。",
 "e": "disgust",
-"v": "voice/c1/c1s6_0.mp3"
+"v": "voice/c1/c1s6_4.mp3"
 },
 {
 "w": "zero",
 "t": "是我的功勞。",
 "e": "n",
-"v": "voice/c1/c1s6_1.mp3"
+"v": "voice/c1/c1s6_5.mp3"
 },
 {
 "w": "he",
 "t": "我沒有在跟 AI 說話。",
 "e": "cold",
-"v": "voice/c1/c1s6_2.mp3"
+"v": "voice/c1/c1s6_6.mp3"
 },
 {
 "w": "zero",
 "t": "我也沒有。我在跟車說話。",
 "e": "n",
-"v": "voice/c1/c1s6_3.mp3"
+"v": "voice/c1/c1s6_7.mp3"
 },
 {
 "w": "narr",
@@ -249,7 +272,7 @@ window.STORY_C1={
 "w": "he",
 "t": "……手機會飛，還會頂嘴。",
 "e": "cold",
-"v": "voice/c1/c1s6_5.mp3"
+"v": "voice/c1/c1s6_9.mp3"
 }
 ]
 },
@@ -342,6 +365,10 @@ window.STORY_C1={
 {
 "w": "narr",
 "t": "小禾沒有說下去。她把步槍抱得更緊了一點。"
+},
+{
+"w": "narr",
+"t": "火堆劈啪作響。很久，都沒有人說話。"
 },
 {
 "w": "narr",

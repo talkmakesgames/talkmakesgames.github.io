@@ -506,6 +506,12 @@ function renderDiary() {
     if (S.story && S.story.c1s8) V.push(['c1_drama', '第一章章末：被丟掉的東西']);
     B.innerHTML = V.map(([k, n]) => `<div class="vrow" data-v="${k}"><span>▶</span>${n}</div>`).join('') + '<div style="font-size:14px;color:#7a6440">' + (S.story && S.story.c1s8 ? '下一章破解後，會再解鎖新影片' : '打倒第一章頭目，會解鎖一支新影片') + '</div>';
     B.querySelectorAll('.vrow').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
+    // 劇情回顧：看過的第一章劇情可以重播
+    const SC = (window.STORY_C1 && window.STORY_C1.scenes) || {}, seen = Object.keys(SC).filter(k => S.story && S.story[k]);
+    if (seen.length && window.Story) {
+      B.insertAdjacentHTML('beforeend', '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章　劇情回顧</div>' + seen.map(k => `<div class="vrow" data-s="${k}"><span>▶</span>${SC[k].title}</div>`).join(''));
+      B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
+    }
   } else {
     const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 5 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 5 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
@@ -560,6 +566,8 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
+<script src="story/ch1.js"></script>
+<script src="story/story.js"></script>
 <script src="extras.js"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）

@@ -31,6 +31,8 @@
   function close() { ov.style.display = 'none'; }
   function btn(id, top, icon, label, isNew) { const b = document.createElement('button'); b.className = 'xbtn'; b.id = id; b.style.top = top + 'px'; b.innerHTML = `<b>${icon}</b>${label}` + (isNew ? '<span class="new">NEW</span>' : ''); home.appendChild(b); return b; }
   const getS = () => window.__zwS ? window.__zwS() : null;
+  // 新玩家先不要一次看到太多入口：打過 1-1 才出現傳送資格，打過 1-3 才出現加班模式
+  const cleared = () => { const S = getS(); return (S && S.cleared && S.cleared.zero) || 0; };
   const track = (n, p) => { try { window.tmgTrack && window.tmgTrack(n, p); } catch (e) {} };
 
   // ═══ 1. 分享卡 ═══
@@ -40,6 +42,7 @@
   let hours = 46, phrase = 0;
   const cardBtn = btn('cardBtn', 206, '📇', '傳送資格', true);
   cardBtn.onclick = () => { track('zw_card_open'); cardForm(); };
+  if (cleared() < 1) cardBtn.style.display = 'none';
   function cardForm() {
     open(`<h3>你符合傳送資格嗎？</h3><div class="sub">只在你的手機裡畫成圖片，不會上傳、也不會記錄你的答案</div>
       <div>這個月加班大約幾小時？</div><div class="big" id="hv">${hours} 小時</div>
@@ -99,6 +102,7 @@
 
   // ═══ 2. 加班模式入口 ═══
   const otBtn = btn('otBtn', 286, '🌙', '加班模式');
+  if (cleared() < 3) otBtn.style.display = 'none';
   otBtn.onclick = () => {
     let best = null; try { best = JSON.parse(localStorage.getItem('zw-ot-best')); } catch (e) {}
     const d0 = new Date(), today = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
