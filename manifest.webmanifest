@@ -1,0 +1,16 @@
+{
+  "name": "動嘴做遊戲",
+  "short_name": "動嘴做遊戲",
+  "description": "我不會寫程式，叫 AI 幫我做遊戲",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1d2e",
+  "theme_color": "#1a1d2e",
+  "lang": "zh-Hant-TW",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
