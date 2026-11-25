@@ -661,6 +661,18 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
   return { r, stars };
 }
+let btn2Rect = null, fuelMsg = '';
+function goStage(n) {   // 結算直接打下一關／再試一次：燃料規則跟首頁一樣（每 6 分鐘回 1；新手前 3 天免費；頭目 20）
+  let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
+  if (!S0) { location.href = '../'; return; }
+  const max = 100 + ((S0.fac && S0.fac.tank) || 1) * 20 - 20, per = 360000, k = Math.floor((Date.now() - S0.fuelTs) / per);
+  if (k > 0) { S0.res.fuel = Math.min(max, S0.res.fuel + k); S0.fuelTs += k * per; }
+  const cost = n === 11 ? 20 : 10, free = Date.now() - S0.firstDay < 3 * 86400000;
+  if (!free && S0.res.fuel < cost) { fuelMsg = `燃料不夠（剩 ${S0.res.fuel}，需要 ${cost}）。回基地等它回復吧。`; return; }
+  if (!free) S0.res.fuel -= cost;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
+  location.href = '?stage=' + n;
+}
 function finish(win) {
   G.state = 'result'; G.result = { win }; G.phaseT = 0; playBGM(null);
   if (STAGE) G.reward = stageSave(win);
@@ -1258,7 +1270,7 @@ function drawResult() {
     ctx.font = '900 34px sans-serif'; ctx.fillStyle = '#ffd23f'; ctx.fillText('★'.repeat(st) + '☆'.repeat(3 - st), W / 2, 232);
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
     const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : ''].filter(Boolean).join('　');
-    if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 700); }
+    if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
   }
   rows.forEach(([k, v], i) => {
     const y = 522 + i * 42; ctx.fillStyle = 'rgba(63,240,255,0.08)'; roundRect(90, y - 18, W - 180, 36, 8); ctx.fill();
@@ -1266,10 +1278,16 @@ function drawResult() {
     ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillText(v, W - 110, y);
   });
   if (!STAGE && G.picked && G.picked.length) { ctx.textAlign = 'center'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('改裝：' + G.picked.join('、'), W / 2, 690); }
-  btnRect = { x: W / 2 - 120, y: 730, w: 240, h: 64 };
+  btnRect = { x: W / 2 - 120, y: 730, w: 240, h: 64 }; btn2Rect = null;
+  const nextN = STAGE ? (win ? (STAGE < 11 ? STAGE + 1 : 0) : STAGE) : 0;   // 過關→下一關；打輸→再試一次；頭目打贏→只能回基地
+  if (STAGE && nextN) btn2Rect = { x: W / 2 - 90, y: 806, w: 180, h: 44 };
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 20; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 32); ctx.fill(); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? '回基地' : TRIAL_FLOW ? '繼續' : '再玩一次', W / 2, btnRect.y + 33);
-  ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('廢域方舟 試玩原型｜動嘴做遊戲', W / 2, 860);
+  ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? (nextN ? (win ? `下一關（第 ${nextN === 11 ? '頭目' : nextN} 關）` : '再試一次') : '回基地') : TRIAL_FLOW ? '繼續' : '再玩一次', W / 2, btnRect.y + 33);
+  if (btn2Rect) { ctx.fillStyle = 'rgba(4,14,18,0.9)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(btn2Rect.x, btn2Rect.y, btn2Rect.w, btn2Rect.h, 22); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = CYAN; ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.fillText('回基地', W / 2, btn2Rect.y + 23); }
+  if (STAGE && nextN) { ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === 11 ? '頭目關要花燃料 20' : '要花燃料 10', W / 2, 716); }
+  if (fuelMsg) { ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText(fuelMsg, W / 2, 864); }
+  ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; if (!fuelMsg) ctx.fillText('廢域方舟｜動嘴做遊戲', W / 2, 880);
   ctx.restore();
 }
 function drawTitle() {
@@ -1340,7 +1358,8 @@ cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); audioInit(); const p = toXY(ev);
   if (inRect(p, MUSIC_BTN)) { toggleMusic(); return; }
   if (G.state === 'title') { if (inRect(p, btnRect)) startGame(); return; }
-  if (G.state === 'result') { if (inRect(p, btnRect)) { if (STAGE) location.href = '../'; else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
+  if (G.state === 'result') { if (STAGE && inRect(p, btn2Rect)) { location.href = '../'; return; }
+    if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < 11 ? STAGE + 1 : 0) : STAGE; if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
   if (G.state === 'player') {
     if (G.ai.drawX && Math.hypot(p.x - G.ai.drawX, p.y - G.ai.drawY) < 48 && G.energy >= 100) { useEMP(); return; }

@@ -22,6 +22,15 @@
   .close { position:absolute; top:14px; right:14px; width:46px; height:46px; border-radius:50%; background:rgba(4,14,18,.85); border:1.5px solid var(--cyan); color:var(--cyan); font:900 24px sans-serif; z-index:5; }
   .title { position:absolute; top:22px; left:0; right:0; text-align:center; font:900 30px "Microsoft JhengHei",sans-serif; color:var(--ink); text-shadow:0 0 14px var(--cyan); }
   #acctBtn { position:absolute; top:104px; right:12px; padding:6px 12px; border-radius:999px; background:rgba(4,12,16,.85); border:1.5px solid rgba(63,240,255,.7); color:#c8fbff; font:800 13px sans-serif; z-index:4; }
+  #questBtn { position:absolute; left:12px; top:112px; width:84px; height:84px; border-radius:16px; background:rgba(4,12,16,.88); border:1.5px solid #ffd23f; color:#ffd23f; font:900 15px sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; z-index:4; box-shadow:0 0 14px rgba(255,210,63,.35); }
+  #questBtn b { font-size:30px; line-height:1; }
+  #questBtn .dot { position:absolute; top:-6px; right:-6px; min-width:24px; height:24px; border-radius:12px; background:#ff3b3b; color:#fff; font:900 14px/24px sans-serif; text-align:center; padding:0 6px; display:none; }
+  .card.q { display:flex; align-items:center; gap:10px; text-align:left; padding:10px 12px; }
+  .q .qt { flex:1; } .q .qt div:first-child { font:900 15px sans-serif; color:#e8f6f8; } .q .qt .sub { font-size:12px; }
+  .q .bar { height:6px; background:rgba(255,255,255,.12); border-radius:3px; margin-top:5px; overflow:hidden; } .q .bar i { display:block; height:100%; background:var(--cyan); }
+  .q button { width:76px; height:40px; border-radius:10px; border:none; font:900 15px sans-serif; background:#ffd23f; color:#3a2600; }
+  .q button:disabled { background:rgba(255,255,255,.12); color:#8fa0ae; }
+  .q.done { opacity:.45; }
   #modal { position:absolute; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:60; }
   #modal .box { width:460px; background:rgba(4,12,16,.97); border:1.5px solid var(--cyan); border-radius:14px; padding:20px; text-align:center; }
   #modal h3 { margin:0 0 10px; font:900 22px sans-serif; color:var(--cyan); }
@@ -140,6 +149,7 @@
     <div id="who"></div>
     <img id="homeLogo" src="img/logo.webp" alt="">
     <button id="acctBtn">☁ 登入備份</button>
+    <button id="questBtn"><b>📋</b>任務<span class="dot" id="questDot"></span></button>
     <img id="zeroHome" src="img/zero.webp" alt="零">
     <div id="bubble"></div>
     <img id="vehicle" src="img/v1.webp" alt="">
@@ -169,6 +179,10 @@
     <div class="panel" id="stageList"><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div></div>
   </div>
 
+  <!-- 新手任務 -->
+  <div class="scr" id="scr-quest"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.3)"><div class="title">新手任務</div><button class="close" data-back>✕</button>
+    <div style="position:absolute;top:74px;left:20px;right:20px;font:700 14px sans-serif;color:#9ff8ff;text-align:center">零：「照著做，至少可以活到下禮拜。」</div>
+    <div class="grid" id="questGrid" style="grid-template-columns:1fr;top:104px"></div></div>
   <!-- 車庫 -->
   <div class="scr" id="scr-garage"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">車庫</div><button class="close" data-back>✕</button><div class="grid" id="garageGrid" style="grid-template-columns:1fr 1fr"></div></div>
   <!-- 設施 -->
@@ -248,7 +262,7 @@ function renderAcct() {
   if (!window.Cloud || !Cloud.ready) { b.style.display = 'none'; return; }
   b.style.display = ''; b.textContent = Cloud.user ? '☁ 已備份' : '☁ 登入備份';
 }
-window.onCloudUser = u => { renderAcct(); let p = null; try { p = sessionStorage.getItem('zw-login'); } catch (e) {} if (u && p) cloudLogin(p === 'n', true); };   // 手機瀏覽器擋彈出視窗、改用整頁跳轉登入時，回來接著做
+window.onCloudUser = u => { renderAcct(); if ($('scr-home').classList.contains('on')) renderQuestDot(); let p = null; try { p = sessionStorage.getItem('zw-login'); } catch (e) {} if (u && p) cloudLogin(p === 'n', true); };   // 手機瀏覽器擋彈出視窗、改用整頁跳轉登入時，回來接著做
 save();
 const day = () => Math.floor((NOW() - S.firstDay) / 86400000) + 1;
 const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '萬' : Math.floor(n).toLocaleString();
@@ -345,10 +359,10 @@ function idleReport() {   // 掛機收益：零的回收無人機（產出＝載
 let bubbleT;
 function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity = 1; clearTimeout(bubbleT); bubbleT = setTimeout(() => b.style.opacity = 0, 3600); }
 function goHome(first) {
-  tickResources(); show('home'); renderTop(); renderAcct();
+  tickResources(); show('home'); renderTop(); renderAcct(); renderQuestDot();
   if (!first) idleReport();
   S.lastSeen = NOW(); save();
-  setTimeout(() => zeroSay(first ? '走吧。先去撿廢鐵。按下面的「出發」。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
+  setTimeout(() => zeroSay(first ? '走吧。先去撿廢鐵。不知道做什麼就看左上角的「任務」。' : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
 $('vehicle').onclick = () => openScreen('garage');
@@ -358,9 +372,44 @@ document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => goHome()
 setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(); renderTop(); } }, 30000);
 
 function openScreen(k) {
-  if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
+  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
   show(k);
 }
+
+// ═══ 新手任務：一步一步帶玩家走完第一輪（打關 → 改裝 → 升級設施 → 升階 → 打頭目） ═══
+const facSum = () => Object.values(S.fac).reduce((a, b) => a + b, 0);
+const starSum = () => Object.values(S.stars || {}).reduce((a, b) => a + b, 0);
+const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標]）, 獎勵]
+  ['q1', '第一次出門', '打過零號廢域第 1 關', () => [Math.min(S.cleared.zero || 0, 1), 1], { coin: 200, scrap: 100 }],
+  ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { coin: 100 }],
+  ['q3', '改裝三輪車', '到車庫把載具改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
+  ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { core: 1 }],
+  ['q5', '打到第 3 關', '打過零號廢域第 3 關', () => [Math.min(S.cleared.zero || 0, 3), 3], { coin: 300, fuel: 20 }],
+  ['q6', '蓋點東西', '升級任一個基地設施', () => [Math.min(facSum() - 6, 1), 1], { coin: 300 }],
+  ['q7', '收集情報', '在零的資料庫解鎖 3 種敵人（打倒才算）', () => [Math.min(Object.keys(S.codex.kills).length, 3), 3], { chip: 30 }],
+  ['q8', '備份存檔', '首頁右上角「☁ 登入備份」用 Google 登入', () => [window.Cloud && Cloud.user ? 1 : 0, 1], { fuel: 30, core: 1 }],
+  ['q9', '拿星星', '在零號廢域累積 10 顆星', () => [Math.min(starSum(), 10), 10], { coin: 500, scrap: 300 }],
+  ['q10', '換台車', '把載具升到第 2 階「改裝邊車機車」', () => [Math.min(S.tier - 1, 1), 1], { core: 2, chip: 40 }],
+  ['q11', '打到第 10 關', '打過零號廢域第 10 關', () => [Math.min(S.cleared.zero || 0, 10), 10], { coin: 800, fuel: 30 }],
+  ['q12', '破解零號廢域', '打倒頭目「巨型機甲」', () => [Math.min(S.cleared.zero || 0, 11) >= 11 ? 1 : 0, 1], { core: 5, coin: 1500 }],
+];
+const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '燃料', core: '青晶核心' };
+const rwText = r => Object.entries(r).map(([k, v]) => `${RW[k]} +${v}`).join('、');
+function questState(q) { const [cur, max] = q[3](); const claimed = (S.quests || {})[q[0]]; return { cur, max, done: cur >= max, claimed }; }
+function questReady() { return QUESTS.filter(q => { const st = questState(q); return st.done && !st.claimed; }).length; }
+function renderQuestDot() { const n = questReady(), d = $('questDot'); d.textContent = n; d.style.display = n ? 'block' : 'none'; }
+function renderQuests() {
+  S.quests = S.quests || {};
+  const order = QUESTS.map((q, i) => ({ q, i, st: questState(q) })).sort((a, b) => (a.st.claimed - b.st.claimed) || ((b.st.done && !b.st.claimed) - (a.st.done && !a.st.claimed)) || a.i - b.i);
+  $('questGrid').innerHTML = order.map(({ q, st }) => `<div class="card q ${st.claimed ? 'done' : ''}"><div class="qt"><div>${st.claimed ? '✅ ' : ''}${q[1]}</div><div class="sub">${q[2]}</div><div class="sub" style="color:#ffd23f">獎勵：${rwText(q[4])}</div><div class="bar"><i style="width:${Math.round(st.cur / st.max * 100)}%"></i></div></div>
+    <button data-q="${q[0]}" ${st.done && !st.claimed ? '' : 'disabled'}>${st.claimed ? '已領' : st.done ? '領取' : `${st.cur}/${st.max}`}</button></div>`).join('');
+  $('questGrid').querySelectorAll('button[data-q]').forEach(b => b.onclick = () => {
+    const q = QUESTS.find(x => x[0] === b.dataset.q); if (!q) return;
+    for (const [k, v] of Object.entries(q[4])) S.res[k] = k === 'fuel' ? Math.min(FUEL_MAX(), S.res.fuel + v) : (S.res[k] || 0) + v;
+    S.quests[q[0]] = 1; save(); toast('領取：' + rwText(q[4]), 2200); renderQuests();
+  });
+}
+$('questBtn').onclick = () => openScreen('quest');
 
 // ═══ 世界地圖＋關卡 ═══
 const ZONES = [   // 地圖上可以點的區域（位置對應 world_map 圖）
@@ -446,7 +495,7 @@ function renderFac() {
 // ═══ 日記本：日記／影片回放／紀錄 ═══
 let diaryTab = 'log';
 function openDiaryScreen() { $('diaryCover').style.display = 'flex'; $('diaryBook').style.display = 'none'; }
-$('openDiary').onclick = () => { $('diaryCover').style.display = 'none'; $('diaryBook').style.display = 'block'; renderDiary(); };
+$('openDiary').onclick = () => { S.flags = S.flags || {}; if (!S.flags.diary) { S.flags.diary = 1; save(); } $('diaryCover').style.display = 'none'; $('diaryBook').style.display = 'block'; renderDiary(); };
 document.querySelectorAll('.dtab').forEach(b => b.onclick = () => { diaryTab = b.dataset.tab; document.querySelectorAll('.dtab').forEach(x => x.classList.toggle('on', x === b)); renderDiary(); });
 function renderDiary() {
   const B = $('diaryBody');
