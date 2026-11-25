@@ -72,15 +72,15 @@ h2 small{font-size:12px;color:var(--tan);font-weight:700}
 @keyframes blink{50%{opacity:.3}}
 /* ---------- result ---------- */
 #res{position:fixed;inset:0;background:rgba(42,29,20,.75);display:flex;align-items:center;justify-content:center;z-index:15;padding:14px}
-#resBox{width:100%;max-width:420px;background:var(--cream);border:4px solid var(--brown);border-radius:24px;padding:16px;text-align:center;animation:pop .25s}
+#resBox{width:100%;max-width:420px;max-height:calc(100vh - 28px);overflow-y:auto;background:var(--cream);border:4px solid var(--brown);border-radius:24px;padding:16px;text-align:center;animation:pop .25s}
 #resBox h3{margin:2px 0 4px;font-size:28px}
 #resSub{font-size:15px;font-weight:700;color:#6b4a35}
-.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;margin:14px 0 6px;height:220px}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;margin:10px 0 6px;height:160px}
 .pd{display:flex;flex-direction:column;align-items:center;width:46%}
-.pd img{width:100%;max-height:130px;object-fit:contain;object-position:bottom}
+.pd img{width:100%;max-height:100px;object-fit:contain;object-position:bottom}
 .pd .blk{width:100%;border:3px solid var(--brown);border-bottom:none;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#fff}
-.pd.first .blk{height:86px;background:var(--yellow);color:var(--brown)}
-.pd.second .blk{height:52px;background:#c9b49a}
+.pd.first .blk{height:60px;background:var(--yellow);color:var(--brown)}
+.pd.second .blk{height:38px;background:#c9b49a}
 #resStats{font-size:14px;font-weight:800;margin:6px 0 2px}
 #resBox .row{display:flex;gap:8px;margin-top:12px}
 #resBox .row button{flex:1;font-size:17px;font-weight:900;padding:12px;border-radius:999px;border:3px solid var(--brown)}
@@ -127,7 +127,7 @@ h2 small{font-size:12px;color:var(--tan);font-weight:700}
   <div class="foot">
     薯懶懶人運動會・第一季<br>
     由「動嘴做遊戲」用 AI 製作・到 YouTube 搜尋「動嘴做遊戲」看幕後<br>
-    本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。<br>
+    本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。排行榜只存你自己輸入的名字和成績。<br>
     <button class="reset" id="bReset">清除我的比賽紀錄</button>
   </div>
 </div>
@@ -143,9 +143,126 @@ h2 small{font-size:12px;color:var(--tan);font-weight:700}
   <h3 id="resT"></h3><div id="resSub"></div>
   <div class="podium"><div class="pd second"><img id="pd2" alt=""><div class="blk">2</div></div><div class="pd first"><img id="pd1" alt=""><div class="blk">1</div></div></div>
   <div id="resStats"></div>
+  <div id="resLB"></div>
   <div class="row"><button id="bAgain">再比一次</button><button id="bHome">回到會場</button></div>
 </div></div>
 
+<script>
+// 動嘴做遊戲：共用排行榜（不用登入，結束後輸入名字上榜）
+// 用法：TMGLB.mount(放排行榜的 div, {game:'sumo', v:成績數字 或 null（不能上榜）})
+// 資料存在 Firebase Firestore（CFG 填好就是全世界排行；沒填就只存在這台手機，方便測試）
+// 網站打包時 tools/site_build.py 會把這個檔案直接塞進每個遊戲裡。
+(function () {
+  const CFG = { project: 'talkmakesgames-5cc95', key: 'AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI' };   // Firebase 專案（跟廢域方舟同一個）；金鑰是公開的，資料靠 Firestore 規則保護
+  const ONLINE = !!(CFG.project && CFG.key);
+  const DB = 'https://firestore.googleapis.com/v1/projects/' + CFG.project + '/databases/(default)/documents';
+
+  // 每個遊戲：比大還是比小、成績怎麼顯示、關主（角色先佔的名次，排行榜才不會空）
+  const GAMES = {
+    sumo: { low: true, max: 600, show: v => v.toFixed(1) + ' 秒',
+      title: '最快獲勝', bosses: [['勤薯', 22], ['花椰長', 30], ['小片', 45]] },
+    chips: { low: false, max: 2545, show: v => { const n = Math.floor(v / 100), s = Math.round(v % 100); return n + ' 片' + (n >= 25 ? '・剩 ' + s + ' 秒' : ''); },
+      title: '吃最多最快', bosses: [['勤薯', 2512], ['花椰長', 2504], ['小片', 2100]] },
+    race: { low: true, max: 900, show: v => v.toFixed(2) + ' 秒',
+      title: '最快完賽', bosses: [['勤薯', 29], ['花椰長', 32], ['小片', 36]] },
+  };
+
+  // 不雅字（比對時忽略大小寫和空白）
+  const BAD = ['幹你', '幹妳', '干你', '操你', '肏', '屌', '屄', '雞掰', '機掰', '雞巴', '鸡巴', '靠北', '靠杯', '三小', '智障', '白癡', '白痴', '傻逼', '傻b', '煞筆',
+    '尼瑪', '尼玛', '你媽', '你妈', '妳媽', '他媽', '他妈', '媽的', '妈的', '媽逼', '賤', '婊', '妓', '屎', '尻', '射精', '性交', '做愛', '色情', '強姦', '强奸', '去死', '垃圾', '廢物', '畜生', '王八',
+    'fuck', 'fuk', 'shit', 'bitch', 'dick', 'cock', 'cunt', 'pussy', 'nigg', 'porn', 'sex', 'asshole', 'bastard', 'slut', 'whore', 'http', 'www', '.com', '.tw', '.net', '@'];
+  function cleanName(s) {
+    s = String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 10);
+    const k = s.toLowerCase().replace(/\s+/g, '');
+    if (!k) return { err: '先輸入名字喔' };
+    if (BAD.some(b => k.includes(b))) return { err: '這個名字不行，換一個吧' };
+    return { name: s };
+  }
+
+  // ---- 資料：線上（Firestore REST）或本機 ----
+  const col = g => 'lb_' + g;
+  const num = f => f ? Number(f.doubleValue ?? f.integerValue ?? 0) : 0;
+  async function top(g, n) {
+    const cfg = GAMES[g];
+    if (!ONLINE) return local(g).sort((a, b) => cfg.low ? a.v - b.v : b.v - a.v).slice(0, n);
+    const r = await fetch(DB + ':runQuery?key=' + CFG.key, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: col(g) }], orderBy: [{ field: { fieldPath: 'v' }, direction: cfg.low ? 'ASCENDING' : 'DESCENDING' }], limit: n } }) });
+    if (!r.ok) throw new Error('top ' + r.status);
+    return (await r.json()).filter(x => x.document).map(x => ({ name: x.document.fields.name.stringValue, v: num(x.document.fields.v), id: x.document.name }));
+  }
+  async function better(g, v) {   // 有幾個真人成績比 v 好
+    const cfg = GAMES[g];
+    if (!ONLINE) return local(g).filter(e => cfg.low ? e.v < v : e.v > v).length;
+    const r = await fetch(DB + ':runAggregationQuery?key=' + CFG.key, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredAggregationQuery: {
+      structuredQuery: { from: [{ collectionId: col(g) }], where: { fieldFilter: { field: { fieldPath: 'v' }, op: cfg.low ? 'LESS_THAN' : 'GREATER_THAN', value: { doubleValue: v } } } },
+      aggregations: [{ alias: 'n', count: {} }] } }) });
+    if (!r.ok) throw new Error('rank ' + r.status);
+    const j = await r.json();
+    return num(j[0] && j[0].result && j[0].result.aggregateFields && j[0].result.aggregateFields.n);
+  }
+  async function submit(g, name, v) {
+    if (!ONLINE) { const a = local(g); const id = 'L' + Date.now(); a.push({ name, v, id }); try { localStorage.setItem('tmg-lb-' + g, JSON.stringify(a.slice(-200))); } catch (e) {} return id; }
+    const r = await fetch(DB + '/' + col(g) + '?key=' + CFG.key, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { name: { stringValue: name }, v: { doubleValue: v } } }) });
+    if (!r.ok) throw new Error('submit ' + r.status);
+    return (await r.json()).name;
+  }
+  function local(g) { try { return JSON.parse(localStorage.getItem('tmg-lb-' + g)) || []; } catch (e) { return []; } }
+
+  // ---- 畫面 ----
+  const CSS = `.tlb{margin:10px 0 2px;background:#fff;border:3px solid #3a1e0f;border-radius:16px;padding:8px 10px;text-align:left;color:#3a1e0f}
+.tlb h4{margin:0 0 6px;font-size:16px;text-align:center}.tlb h4 small{font-size:12px;opacity:.65;font-weight:700}
+.tlb ol{list-style:none;margin:0;padding:0;font-size:14px;font-weight:800}
+.tlb li{display:flex;gap:8px;align-items:center;padding:3px 6px;border-radius:8px}
+.tlb li:nth-child(odd){background:#fff3dd}.tlb li .r{width:26px;text-align:center}.tlb li .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tlb li.boss .n{color:#a0663a}.tlb li.me{background:#ffd84d!important;outline:2px solid #3a1e0f}
+.tlb .f{display:flex;gap:6px;margin-top:8px}.tlb input{flex:1;min-width:0;font-size:16px;font-weight:800;padding:9px 12px;border:3px solid #3a1e0f;border-radius:999px;background:#fffaf2;color:#3a1e0f}
+.tlb button{font-size:16px;font-weight:900;padding:9px 14px;border-radius:999px;border:3px solid #3a1e0f;background:#4caf50;color:#fff;white-space:nowrap}
+.tlb button:disabled{opacity:.5}.tlb .msg{font-size:13px;font-weight:800;text-align:center;margin-top:6px;min-height:1em}`;
+  let css = false;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
+
+  async function mount(el, o) {
+    if (!css) { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); css = true; }
+    const g = o.game, cfg = GAMES[g], v = o.v;
+    const ok = v != null && isFinite(v) && v > 0 && v <= cfg.max;
+    el.className = 'tlb';
+    el.innerHTML = `<h4>🏆 排行榜 <small>${cfg.title}</small></h4><ol><li><span class="n">載入中…</span></li></ol>` +
+      (ok ? `<div class="f"><input maxlength="10" placeholder="輸入名字上榜" enterkeyhint="done"><button>上榜</button></div>` : '') +
+      `<div class="msg">${ok ? '你的成績：' + cfg.show(v) : (o.why || '')}</div>`;
+    const list = el.querySelector('ol'), msg = el.querySelector('.msg');
+    let myId = null;
+    async function draw() {
+      let rows;
+      try { rows = await top(g, 10); } catch (e) { list.innerHTML = '<li><span class="n">排行榜暫時連不上</span></li>'; return; }
+      rows = rows.concat(cfg.bosses.map(([name, bv]) => ({ name, v: bv, boss: true })))
+        .sort((a, b) => cfg.low ? a.v - b.v : b.v - a.v).slice(0, 10);
+      list.innerHTML = rows.map((r, i) => `<li class="${r.boss ? 'boss' : ''}${r.id && r.id === myId ? ' me' : ''}"><span class="r">${medal(i)}</span><span class="n">${r.boss ? '👑 ' : ''}${esc(r.name)}</span><span>${cfg.show(r.v)}</span></li>`).join('');
+    }
+    await draw();
+    if (!ok) return;
+    const inp = el.querySelector('input'), btn = el.querySelector('button');
+    try { inp.value = localStorage.getItem('tmg-lb-name') || ''; } catch (e) {}
+    const go = async () => {
+      const c = cleanName(inp.value);
+      if (c.err) { msg.textContent = c.err; return; }
+      btn.disabled = inp.disabled = true; msg.textContent = '上傳中…';
+      try {
+        try { localStorage.setItem('tmg-lb-name', c.name); } catch (e) {}
+        myId = await submit(g, c.name, v);
+        const n = (await better(g, v)) + cfg.bosses.filter(([, bv]) => cfg.low ? bv < v : bv > v).length + 1;
+        el.querySelector('.f').remove();
+        msg.textContent = '🎉 ' + c.name + '，你排第 ' + n + ' 名！' + (ONLINE ? '' : '（測試：只存在這台裝置）');
+        window.tmgTrack && tmgTrack('post_score', { game_name: g, score: v });
+        await draw();
+      } catch (e) { btn.disabled = inp.disabled = false; msg.textContent = '上傳失敗，再按一次試試'; }
+    };
+    btn.onclick = go;
+    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  }
+  window.TMGLB = { mount, cleanName, online: ONLINE };
+})();
+</script>
 <script>
 
 const sfx=(()=>{let ac=null,on=true;try{on=localStorage.getItem('tmg-sound')!=='off';}catch(e){}
@@ -296,7 +413,7 @@ function backHome(){if(tmgT0){let a=0,b=0; for(const k in P.res){if(P.res[k].win
 $('bBack').onclick=backHome; $('bHome').onclick=backHome;
 $('bAgain').onclick=()=>{$('res').classList.add('hidden'); startGame(curEvent);};
 
-function finish(win,note,stats){
+function finish(win,note,stats,lb){
   const ev=G.ev; G.over=true; window.tmgTrack&&tmgTrack('level_end',{game_name:'薯懶懶人運動會',level_name:ev.t,result:win?'win':'lose',score:String(note||''),play_seconds:Math.round((Date.now()-(G.tmg0||Date.now()))/1000)});
   P.res[ev.id]={win,note}; save();
   setTimeout(()=>talk(POST[ev.game][win?'win':'lose'],()=>{
@@ -307,6 +424,7 @@ function finish(win,note,stats){
     let a=0,b=0; for(const k in P.res){if(P.res[k].win)a++; else b++;}
     $('resStats').textContent=stats+'　｜　總比分 薯懶 '+a+' : '+b+' 勤薯';
     win?sfx.win():sfx.over(); $('res').classList.remove('hidden');
+    if(window.TMGLB&&lb)TMGLB.mount($('resLB'),lb); else $('resLB').innerHTML='';
   }),900);
 }
 
@@ -407,7 +525,7 @@ function sumoGame(){
       }
     } else if(g.phase==='end'){
       if(--g.pt<=0){
-        if(g.wins.shu>=2||g.wins.qin>=2){ if(!g.over) finish(g.wins.shu>=2,g.wins.shu+':'+g.wins.qin,'沙發相撲 '+g.wins.shu+' : '+g.wins.qin); g.phase='done'; }
+        if(g.wins.shu>=2||g.wins.qin>=2){ if(!g.over) {const sec=Math.round((Date.now()-g.tmg0)/100)/10, w=g.wins.shu>=2; finish(w,g.wins.shu+':'+g.wins.qin,'沙發相撲 '+g.wins.shu+' : '+g.wins.qin+(w?'　用時 '+sec.toFixed(1)+' 秒':''),{game:'sumo',v:w?sec:null,why:'贏了才能上榜，再比一次！'});} g.phase='done'; }
         else {g.round++; reset();}
       }
     }
@@ -509,11 +627,11 @@ function chipsGame(){
         else if(it.type==='bag'){sfx.bonus(); g.score+=3; setFace('thumb',50); burst(g.fx,it.x,MOUTH_Y,'#ff9a3c',16); pop(it.x,MOUTH_Y-50,'+3 薯懶牌！','#ff8a00');}
         else if(it.type==='pian'){sfx.bonus(); g.hearts=Math.min(3,g.hearts+1); setFace('chew',30); g.pianFace='hurt'; g.pianT=120; burst(g.fx,it.x,MOUTH_Y,'#ffe680',12); pop(it.x,MOUTH_Y-50,'片片：啊！我的角！','#e0a800');}
         else {sfx.bad(); g.hearts--; setFace('crash',50); g.shake=14; g.hface='smug'; g.hfaceT=60; g.hmsg='哈！吃到蔬菜了吧！'; g.hmsgT=70; burst(g.fx,it.x,MOUTH_Y,'#4caf50',14); pop(it.x,MOUTH_Y-50,'噁！蔬菜','#2e7d32');}
-        if(g.score>=GOAL&&g.phase==='play'){g.phase='done'; setFace('thumb',999); g.hface='angry'; g.hfaceT=999; pop(W/2,H*0.45,'吃到 '+GOAL+' 片了！','#ff8a00'); finish(true,g.score+' 片','大胃王 '+g.score+' 片／剩 '+Math.max(0,TIME-el).toFixed(0)+' 秒');}
-        else if(g.hearts<=0&&g.phase==='play'){g.phase='done'; g.hface='smug'; g.hfaceT=999; finish(false,g.score+' 片','大胃王 '+g.score+' 片（心用完了）');}
+        if(g.score>=GOAL&&g.phase==='play'){g.phase='done'; setFace('thumb',999); g.hface='angry'; g.hfaceT=999; pop(W/2,H*0.45,'吃到 '+GOAL+' 片了！','#ff8a00'); finish(true,g.score+' 片','大胃王 '+g.score+' 片／剩 '+Math.max(0,TIME-el).toFixed(0)+' 秒',{game:'chips',v:g.score*100+Math.max(0,Math.round(TIME-el))});}
+        else if(g.hearts<=0&&g.phase==='play'){g.phase='done'; g.hface='smug'; g.hfaceT=999; finish(false,g.score+' 片','大胃王 '+g.score+' 片（心用完了）',{game:'chips',v:g.score*100,why:'吃到 1 片以上就能上榜'});}
       }
     }
-    if(g.phase==='play'&&el>=TIME){g.phase='done'; g.hface='smug'; g.hfaceT=999; setFace('crash',999); finish(false,g.score+' 片','大胃王 '+g.score+' 片（時間到）');}
+    if(g.phase==='play'&&el>=TIME){g.phase='done'; g.hface='smug'; g.hfaceT=999; setFace('crash',999); finish(false,g.score+' 片','大胃王 '+g.score+' 片（時間到）',{game:'chips',v:g.score*100,why:'吃到 1 片以上就能上榜'});}
     g.items=g.items.filter(it=>!it.done&&it.y<H+50);
     g.fx=stepFx(g.fx); for(const t of g.texts){t.y-=1.2;t.life--;} g.texts=g.texts.filter(t=>t.life>0); g.shake*=0.85;
   };
