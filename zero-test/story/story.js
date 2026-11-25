@@ -2,7 +2,7 @@
 // 用法：Story.play('c1s1', { name: '主角名字', base: '../', onDone() {} })
 //       Story.video('../video/c1_drama.mp4', onDone)
 (function () {
-  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機' };
+  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？' };
   const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp' };
   const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R' };
   const css = `
@@ -21,7 +21,7 @@
   #sty .pt.he{border-color:#ffb35c}#sty .pt.hero{border-color:#e8edf2}
   #sty .tb{position:absolute;left:18px;right:18px;bottom:60px;min-height:150px;box-sizing:border-box;padding:30px 24px 22px;border-radius:14px;background:rgba(8,12,18,.88);border:1.5px solid rgba(63,240,255,.35);color:#eef6fa;font-size:25px;line-height:1.55;letter-spacing:.5px}
   #sty .nm{position:absolute;top:-19px;left:18px;padding:5px 16px;border-radius:8px;background:#3ff0ff;color:#031016;font-weight:800;font-size:20px}
-  #sty .nm.he{background:#ffb35c}#sty .nm.hero{background:#e8edf2}#sty .nm.doc{background:#c9b48a}#sty .nm.radio{background:#8a949e}
+  #sty .nm.he{background:#ffb35c}#sty .nm.hero{background:#e8edf2}#sty .nm.doc{background:#c9b48a}#sty .nm.radio{background:#8a949e}#sty .nm.gen{background:#ff2d3c;color:#fff}
   #sty .tb.narr{border-color:rgba(255,255,255,.12);color:#c8d2da;font-style:italic;font-size:23px}
   #sty .tb.sys{border-color:#3ff0ff;background:rgba(3,30,38,.92);color:#bff8ff;font-weight:700;font-size:23px;box-shadow:0 0 24px rgba(63,240,255,.35)}
   #sty .nx{position:absolute;right:20px;bottom:12px;color:#3ff0ff;font-size:18px;animation:styb 1s infinite}

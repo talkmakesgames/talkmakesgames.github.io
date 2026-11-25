@@ -332,7 +332,7 @@ function drawMusicBtn() {
 
 // ── 波次 ──
 function spawnWave() {
-  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.36 : 1;
+  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.36 * (STAGE === ZN ? Math.pow(0.88, Math.min(2, (SV && SV.bossFails) || 0)) : 1) : 1;
   G.enemies = list.map((k, i) => {
     const K = KINDS[k], boss = k === 'boss';
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
@@ -358,6 +358,7 @@ function startGame() {
   newGame(OT ? OT_SEED : undefined); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start)); playBGM('battle');
   if (STAGE === 1) { G.energy = 100; G.ai.fullSaid = true; say('能量是滿的。點我。'); }
   if (CHASE) { G.bannerText = `撐 ${CHASE} 回合，衝進地下入口！`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
+  if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次小禾一滿就用。'), 2000);
   if (STAGE === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
 }
 function update(dt) {
@@ -634,7 +635,7 @@ function stepEnemy() {
 }
 function rustify(n) {   // 頭目攻擊時把幾顆零件鏽掉（同時最多 5 格）
   const now = G.board.flat().filter(p => p && p.t === RUST).length; n = Math.min(n, 5 - now); if (n <= 0) return;
-  G.bannerText = '⚠ 鏽化攻擊'; G.bannerT = 1.2;
+  G.bannerText = '⚠ 鏽化攻擊'; G.bannerT = 1.2; G.ai.lineT = 0; G.heLineT = 0;
   const cand = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const p = G.board[r][c]; if (p && p.t !== RUST && !p.plus) cand.push([c, r]); }
   for (let i = 0; i < n && cand.length; i++) {
     const [c, r] = cand.splice(ri(cand.length), 1)[0], p = G.board[r][c]; p.rt = p.t; p.t = RUST; p.s = 1.4;
@@ -749,6 +750,7 @@ function finish(win) {
   if (win) { SFX.win(); say(AI_LINES.win[0]); } else { SFX.lose(); say(AI_LINES.lose[0]); }
   if (win && STAGE && window.Story) postStory();
   if (OT) otRecord();
+  if (STAGE === ZN && !win) { try { const s0 = JSON.parse(localStorage.getItem(SAVE_KEY)); s0.bossFails = (s0.bossFails || 0) + 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s0)); } catch (e) {} say('鏽塊別放著。點小禾，把有鏽的那一排改掉。'); }
 }
 function otRecord() {
   let b = null; try { b = JSON.parse(localStorage.getItem('zw-ot-best')); } catch (e) {}
@@ -1396,7 +1398,7 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const q = !win ? '下次記得先動腦。車子比你的面子重要。' : st === 3 ? '……數據異常。你今天居然沒有拖後腿。' : st === 2 ? '還行。離「可靠」還差一點。' : '活著回來就好。我是說車子。';
+    const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : st === 3 ? '……數據異常。你今天居然沒有拖後腿。' : st === 2 ? '還行。離「可靠」還差一點。' : '活著回來就好。我是說車子。';
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
