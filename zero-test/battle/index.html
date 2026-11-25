@@ -411,7 +411,8 @@ function update(dt) {
 
   G.phaseT += d;
   switch (G.state) {
-    case 'intro': if (G.phaseT > 1.4) { G.state = 'player'; } break;
+    case 'intro': if (G.phaseT > 1.4) { G.state = 'player'; if (!G.tipShown && TIPS[STAGE] && STAGE !== ZN && !tipSeen(STAGE)) { G.tipShown = true; G.state = 'tip'; G.tipT = 0; } } break;
+    case 'tip': G.tipT = (G.tipT || 0) + dt; break;
     case 'drag':
       if (G.swapped) { G.timer -= dt; if (G.timer <= 0) endDrag(); }
       break;
@@ -607,6 +608,7 @@ function stepEnemy() {
     if (G.dogBlocked) { G.dogBlocked = false; G.dogArmed = false; G.dogUsed = true; }
     if (RUST_ON) { const nR = G.board.flat().filter(p => p && p.t === RUST).length; if (nR) { const rd = nR * 60; G.armor = Math.max(0, G.armor - rd); G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 46, s: `鏽蝕 -${rd}`, t: 0, life: 1.1, color: '#d08a50' }); if (G.armor <= 0) { finish(false); return; } } }
     G.turns++; G.state = 'player'; G.phaseT = 0;
+    if (G.tipPending) { G.tipPending = false; G.tipShown = true; G.state = 'tip'; G.tipT = 0; }
     if (CHASE) { if (G.turns >= CHASE) { finish(true); return; } const left = CHASE - G.turns; G.bannerText = left === 1 ? '入口就在前面！' : `入口還有 ${left} 回合`; G.bannerT = 1.2; if (left === 3) sayV('c1_chase'); }
     return;
   }
@@ -639,6 +641,7 @@ function rustify(n) {   // 頭目攻擊時把幾顆零件鏽掉（同時最多 5
   const cand = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const p = G.board[r][c]; if (p && p.t !== RUST && !p.plus) cand.push([c, r]); }
   for (let i = 0; i < n && cand.length; i++) {
     const [c, r] = cand.splice(ri(cand.length), 1)[0], p = G.board[r][c]; p.rt = p.t; p.t = RUST; p.s = 1.4;
+    if (!G.tipShown && !tipSeen(ZN)) { G.tipPending = true; const q0 = cellPos(c, r); TIPS[ZN].x = q0.x; TIPS[ZN].y = q0.y; TIPS[ZN].r = 50; }
     const q = cellPos(c, r); for (let k = 0; k < 8; k++) { const a = rnd() * 6.3; G.parts_.push({ x: q.x, y: q.y, vx: Math.cos(a) * 160, vy: Math.sin(a) * 160, t: 0, life: 0.5, color: '#a0522d', size: 4, rot: 0, vr: 0 }); }
   }
   if (!G.rustSaid) { G.rustSaid = true; setTimeout(() => sayV('c1_rust'), 700); }
@@ -1020,7 +1023,7 @@ function drawAI() {
   }
   a.drawX = x; a.drawY = y;
   // 台詞泡泡
-  if (a.lineT > 0 && G.state !== 'result' && G.state !== 'cards') {
+  if (a.lineT > 0 && G.state !== 'result' && G.state !== 'cards' && G.state !== 'tip' && G.comboShow <= 0) {
     const al = Math.min(1, a.lineT * 3, (2.8 - a.lineT) * 6 + 0.01);
     ctx.save(); ctx.globalAlpha = al; ctx.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif';
     const lines = wrap(a.line, 190); const bw = 214, bh = 16 + lines.length * 20, bx = clamp(x - bw + 40, 8, W - bw - 8), by = y - 60 - bh;
@@ -1469,6 +1472,24 @@ function drawTitle() {
   ['按住零件拖動，經過的零件會交換位置', '橫排或直排 3 個以上相同 → 合成攻擊', '敵人頭上的數字歸零就會攻擊房車'].forEach((s, i) => ctx.fillText(s, W / 2, (IMG.bg ? 775 : 700) + i * 26));
   ctx.restore();
 }
+const TIPS = {
+  3: { t: '鐵鏽：護車', d: ['點牠的頭像 → 這一回合的小攻擊，牠會全部擋下。', '每關只能用一次。', '敵人頭上的數字變成 1 的時候，最適合點。'], x: 34, y: 178, r: 30 },
+  4: { t: '小禾：改裝', d: ['合成灰色零件，會幫小禾充能。', '充滿後點她 → 點一排 → 選顏色，', '那一排的灰色零件全部變成你要的顏色。'], x: 46, y: 256, r: 42 },
+  5: { t: '頭目：鏽塊', d: ['頭目會把零件鏽掉。鏽塊不能合成，', '而且每回合都會腐蝕車子。', '在旁邊合成灰色零件可以敲碎，或用小禾改掉。'], x: W / 2, y: BY + 2 * CELL, r: 70 },
+};
+function tipSeen(n) { try { return localStorage.getItem('zw-tip-' + n) === '1'; } catch (e) { return false; } }
+function drawTip() {
+  const T = TIPS[STAGE]; if (!T) return; const k = Math.min(1, (G.tipT || 0) * 4), pu = 0.5 + 0.5 * Math.sin(G.t * 6);
+  ctx.save(); ctx.globalAlpha = k;
+  ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.arc(T.x, T.y, T.r, 0, Math.PI * 2, true); ctx.fill();   // 挖一個洞照亮要點的地方
+  ctx.strokeStyle = `rgba(255,214,120,${0.6 + 0.4 * pu})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(T.x, T.y, T.r + 4 * pu, 0, 7); ctx.stroke();
+  const bx = 40, by = 560, bw = W - 80, bh = 190;
+  ctx.fillStyle = 'rgba(8,14,20,0.96)'; ctx.strokeStyle = '#ffd28a'; ctx.lineWidth = 2; roundRect(bx, by, bw, bh, 16); ctx.fill(); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffd28a'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.fillText(T.t, W / 2, by + 34);
+  ctx.fillStyle = '#e8f6f8'; ctx.font = '700 17px "Microsoft JhengHei",sans-serif'; T.d.forEach((l, i) => ctx.fillText(l, W / 2, by + 76 + i * 28));
+  ctx.fillStyle = `rgba(159,248,255,${0.5 + 0.5 * pu})`; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.fillText('點一下繼續', W / 2, by + bh - 16);
+  ctx.restore();
+}
 function drawC1() {
   if (!STAGE) return;
   ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1557,7 +1578,7 @@ function render() {
       ctx.fillStyle = '#ffd0d4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, W / 2, 38); ctx.restore(); }
   }
   ctx.restore();
-  drawUI(); drawHero(); drawC1(); drawFX(); drawTutorial(); drawCombo();
+  drawUI(); drawHero(); drawC1(); drawFX(); drawTutorial(); drawCombo(); if (G.state === 'tip') drawTip();
   if (G.bannerT > 0) {
     const t = G.bannerT, a = Math.min(1, t * 3, (1.6 - t) * 5);
     ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 150, W, 70);
@@ -1582,6 +1603,7 @@ cv.addEventListener('pointerdown', ev => {
   if (G.state === 'result') { if ((STAGE || OT) && inRect(p, btn2Rect)) { location.href = '../'; return; }
     if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
+  if (G.state === 'tip') { if ((G.tipT || 0) > 0.4) { G.state = 'player'; try { localStorage.setItem('zw-tip-' + STAGE, '1'); } catch (e) {} } return; }
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
   if (G.state === 'heRow') { const cell = boardCellAt(p.x, p.y); if (cell.inside) { if (!G.board[cell.r].some(q => q && (q.t === 3 || q.t === RUST))) { G.heLine = '這排沒有灰零件。選亮的那幾排。'; G.heLineT = 1.8; return; } G.heRowSel = cell.r; G.state = 'hePick'; SFX.card(); } else G.state = 'player'; return; }
   if (G.state === 'hePick') { const r = pickRects.find(r => inRect(p, r)); if (r) heConvert(r.t); else { G.state = 'player'; G.heRowSel = null; } return; }
