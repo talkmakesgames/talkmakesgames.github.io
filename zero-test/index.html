@@ -220,7 +220,9 @@ function toast(t, ms) { const e = $('toast'); e.textContent = t; e.classList.add
 function show(id) { document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + id)); }
 
 // ═══ 存檔（先存在手機裡；之後做帳號登入時搬到帳號） ═══
-const KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';   // 測試網址用另一份存檔，不影響正式版
+const KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';
+// 2026-11-26 快節奏版（給使用者比較）：網址加 ?quick=1 → 解說影片用精簡版（A 24 秒、B 36 秒）；?quick=0 換回原版
+const QUICK = (() => { try { const m = location.search.match(/[?&]quick=([01])/); if (m) localStorage.setItem('zw-quick', m[1]); return localStorage.getItem('zw-quick') === '1'; } catch (e) { return false; } })();   // 測試網址用另一份存檔，不影響正式版
 const NOW = () => Date.now();
 function newSave() {
   return { v: 1, intro: 'opening', hero: '', ai: '零', firstDay: NOW(), lastSeen: NOW(), fuelTs: NOW(),
@@ -285,9 +287,9 @@ $('vid').onended = endVideo; $('skip').onclick = endVideo;
 function runIntro() {
   if (S.intro === 'opening') playVideo('video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
   else if (S.intro === 'trial') location.href = 'battle/?trial=1';
-  else if (S.intro === 'explainA') playVideo('video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
+  else if (S.intro === 'explainA') playVideo(QUICK ? 'video/explainA_short.mp4' : 'video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
   else if (S.intro === 'naming') startNaming();
-  else if (S.intro === 'explainB') playVideo('video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
+  else if (S.intro === 'explainB') playVideo(QUICK ? 'video/explainB_short.mp4' : 'video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
   else goHome();
 }
 function finishIntro() {
