@@ -25,6 +25,135 @@
 <meta name="theme-color" content="#1a1d2e">
 </head>
 <body>
+<script>
+// 動嘴做遊戲：共用排行榜（不用登入，結束後輸入名字上榜）
+// 用法：TMGLB.mount(放排行榜的 div, {game:'sumo', v:成績數字 或 null（不能上榜）})
+// 資料存在 Firebase Firestore（CFG 填好就是全世界排行；沒填就只存在這台手機，方便測試）
+// 網站打包時 tools/site_build.py 會把這個檔案直接塞進每個遊戲裡。
+(function () {
+  const CFG = { project: 'talkmakesgames-5cc95', key: 'AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI' };   // Firebase 專案（跟廢域方舟同一個）；金鑰是公開的，資料靠 Firestore 規則保護
+  const ONLINE = !!(CFG.project && CFG.key);
+  const DB = 'https://firestore.googleapis.com/v1/projects/' + CFG.project + '/databases/(default)/documents';
+
+  // 每個遊戲：比大還是比小、成績怎麼顯示、關主（角色先佔的名次，排行榜才不會空）
+  const GAMES = {
+    sumo: { low: true, max: 600, show: v => v.toFixed(1) + ' 秒',
+      title: '最快獲勝', bosses: [['勤薯', 22], ['花椰長', 30], ['小片', 45]] },
+    chips: { low: false, max: 2545, show: v => { const n = Math.floor(v / 100), s = Math.round(v % 100); return n + ' 片' + (n >= 25 ? '・剩 ' + s + ' 秒' : ''); },
+      title: '吃最多最快', bosses: [['勤薯', 2512], ['花椰長', 2504], ['小片', 2100]] },
+    race: { low: true, max: 900, show: v => v.toFixed(2) + ' 秒',
+      title: '最快完賽', bosses: [['勤薯', 29], ['花椰長', 32], ['小片', 36]] },
+    comeback: { low: false, max: 8000, show: v => Math.round(v) + ' 分',   // 王者回歸：剩餘秒數×100＋洋芋片×50，只有搶回沙發才能上榜
+      title: '搶回沙發最高分', bosses: [['勤薯', 2200], ['花椰長', 1700], ['小片', 1200]] },
+  };
+
+  // 不雅字（比對時忽略大小寫和空白）
+  const BAD = ['幹你', '幹妳', '干你', '操你', '肏', '屌', '屄', '雞掰', '機掰', '雞巴', '鸡巴', '靠北', '靠杯', '三小', '智障', '白癡', '白痴', '傻逼', '傻b', '煞筆',
+    '尼瑪', '尼玛', '你媽', '你妈', '妳媽', '他媽', '他妈', '媽的', '妈的', '媽逼', '賤', '婊', '妓', '屎', '尻', '射精', '性交', '做愛', '色情', '強姦', '强奸', '去死', '垃圾', '廢物', '畜生', '王八',
+    'fuck', 'fuk', 'shit', 'bitch', 'dick', 'cock', 'cunt', 'pussy', 'nigg', 'porn', 'sex', 'asshole', 'bastard', 'slut', 'whore', 'http', 'www', '.com', '.tw', '.net', '@'];
+  function cleanName(s) {
+    s = String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 10);
+    const k = s.toLowerCase().replace(/\s+/g, '');
+    if (!k) return { err: '先輸入名字喔' };
+    if (BAD.some(b => k.includes(b))) return { err: '這個名字不行，換一個吧' };
+    return { name: s };
+  }
+
+  // ---- 資料：線上（Firestore REST）或本機 ----
+  // 歷史榜：lb_<遊戲>/<id>；本月榜：lbm/<年月，台灣時間，例如 202611>/lb_<遊戲>/<id>
+  const col = g => 'lb_' + g;
+  const num = f => f ? Number(f.doubleValue ?? f.integerValue ?? 0) : 0;
+  const ym = () => { const d = new Date(Date.now() + 8 * 3600e3); return String(d.getUTCFullYear() * 100 + d.getUTCMonth() + 1); };
+  const base = sc => DB + (sc === 'm' ? '/lbm/' + ym() : '');
+  const post = (url, body) => fetch(url + '?key=' + CFG.key, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  function local(g, sc) { let a; try { a = JSON.parse(localStorage.getItem('tmg-lb-' + g)) || []; } catch (e) { a = []; } return sc === 'm' ? a.filter(e => e.ym === ym()) : a; }
+  async function top(g, n, sc) {
+    const cfg = GAMES[g];
+    if (!ONLINE) return local(g, sc).sort((a, b) => cfg.low ? a.v - b.v : b.v - a.v).slice(0, n);
+    const r = await post(base(sc) + ':runQuery', { structuredQuery: {
+      from: [{ collectionId: col(g) }], orderBy: [{ field: { fieldPath: 'v' }, direction: cfg.low ? 'ASCENDING' : 'DESCENDING' }], limit: n } });
+    if (!r.ok) throw new Error('top ' + r.status);
+    return (await r.json()).filter(x => x.document).map(x => ({ name: x.document.fields.name.stringValue, v: num(x.document.fields.v), id: x.document.name }));
+  }
+  async function better(g, v, sc) {   // 有幾個真人成績比 v 好
+    const cfg = GAMES[g];
+    if (!ONLINE) return local(g, sc).filter(e => cfg.low ? e.v < v : e.v > v).length;
+    const r = await post(base(sc) + ':runAggregationQuery', { structuredAggregationQuery: {
+      structuredQuery: { from: [{ collectionId: col(g) }], where: { fieldFilter: { field: { fieldPath: 'v' }, op: cfg.low ? 'LESS_THAN' : 'GREATER_THAN', value: { doubleValue: v } } } },
+      aggregations: [{ alias: 'n', count: {} }] } });
+    if (!r.ok) throw new Error('rank ' + r.status);
+    const j = await r.json();
+    return num(j[0] && j[0].result && j[0].result.aggregateFields && j[0].result.aggregateFields.n);
+  }
+  async function submit(g, name, v) {   // 同時寫進歷史榜和本月榜
+    if (!ONLINE) { const a = local(g), id = 'L' + Date.now(); a.push({ name, v, id, ym: ym() }); try { localStorage.setItem('tmg-lb-' + g, JSON.stringify(a.slice(-300))); } catch (e) {} return { a: id, m: id }; }
+    const body = { fields: { name: { stringValue: name }, v: { doubleValue: v } } };
+    const [ra, rm] = await Promise.all([post(base('a') + '/' + col(g), body), post(base('m') + '/' + col(g), body)]);
+    if (!ra.ok || !rm.ok) throw new Error('submit ' + ra.status + '/' + rm.status);
+    return { a: (await ra.json()).name, m: (await rm.json()).name };
+  }
+
+  // ---- 畫面 ----
+  const CSS = `.tlb{margin:10px 0 2px;background:#fff;border:3px solid #3a1e0f;border-radius:16px;padding:8px 10px;text-align:left;color:#3a1e0f}
+.tlb h4{margin:0 0 6px;font-size:16px;text-align:center}.tlb h4 small{font-size:12px;opacity:.65;font-weight:700}
+.tlb .tabs{display:flex;gap:6px;margin:0 0 6px}.tlb .tabs b{flex:1;text-align:center;font-size:14px;padding:5px 0;border:2px solid #3a1e0f;border-radius:999px;cursor:pointer;background:#fff;user-select:none}
+.tlb .tabs b.on{background:#3a1e0f;color:#ffd84d}
+.tlb ol{list-style:none;margin:0;padding:0;font-size:14px;font-weight:800}
+.tlb li{display:flex;gap:8px;align-items:center;padding:3px 6px;border-radius:8px}
+.tlb li:nth-child(odd){background:#fff3dd}.tlb li .r{width:26px;text-align:center}.tlb li .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tlb li.boss .n{color:#a0663a}.tlb li.me{background:#ffd84d!important;outline:2px solid #3a1e0f}
+.tlb .f{display:flex;gap:6px;margin-top:8px}.tlb input{flex:1;min-width:0;font-size:16px;font-weight:800;padding:9px 12px;border:3px solid #3a1e0f;border-radius:999px;background:#fffaf2;color:#3a1e0f}
+.tlb button{font-size:16px;font-weight:900;padding:9px 14px;border-radius:999px;border:3px solid #3a1e0f;background:#4caf50;color:#fff;white-space:nowrap}
+.tlb button:disabled{opacity:.5}.tlb .msg{font-size:13px;font-weight:800;text-align:center;margin-top:6px;min-height:1em}`;
+  let css = false;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
+
+  async function mount(el, o) {
+    if (!css) { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); css = true; }
+    const g = o.game, cfg = GAMES[g], v = o.v;
+    const ok = v != null && isFinite(v) && v > 0 && v <= cfg.max;
+    const month = +ym().slice(4);
+    el.className = 'tlb';
+    el.innerHTML = `<h4>🏆 排行榜 <small>${cfg.title}</small></h4><div class="tabs"><b data-s="m" class="on">${month} 月</b><b data-s="a">歷史</b></div><ol><li><span class="n">載入中…</span></li></ol>` +
+      (ok ? `<div class="f"><input maxlength="10" placeholder="輸入名字上榜" enterkeyhint="done"><button>上榜</button></div>` : '') +
+      `<div class="msg">${ok ? '你的成績：' + cfg.show(v) : (o.why || '')}</div>`;
+    const list = el.querySelector('ol'), msg = el.querySelector('.msg');
+    let sc = 'm', mine = {}, seq = 0;
+    async function draw() {
+      const my = ++seq, s = sc; let rows;
+      try { rows = await top(g, 10, s); } catch (e) { if (my === seq) list.innerHTML = '<li><span class="n">排行榜暫時連不上</span></li>'; return; }
+      if (my !== seq) return;   // 切換分頁太快：只畫最後一次
+      rows = rows.concat(cfg.bosses.map(([name, bv]) => ({ name, v: bv, boss: true })))
+        .sort((a, b) => cfg.low ? a.v - b.v : b.v - a.v).slice(0, 10);
+      list.innerHTML = rows.map((r, i) => `<li class="${r.boss ? 'boss' : ''}${r.id && r.id === mine[s] ? ' me' : ''}"><span class="r">${medal(i)}</span><span class="n">${r.boss ? '👑 ' : ''}${esc(r.name)}</span><span>${cfg.show(r.v)}</span></li>`).join('');
+    }
+    el.querySelectorAll('.tabs b').forEach(b => b.onclick = e => { e.stopPropagation(); sc = b.dataset.s; el.querySelectorAll('.tabs b').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+    await draw();
+    if (!ok) return;
+    const inp = el.querySelector('input'), btn = el.querySelector('button');
+    try { inp.value = localStorage.getItem('tmg-lb-name') || ''; } catch (e) {}
+    const go = async () => {
+      const c = cleanName(inp.value);
+      if (c.err) { msg.textContent = c.err; return; }
+      btn.disabled = inp.disabled = true; msg.textContent = '上傳中…';
+      try {
+        try { localStorage.setItem('tmg-lb-name', c.name); } catch (e) {}
+        mine = await submit(g, c.name, v);
+        const bb = cfg.bosses.filter(([, bv]) => cfg.low ? bv < v : bv > v).length + 1;
+        const [nm, na] = await Promise.all([better(g, v, 'm'), better(g, v, 'a')]);
+        el.querySelector('.f').remove();
+        msg.textContent = '🎉 ' + c.name + '：' + month + ' 月第 ' + (nm + bb) + ' 名・歷史第 ' + (na + bb) + ' 名' + (ONLINE ? '' : '（測試：只存在這台裝置）');
+        window.tmgTrack && tmgTrack('post_score', { game_name: g, score: v });
+        await draw();
+      } catch (e) { btn.disabled = inp.disabled = false; msg.textContent = '上傳失敗，再按一次試試'; }
+    };
+    btn.onclick = go;
+    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  }
+  window.TMGLB = { mount, cleanName, online: ONLINE };
+})();
+</script>
 <canvas id="cv"></canvas>
 <button class="btn" id="bStart">開始搶沙發！</button>
 <button class="btn sub" id="bSkip">跳過 ≫</button>
@@ -137,6 +266,17 @@ let state = 'drop', st = 0, gt = 0;   // st：這個狀態經過幾格（60 格�
 let shake = 0, flashAll = 0;
 const G = {};   // 遊戲中的東西
 function go(s) { state = s; st = 0; layout(); }
+// 排行榜：搶回沙發後跳出（共用 tmg-leaderboard.js，只有贏才能上榜）
+function showLB(v) {
+  if (!window.TMGLB) return;
+  const m = document.createElement('div');
+  m.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(40,20,8,.6);display:flex;align-items:center;justify-content:center;padding:14px;font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif';
+  m.innerHTML = '<div style="width:100%;max-width:380px;max-height:calc(100vh - 28px);overflow-y:auto;background:#fff8ee;border:4px solid #3a1e0f;border-radius:22px;padding:12px;text-align:center"><div></div><button style="margin-top:10px;width:100%;font-size:17px;font-weight:900;padding:11px;border-radius:999px;border:3px solid #3a1e0f;background:#ffd84d;color:#3a1e0f">看結果 ▶</button></div>';
+  for (const ev of ['pointerdown', 'pointerup', 'pointermove', 'click', 'touchstart', 'touchend', 'keydown', 'keyup']) m.addEventListener(ev, e => e.stopPropagation());
+  m.querySelector('button').onclick = () => m.remove();
+  document.body.appendChild(m);
+  TMGLB.mount(m.firstChild.firstChild, { game: 'comeback', v });
+}
 const SEC = f => f / 60;
 const STORY_LEN = { drop: 2.6, ago: 3.4, fans: 2.8 };
 
@@ -174,7 +314,7 @@ function step() {
   else if (state === 'fans') { if (st === 60) ev('hit'); if (t > STORY_LEN.fans) { go('count'); } }
   else if (state === 'count') { if (st === 1) resetGame(); if (st % 40 === 1 && st < 120) ev('hit'); if (st >= 120) { go('play'); ev('whistle'); } }
   else if (state === 'play') updatePlay();
-  else if (state === 'win') { if (st === 40) ev('ding'); if (st === 200) layout(); }
+  else if (state === 'win') { if (st === 40) ev('ding'); if (st === 200) layout(); if (st === 230 && !REC) showLB(G.score); }
   else if (state === 'lose') { if (st === 10) ev('sad'); }
 }
 let autoStory = false;
