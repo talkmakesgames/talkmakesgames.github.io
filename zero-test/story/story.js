@@ -14,6 +14,7 @@
   #sty .sbg{position:absolute;inset:0;background:#05070b center/cover no-repeat;transition:opacity .6s;transform:scale(1.04);animation:stykb 14s ease-out forwards}
   @keyframes stykb{to{transform:scale(1.12)}}
   #sty.over .sbg{display:none}
+  #sty canvas.pt2{position:absolute;inset:0;pointer-events:none}
   #sty .shade{position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(transparent,rgba(0,0,0,.85) 55%,#000)}
   #sty .pt{position:absolute;bottom:236px;height:210px;width:210px;object-fit:cover;object-position:top;border-radius:16px;border:2px solid rgba(63,240,255,.55);background:linear-gradient(#26313c,#0c1117);box-shadow:0 8px 22px rgba(0,0,0,.7);transition:opacity .25s,transform .25s;opacity:0;transform:translateY(14px)}
   #sty .pt.L{left:22px}#sty .pt.R{right:22px}
@@ -85,7 +86,17 @@
       if (!sc) { o.onDone && o.onDone(); return; }
       const base = o.base != null ? o.base : '../', name = o.name || '我';
       mount(sc.over);
-      const bg = el('div', 'sbg'); el('div', 'shade');
+      const bg = el('div', 'sbg');
+      // 飄浮粒子：平靜＝暖色光塵、緊張＝紅色火星、難過＝藍色微光
+      const pc = el('canvas', 'pt2'); pc.width = 540; pc.height = 960; const px = pc.getContext('2d');
+      const PCOL = { calm: [255, 214, 150], tense: [255, 80, 60], sad: [140, 200, 255] }[sc.bgm] || [200, 230, 255];
+      const parts = Array.from({ length: sc.bgm === 'tense' ? 34 : 24 }, () => ({ x: Math.random() * 540, y: Math.random() * 960, r: 1 + Math.random() * 2.4, vx: (Math.random() - 0.5) * 0.25, vy: sc.bgm === 'tense' ? -0.4 - Math.random() * 0.9 : -0.12 - Math.random() * 0.3, a: Math.random() * 6 }));
+      let praf = 0; const ptick = () => { if (!root || !pc.isConnected) return; px.clearRect(0, 0, 540, 960);
+        for (const q of parts) { q.x += q.vx; q.y += q.vy; q.a += 0.03; if (q.y < -10) { q.y = 970; q.x = Math.random() * 540; } const al = 0.25 + 0.25 * Math.sin(q.a);
+          px.fillStyle = `rgba(${PCOL[0]},${PCOL[1]},${PCOL[2]},${al})`; px.beginPath(); px.arc(q.x, q.y, q.r, 0, 7); px.fill(); }
+        praf = requestAnimationFrame(ptick); };
+      if (!sc.over) ptick();
+      el('div', 'shade');
       const ptL = el('img', 'pt L'), ptR = el('img', 'pt R');
       ptL.onerror = ptR.onerror = function () { this.style.visibility = 'hidden'; };
       const ttl = el('div', 'ttl'); ttl.textContent = sc.title ? '— ' + sc.title + ' —' : '';

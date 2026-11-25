@@ -1394,6 +1394,7 @@ function drawResult() {
     const R = G.reward.r, st = G.reward.stars;
     // 大星星（一顆一顆跳出來）
     for (let i = 0; i < 3; i++) { const k = clamp((G.phaseT - 0.3 - i * 0.25) * 4, 0, 1), on = i < st, sc = on ? easeOutBack(k) : 1;
+      if (on && k > 0 && (G.starSfx || 0) <= i) { G.starSfx = i + 1; tone(700 + i * 180, 1400 + i * 200, 0.18, 'triangle', 0.16); }   // 星星一顆一顆「叮」
       ctx.save(); ctx.translate(W / 2 + (i - 1) * 96, 288); ctx.scale(sc, sc); ctx.font = '900 76px sans-serif'; ctx.fillStyle = on ? '#ffd23f' : '#2c3640'; if (on) { ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 24; } ctx.fillText('★', 0, 0); ctx.restore(); }
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
