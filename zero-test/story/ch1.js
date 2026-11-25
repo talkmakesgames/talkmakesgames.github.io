@@ -3,6 +3,7 @@ window.STORY_C1={
 "c1s1": {
 "title": "上路",
 "bg": "story/bg_road.webp",
+"bgm": "calm",
 "lines": [
 {
 "w": "narr",
@@ -53,6 +54,7 @@ window.STORY_C1={
 "c1s2": {
 "title": "被追的狗",
 "bg": "story/bg_alley.webp",
+"bgm": "tense",
 "lines": [
 {
 "w": "narr",
@@ -86,6 +88,7 @@ window.STORY_C1={
 "c1s3": {
 "title": "鐵鏽",
 "cg": "story/c1_cower.webp",
+"bgm": "sad",
 "lines": [
 {
 "w": "narr",
@@ -130,6 +133,7 @@ window.STORY_C1={
 "c1s4": {
 "title": "被追",
 "bg": "story/bg_horde.webp",
+"bgm": "tense",
 "lines": [
 {
 "w": "zero",
@@ -158,6 +162,7 @@ window.STORY_C1={
 "c1s5": {
 "title": "小禾",
 "cg": "story/c1_gun.webp",
+"bgm": "tense",
 "lines": [
 {
 "w": "narr",
@@ -217,6 +222,7 @@ window.STORY_C1={
 "c1s6": {
 "title": "修車",
 "bg": "story/bg_workbench.webp",
+"bgm": "calm",
 "lines": [
 {
 "w": "narr",
@@ -279,6 +285,7 @@ window.STORY_C1={
 "c1s7": {
 "title": "紅眼將軍",
 "cg": "story/c1_screens.webp",
+"bgm": "tense",
 "lines": [
 {
 "w": "narr",
@@ -339,6 +346,7 @@ window.STORY_C1={
 "c1s9": {
 "title": "營火",
 "bg": "story/bg_campfire.webp",
+"bgm": "sad",
 "lines": [
 {
 "w": "narr",

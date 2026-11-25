@@ -100,7 +100,11 @@
       [sc.cg, sc.bg, ...sc.lines.map(L => L.cg || L.bg)].filter(Boolean).forEach(src => { const im = new Image(); im.src = base + 'img/' + src; });
       setBg(sc.cg || sc.bg);
       function stopAudio() { if (audio) { audio.pause(); audio = null; } clearTimeout(autoT); }
-      function finish() { if (done) return; done = true; stopAudio(); clearInterval(typing); unmount(); o.onDone && o.onDone(); }
+      // 背景音樂（每段劇情自己的氣氛）
+      let music = null;
+      if (sc.bgm) { try { music = new Audio(base + 'story/bgm_' + sc.bgm + '.mp3'); music.loop = true; music.volume = 0; const pm = music.play(); if (pm && pm.catch) pm.catch(() => {}); let vv = 0; const fi = setInterval(() => { vv = Math.min(0.24, vv + 0.02); if (music) music.volume = vv; if (vv >= 0.24) clearInterval(fi); }, 80); } catch (e) {} }
+      function stopMusic() { if (!music) return; const m = music; music = null; let vv = m.volume; const fo = setInterval(() => { vv -= 0.03; if (vv <= 0) { clearInterval(fo); m.pause(); } else m.volume = vv; }, 60); }
+      function finish() { if (done) return; done = true; stopAudio(); stopMusic(); clearInterval(typing); unmount(); o.onDone && o.onDone(); }
       function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms); }
       function show(L) {
         if (L.cg || L.bg) setBg(L.cg || L.bg);
@@ -152,7 +156,8 @@
         if (i >= lines.length) { finish(); return; }
         show(lines[i]);
       }
-      root.addEventListener('click', e => { if (e.target === bAuto || e.target === bSkip) return; next(); });
+      root.addEventListener('click', e => { if (music && music.paused) { const pm = music.play(); if (pm && pm.catch) pm.catch(() => {}); }   // 手機要先點一下才能放聲音
+        if (e.target === bAuto || e.target === bSkip) return; next(); });
       bAuto.onclick = () => { Story.auto = !Story.auto; bAuto.className = Story.auto ? 'on' : ''; try { localStorage.setItem('zw-story-auto', Story.auto ? '1' : '0'); } catch (e) {} if (Story.auto && !typing && !(audio && !audio.paused)) scheduleAuto(400); };
       bSkip.onclick = () => { if (waitOrb) return; // 報告珠那一步不能跳
         if (holdT) { clearInterval(holdT); holdT = null; }
