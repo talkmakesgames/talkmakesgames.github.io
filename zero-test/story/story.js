@@ -8,7 +8,9 @@
   const css = `
   #sty{position:fixed;inset:0;z-index:50;background:#000;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   #sty.over{background:rgba(0,0,0,.35)}
-  #sty .box{position:relative;width:540px;height:960px;overflow:hidden;transform-origin:50% 50%}
+  #sty .full{position:absolute;inset:-30px;background:#05070b center/cover no-repeat;filter:blur(16px) brightness(.45);transition:background-image .6s}
+  #sty.over .full{display:none}
+  #sty .box{position:relative;flex:0 0 auto;width:540px;height:960px;overflow:hidden;transform-origin:50% 50%}
   #sty .sbg{position:absolute;inset:0;background:#05070b center/cover no-repeat;transition:opacity .6s;transform:scale(1.04);animation:stykb 14s ease-out forwards}
   @keyframes stykb{to{transform:scale(1.12)}}
   #sty.over .sbg{display:none}
@@ -55,6 +57,7 @@
   function mount(over) {
     if (!document.getElementById('sty-css')) { const st = document.createElement('style'); st.id = 'sty-css'; st.textContent = css; document.head.appendChild(st); }
     root = document.createElement('div'); root.id = 'sty'; if (over) root.className = 'over';
+    const full = document.createElement('div'); full.className = 'full'; root.appendChild(full);
     box = document.createElement('div'); box.className = 'box'; root.appendChild(box); document.body.appendChild(root);
     fit(); addEventListener('resize', fit);
   }
@@ -95,7 +98,7 @@
       hold.innerHTML = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="6"/><circle class="pg" cx="50" cy="50" r="44" fill="none" stroke="#3ff0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><span>按住</span><small>把手放上去</small>';
       const lines = sc.lines.slice(); let waitAct = false, holdT = null, holdStart = 0;
       let i = -1, typing = null, full = '', audio = null, autoT = null, done = false, waitOrb = false;
-      const setBg = src => { if (!src) return; bg.style.backgroundImage = `url("${base}img/${src}")`; bg.style.animation = 'none'; void bg.offsetWidth; bg.style.animation = ''; };
+      const setBg = src => { if (!src) return; bg.style.backgroundImage = `url("${base}img/${src}")`; const fu = root.querySelector('.full'); if (fu) fu.style.backgroundImage = bg.style.backgroundImage; bg.style.animation = 'none'; void bg.offsetWidth; bg.style.animation = ''; };
       // 先把這一段會用到的圖都載入，換圖時才不會黑一下
       [sc.cg, sc.bg, ...sc.lines.map(L => L.cg || L.bg)].filter(Boolean).forEach(src => { const im = new Image(); im.src = base + 'img/' + src; });
       setBg(sc.cg || sc.bg);

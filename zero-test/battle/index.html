@@ -124,7 +124,7 @@ const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
 const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1))) : 120;
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB)) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const STAGE_HP = [0, 0.62, 1.0, 0.85, 1.1, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 1.0, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const STAGE_HP = [0, 0.62, 1.0, 0.85, 0.95, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 0.9, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = 5;   // 第一章（零號廢域）：4 關＋第 5 關頭目
 const STAGE_WAVES = {
   1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 上路：第一波零的大招、第二波教轉珠
@@ -722,6 +722,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
     S0.cleared = S0.cleared || {}; S0.cleared.zero = STAGE;
     if (STAGE === 1) S0.diary.push({ day: d, text: '第一次出門打殭屍。三輪車沒散架，我也沒散架。' });
     if (STAGE === 2) S0.diary.push({ day: d, text: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。' });
+    if (STAGE === 3) S0.diary.push({ day: d, text: '被一大群殭屍追了一路。鐵鏽撲上去替車子擋了一下。我好像開始習慣這裡了——這才可怕。' });
     if (STAGE === 4) S0.diary.push({ day: d, text: '有個女生拿槍指著零。我說「它是我的手機」。說完我自己也愣了一下。' });
     if (STAGE === ZN) S0.diary.push({ day: d, text: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' });
   }
