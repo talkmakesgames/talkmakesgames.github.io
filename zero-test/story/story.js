@@ -36,7 +36,7 @@
   #sty .ph small{display:block;color:#9aa6b2;font-size:15px;margin-bottom:4px}
   #sty .end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.0);color:#fff;opacity:0;transition:opacity 1.2s,background 1.2s;pointer-events:none}
   #sty .end.on{opacity:1;background:rgba(0,0,0,.82)}
-  #sty .end b{font-size:40px;letter-spacing:8px}#sty .end i{margin-top:14px;color:#3ff0ff;font-style:normal;letter-spacing:4px}
+  #sty .end b{font-size:40px;letter-spacing:8px}#sty .end small{display:block}#sty .end i{margin-top:14px;color:#3ff0ff;font-style:normal;letter-spacing:4px}
   #sty .shk{animation:styshk .45s}
   @keyframes styshk{20%{transform:translate(-8px,4px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(4px,-2px)}}
   #sty.orbm .pt,#sty.orbm .top,#sty.orbm .ttl,#sty.orbm .shade{display:none}#sty.orbm .tb{bottom:auto;top:96px}
@@ -136,7 +136,7 @@
         if (side && src) { const p = side === 'L' ? ptL : ptR; p.style.visibility = ''; if (p.dataset.src !== src) { p.src = base + src; p.dataset.src = src; } p.className = 'pt ' + side + ' ' + who + ' on'; }
         // 手機通知
         if (L.phone) { ph.innerHTML = `<small>${who === 'sys' ? '通知' : ''}</small>`; ph.appendChild(document.createTextNode(full)); ph.classList.add('on'); tb.style.visibility = 'hidden'; } else { ph.classList.remove('on'); tb.style.visibility = ''; }
-        if (L.end) { endEl.innerHTML = '<b>第一章</b><i>一切從零開始　完</i>'; endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
+        if (L.end) { endEl.innerHTML = '<b>第一章</b><i>一切從零開始　完</i><small style="margin-top:34px;color:#9aa6b2;font-size:18px;letter-spacing:3px">下一章　冰港</small><small style="margin-top:8px;color:#5d6b75;font-size:14px">「這裡是冰港……還有人活著嗎？」</small>'; endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
         // 打字效果
         clearInterval(typing); let k = 0; tx.textContent = ''; nx.style.visibility = 'hidden';
         typing = setInterval(() => { k += 2; tx.textContent = full.slice(0, k); if (k >= full.length) { clearInterval(typing); typing = null; nx.style.visibility = ''; } }, 28);
@@ -147,7 +147,7 @@
           audio = new Audio(base + L.v); audio.volume = 1;
           audio.onended = () => scheduleAuto(650);
           const pr = audio.play(); if (pr && pr.catch) pr.catch(() => scheduleAuto(wait));
-        } else scheduleAuto(L.end ? 2600 : L.phone ? 2200 : wait);
+        } else scheduleAuto(L.end ? 4200 : L.phone ? 2200 : wait);
         waitOrb = !!(L.orb && o.onOrb);
         if (L.hold) {   // 按住畫面（淨化）：要親手按住才會往下
           waitAct = true; hold.classList.add('on'); const pg = hold.querySelector('.pg');
