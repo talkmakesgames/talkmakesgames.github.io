@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HJVDZQNFML"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-HJVDZQNFML",{allow_google_signals:false,allow_ad_personalization_signals:false});window.tmgTrack=function(n,p){try{gtag("event",n,p||{});}catch(e){}};</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>廢域方舟（開發中）</title>
+<style>
+  :root { --cyan:#3ff0ff; --red:#ff2d3c; --ink:#e8f6f8; --dim:#8fa0ae; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+  html,body { margin:0; height:100%; background:#05070b; overflow:hidden; font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; color:var(--ink); }
+  #stage { position:absolute; left:50%; top:50%; width:540px; height:960px; transform-origin:50% 50%; overflow:hidden; background:#0a0c10; }
+  .scr { position:absolute; inset:0; display:none; }
+  .scr.on { display:block; }
+  .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .btn { position:absolute; border:none; border-radius:999px; background:var(--cyan); color:#00262c; font:900 26px "Microsoft JhengHei",sans-serif; box-shadow:0 0 22px rgba(63,240,255,.6); cursor:pointer; }
+  .btn:active { transform:scale(.96); }
+  .ghost { background:rgba(4,14,18,.78); color:var(--cyan); border:1.5px solid var(--cyan); box-shadow:none; }
+  .panel { position:absolute; left:18px; right:18px; background:rgba(4,12,16,.94); border:1.5px solid var(--cyan); border-radius:14px; box-shadow:0 0 30px rgba(63,240,255,.25); }
+  .close { position:absolute; top:14px; right:14px; width:46px; height:46px; border-radius:50%; background:rgba(4,14,18,.85); border:1.5px solid var(--cyan); color:var(--cyan); font:900 24px sans-serif; z-index:5; }
+  .title { position:absolute; top:22px; left:0; right:0; text-align:center; font:900 30px "Microsoft JhengHei",sans-serif; color:var(--ink); text-shadow:0 0 14px var(--cyan); }
+  #acctBtn { position:absolute; top:104px; right:12px; padding:6px 12px; border-radius:999px; background:rgba(4,12,16,.85); border:1.5px solid rgba(63,240,255,.7); color:#c8fbff; font:800 13px sans-serif; z-index:4; }
+  #questBtn { position:absolute; left:12px; top:112px; width:84px; height:84px; border-radius:16px; background:rgba(4,12,16,.88); border:1.5px solid #ffd23f; color:#ffd23f; font:900 15px sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; z-index:4; box-shadow:0 0 14px rgba(255,210,63,.35); }
+  #questBtn b { font-size:30px; line-height:1; }
+  #questBtn .dot { position:absolute; top:-6px; right:-6px; min-width:24px; height:24px; border-radius:12px; background:#ff3b3b; color:#fff; font:900 14px/24px sans-serif; text-align:center; padding:0 6px; display:none; }
+  .card.q { display:flex; align-items:center; gap:10px; text-align:left; padding:10px 12px; }
+  .q .qt { flex:1; } .q .qt div:first-child { font:900 15px sans-serif; color:#e8f6f8; } .q .qt .sub { font-size:12px; }
+  .q .bar { height:6px; background:rgba(255,255,255,.12); border-radius:3px; margin-top:5px; overflow:hidden; } .q .bar i { display:block; height:100%; background:var(--cyan); }
+  .q button { width:76px; height:40px; border-radius:10px; border:none; font:900 15px sans-serif; background:#ffd23f; color:#3a2600; }
+  .q button:disabled { background:rgba(255,255,255,.12); color:#8fa0ae; }
+  .q.done { opacity:.45; }
+  #modal { position:absolute; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:60; }
+  #modal .box { width:460px; background:rgba(4,12,16,.97); border:1.5px solid var(--cyan); border-radius:14px; padding:20px; text-align:center; }
+  #modal h3 { margin:0 0 10px; font:900 22px sans-serif; color:var(--cyan); }
+  #modal p { margin:6px 0 14px; font:700 15px sans-serif; color:#d8f6fa; line-height:1.6; }
+  #modal button { display:block; width:100%; margin-top:10px; height:50px; border-radius:12px; border:1.5px solid var(--cyan); background:rgba(63,240,255,.12); color:#e8ffff; font:800 16px sans-serif; }
+  #modal button.main { background:var(--cyan); color:#00262c; }
+  #toast { position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:rgba(4,14,18,.94); border:1.5px solid var(--cyan); color:#c8fbff; padding:12px 18px; border-radius:10px; font:700 16px sans-serif; z-index:50; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; }
+  #toast.show { opacity:1; }
+  /* 影片 */
+  #scr-video { background:#000; }
+  #vid { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  #tapStart { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:rgba(0,0,0,.65); font:900 26px sans-serif; color:var(--cyan); }
+  #skip { position:absolute; top:18px; right:18px; padding:9px 16px; font:800 16px sans-serif; border-radius:999px; background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.5); z-index:3; }
+  #vidSub { position:absolute; left:0; right:0; bottom:200px; text-align:center; font:900 34px sans-serif; color:#9ff8ff; text-shadow:0 0 6px #002a30,0 0 2px #000,2px 2px 0 #000; opacity:0; transition:opacity .3s; }
+  /* 取名 */
+  #nameBox { position:absolute; left:52px; right:52px; top:330px; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  #nameAsk { font:900 20px sans-serif; color:#c8fbff; text-shadow:0 0 8px var(--cyan); text-align:center; line-height:1.5; }
+  #nameIn { width:300px; height:52px; font:900 26px sans-serif; text-align:center; color:#fff; background:rgba(0,30,36,.75); border:2px solid var(--cyan); border-radius:10px; outline:none; user-select:text; -webkit-user-select:text; }
+  #zeroLine { position:absolute; left:40px; right:40px; top:200px; font:700 17px sans-serif; color:#c8fbff; background:rgba(4,14,18,.9); border:1.5px solid var(--cyan); border-radius:10px; padding:10px 14px; line-height:1.55; display:none; }
+  /* 首頁 */
+  #topbar { position:absolute; top:10px; left:10px; right:10px; display:flex; gap:6px; }
+  .res { flex:1; display:flex; align-items:center; gap:4px; background:rgba(4,12,16,.82); border:1px solid rgba(63,240,255,.45); border-radius:999px; padding:3px 8px 3px 3px; font:900 14px "Arial Black","Microsoft JhengHei",sans-serif; color:#fff; white-space:nowrap; }
+  .res img { width:28px; height:28px; object-fit:contain; }
+  #who { position:absolute; top:58px; left:14px; font:900 17px sans-serif; text-shadow:0 0 6px #000,0 0 2px #000; }
+  #who small { display:block; font:700 13px sans-serif; color:#ffd8a8; }
+  #homeLogo { position:absolute; top:56px; right:8px; width:170px; mix-blend-mode:screen; opacity:.95; }
+  #vehicle { position:absolute; left:50%; top:560px; transform:translate(-50%,-100%); width:390px; filter:drop-shadow(0 12px 10px rgba(0,0,0,.6)); cursor:pointer; }
+  #vehName { position:absolute; left:0; right:0; top:576px; text-align:center; font:900 17px sans-serif; text-shadow:0 0 6px #000,0 0 3px #000; }
+  #vehName small { color:var(--cyan); }
+  #zeroHome { position:absolute; left:388px; top:330px; width:92px; animation:bob 2.6s ease-in-out infinite; filter:drop-shadow(0 0 10px rgba(63,240,255,.6)); cursor:pointer; }
+  @keyframes bob { 50% { transform:translateY(-10px); } }
+  #bubble { position:absolute; right:22px; top:236px; width:250px; background:rgba(4,14,18,.92); border:1.5px solid var(--cyan); border-radius:10px; padding:9px 12px; font:700 15px sans-serif; color:#c8fbff; line-height:1.5; opacity:0; transition:opacity .3s; }
+  #goBtn { left:110px; right:110px; top:700px; height:76px; font-size:34px; letter-spacing:6px; }
+  #goBtn small { display:block; font:800 13px sans-serif; letter-spacing:0; margin-top:-2px; }
+  #menu { position:absolute; left:14px; right:14px; top:800px; display:flex; gap:10px; }
+  .mbtn { flex:1; height:118px; background:rgba(4,12,16,.86); border:1.5px solid rgba(63,240,255,.6); border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font:900 16px sans-serif; color:var(--ink); cursor:pointer; }
+  .mbtn img { height:62px; object-fit:contain; }
+  .mbtn:active { transform:scale(.96); }
+  /* 回收報告 */
+  #report { top:250px; padding:20px; text-align:center; z-index:20; display:none; }
+  #report img { width:150px; }
+  #report h3 { margin:4px 0 6px; font:900 24px sans-serif; color:var(--cyan); }
+  #report p { margin:6px 0; font:700 16px sans-serif; color:#c8fbff; line-height:1.6; }
+  .gain { display:flex; justify-content:center; gap:14px; margin:12px 0; font:900 20px "Arial Black",sans-serif; }
+  .gain span { display:flex; align-items:center; gap:4px; } .gain img { width:34px; }
+  /* 地圖 */
+  #mapZones div { position:absolute; border-radius:16px; cursor:pointer; }
+  #stageList { top:420px; padding:16px; display:none; }
+  #stageList h3 { margin:0 0 4px; font:900 22px sans-serif; color:var(--cyan); }
+  #stageList p { margin:0 0 10px; font:700 13px sans-serif; color:var(--dim); }
+  #nodes { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
+  .node { text-align:center; font:900 13px sans-serif; color:#fff; cursor:pointer; }
+  .node img { width:62px; height:62px; object-fit:contain; display:block; margin:0 auto; }
+  /* 車庫、設施、圖鑑共用格子 */
+  .grid { position:absolute; left:16px; right:16px; top:84px; bottom:16px; overflow-y:auto; display:grid; gap:10px; align-content:start; }
+  .card { background:rgba(4,12,16,.9); border:1.5px solid rgba(63,240,255,.5); border-radius:12px; padding:8px; text-align:center; font:800 14px sans-serif; color:var(--ink); position:relative; }
+  .card img { width:100%; height:92px; object-fit:contain; }
+  .card .sub { font:700 12px sans-serif; color:var(--dim); margin-top:2px; line-height:1.4; }
+  .card.cur { border-color:#ffd23f; box-shadow:0 0 16px rgba(255,210,63,.4); }
+  .locked img { filter:brightness(0) drop-shadow(0 0 1px rgba(63,240,255,.7)); opacity:.75; }
+  .tag { position:absolute; top:6px; left:6px; font:900 11px sans-serif; background:var(--cyan); color:#00262c; border-radius:6px; padding:1px 6px; }
+  /* 日記 */
+  #diaryCover { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  #diaryCover img { width:440px; cursor:pointer; filter:drop-shadow(0 10px 20px #000); }
+  #diaryBook { position:absolute; inset:0; display:none; }
+  #diaryTabs { position:absolute; top:74px; left:62px; right:30px; display:flex; gap:8px; z-index:3; }
+  .dtab { flex:1; height:40px; border-radius:8px 8px 0 0; border:none; background:#c9b48a; font:900 17px sans-serif; color:#4a3a22; }
+  .dtab.on { background:#f3e6c4; }
+  #diaryBody { position:absolute; top:122px; left:64px; right:34px; bottom:40px; overflow-y:auto; color:#3a2c18; font:700 18px "KaiTi","DFKai-SB","Microsoft JhengHei",serif; line-height:2.0; }
+  .entry b { color:#8a2a18; }
+  .vrow { display:flex; align-items:center; gap:10px; padding:10px; margin-bottom:10px; background:rgba(255,255,255,.35); border:1px dashed #8a7550; border-radius:8px; cursor:pointer; }
+  .vrow span { font-size:26px; }
+  /* 圖鑑 */
+  .cx { position:relative; height:200px; padding:0; overflow:hidden; background:#02080a; border:none; }
+  .cx .frame { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; mix-blend-mode:screen; pointer-events:none; }
+  .cx .pic { position:absolute; left:10%; right:10%; top:12px; height:104px; width:80%; object-fit:contain; }
+  .cx .nm { position:absolute; left:8px; right:8px; top:128px; font:900 14px sans-serif; color:#c8fbff; }
+  .cx .fam { position:absolute; left:8px; right:8px; top:150px; font:700 11px sans-serif; color:var(--dim); }
+  #cxDetail { top:150px; padding:16px; display:none; z-index:10; }
+  #cxDetail img { width:220px; height:180px; object-fit:contain; display:block; margin:0 auto; }
+  #cxDetail h3 { margin:6px 0; font:900 24px sans-serif; color:var(--cyan); text-align:center; }
+  #cxDetail p { margin:6px 0; font:700 15px sans-serif; line-height:1.6; color:#d8f6fa; }
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="動嘴做遊戲">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#1a1d2e">
+</head>
+<body>
+<div id="stage">
+  <!-- 影片（開場、解說 A／B） -->
+  <div class="scr" id="scr-video">
+    <video id="vid" playsinline preload="auto"></video>
+    <div id="vidSub"></div>
+    <button id="skip">跳過 ▶▶</button>
+    <div id="tapStart"><div>▶</div><div>點一下開始</div><div style="font:700 14px sans-serif;color:#8fa0ae">建議開啟聲音</div></div>
+  </div>
+
+  <!-- 取名 -->
+  <div class="scr" id="scr-naming">
+    <img class="bg" src="img/naming_bg.webp" alt="">
+    <div id="zeroLine"></div>
+    <div id="nameBox"><div id="nameAsk">輸入你的名字</div><input id="nameIn" maxlength="8" autocomplete="off"></div>
+    <button class="btn" id="nameOk" style="left:150px;right:150px;top:520px;height:64px">確定</button>
+    <button class="btn ghost" id="loginOld" style="left:150px;right:150px;top:600px;height:46px;font-size:16px">登入舊帳號</button>
+  </div>
+
+  <!-- 首頁 -->
+  <div class="scr" id="scr-home">
+    <img class="bg" src="img/home_bg.webp" alt="">
+    <div id="topbar"></div>
+    <div id="who"></div>
+    <img id="homeLogo" src="img/logo.webp" alt="">
+    <button id="acctBtn">☁ 登入備份</button>
+    <button id="questBtn"><b>📋</b>任務<span class="dot" id="questDot"></span></button>
+    <img id="zeroHome" src="img/zero.webp" alt="零">
+    <div id="bubble"></div>
+    <img id="vehicle" src="img/v1.webp" alt="">
+    <div id="vehName"></div>
+    <button class="btn" id="goBtn">出發<small id="goCost">燃料 -10</small></button>
+    <div id="menu">
+      <div class="mbtn" data-go="garage"><img src="img/v1.webp" alt="">車庫</div>
+      <div class="mbtn" data-go="facility"><img src="img/f_recycle.webp" alt="">設施</div>
+      <div class="mbtn" data-go="diary"><img src="img/diary_cover.webp" alt="">日記</div>
+      <div class="mbtn" data-go="codex"><img src="img/zero.webp" alt="">資料庫</div>
+    </div>
+    <div class="panel" id="report">
+      <img src="img/drone.webp" alt="">
+      <h3>零的回收報告</h3>
+      <p id="repText"></p>
+      <div class="gain" id="repGain"></div>
+      <button class="btn" id="repOk" style="position:relative;width:200px;height:54px;font-size:22px">收下</button>
+    </div>
+  </div>
+
+  <!-- 世界地圖 -->
+  <div class="scr" id="scr-map">
+    <img class="bg" src="img/world_map.webp" alt="">
+    <div class="title">選擇廢域</div>
+    <button class="close" data-back>✕</button>
+    <div id="mapZones"></div>
+    <div class="panel" id="stageList"><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div></div>
+  </div>
+
+  <!-- 新手任務 -->
+  <div class="scr" id="scr-quest"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.3)"><div class="title">新手任務</div><button class="close" data-back>✕</button>
+    <div style="position:absolute;top:74px;left:20px;right:20px;font:700 14px sans-serif;color:#9ff8ff;text-align:center">零：「照著做，至少可以活到下禮拜。」</div>
+    <div class="grid" id="questGrid" style="grid-template-columns:1fr;top:104px"></div></div>
+  <!-- 車庫 -->
+  <div class="scr" id="scr-garage"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">車庫</div><button class="close" data-back>✕</button><div class="grid" id="garageGrid" style="grid-template-columns:1fr 1fr"></div></div>
+  <!-- 設施 -->
+  <div class="scr" id="scr-facility"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">基地設施</div><button class="close" data-back>✕</button><div class="grid" id="facGrid" style="grid-template-columns:1fr 1fr"></div></div>
+  <!-- 日記 -->
+  <div class="scr" id="scr-diary">
+    <img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.25) blur(2px)">
+    <button class="close" data-back>✕</button>
+    <div id="diaryCover"><img src="img/diary_cover.webp" alt="" id="openDiary"></div>
+    <div id="diaryBook">
+      <img class="bg" src="img/diary_page.webp" alt="">
+      <div id="diaryTabs"><button class="dtab on" data-tab="log">日記</button><button class="dtab" data-tab="video">影片</button><button class="dtab" data-tab="stat">紀錄</button></div>
+      <div id="diaryBody"></div>
+    </div>
+  </div>
+  <!-- 圖鑑 -->
+  <div class="scr" id="scr-codex">
+    <div class="bg" style="background:radial-gradient(circle at 50% 30%,#06252b,#020507 70%)"></div>
+    <div class="title">零的資料庫 <span id="cxCount" style="font-size:16px;color:#8fa0ae"></span></div>
+    <button class="close" data-back>✕</button>
+    <div class="grid" id="cxGrid" style="grid-template-columns:1fr 1fr 1fr"></div>
+    <div class="panel" id="cxDetail"></div>
+  </div>
+  <div id="modal"><div class="box" id="modalBox"></div></div>
+  <div id="toast"></div>
+</div>
+
+<script>
+// ═══ 畫面縮放：540×960 等比放大，置中 ═══
+const stage = document.getElementById('stage');
+function fit() { const s = Math.min(innerWidth / 540, innerHeight / 960); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+const $ = id => document.getElementById(id);
+function toast(t, ms) { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), ms || 1800); }
+function show(id) { document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + id)); }
+
+// ═══ 存檔（先存在手機裡；之後做帳號登入時搬到帳號） ═══
+const KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';   // 測試網址用另一份存檔，不影響正式版
+const NOW = () => Date.now();
+function newSave() {
+  return { v: 1, intro: 'opening', hero: '', ai: '零', firstDay: NOW(), lastSeen: NOW(), fuelTs: NOW(),
+    res: { coin: 300, scrap: 120, chip: 20, fuel: 100, core: 0, blueprint: 0 }, tier: 1, sub: 0,
+    fac: { tank: 1, store: 1, recycle: 1, battery: 1, workshop: 1, dock: 1 },
+    codex: { seen: {}, kills: {} }, diary: [], stats: { maxCombo: 0, maxHit: 0, clears: 0 }, cleared: {} };
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+if (!S || S.v !== 1) S = newSave();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (window.Cloud && Cloud.user && S.intro === 'done') { clearTimeout(save.t); save.t = setTimeout(() => Cloud.push(S).catch(() => {}), 3000); } }
+// ═══ 選擇視窗 ═══
+function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]]
+  $('modalBox').innerHTML = `<h3>${title}</h3><p>${text}</p>` + buttons.map(([t], i) => `<button data-i="${i}" class="${buttons[i][2] ? 'main' : ''}">${t}</button>`).join('');
+  $('modal').style.display = 'flex';
+  $('modalBox').querySelectorAll('button').forEach(b => b.onclick = () => { $('modal').style.display = 'none'; const f = buttons[+b.dataset.i][1]; if (f) f(); });
+}
+const VEHN = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
+const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜第一章 ${(x.cleared && x.cleared.zero) || 0}/5`;
+// ═══ 帳號（Google 登入，只用來備份存檔；不存、不顯示 Email） ═══
+async function cloudLogin(fromNaming, already) {
+  if (!window.Cloud || !Cloud.ready) { toast('帳號系統還沒設定好', 2200); return; }
+  if (!already) { try { await Cloud.login(fromNaming ? 'n' : 'h'); } catch (e) { toast('登入沒有完成', 2000); return; } }
+  try { sessionStorage.removeItem('zw-login'); } catch (e) {}
+  let remote = null; try { remote = await Cloud.pull(); } catch (e) { toast('讀取雲端存檔失敗', 2000); return; }
+  const localReal = S.intro === 'done';
+  if (remote && !localReal) { S = remote; S.intro = 'done'; save(); toast('已載入雲端存檔', 2000); goHome(); return; }
+  if (remote && localReal) {
+    ask('找到雲端存檔', `雲端：${saveInfo(remote)}<br>這支手機：${saveInfo(S)}<br>要用哪一個？（另一個會被蓋掉）`, [
+      ['用雲端存檔', () => { S = remote; save(); goHome(); toast('已換成雲端存檔'); }, true],
+      ['用這支手機的存檔', () => { Cloud.push(S).then(() => toast('已備份到雲端')); renderAcct(); }]]);
+    return;
+  }
+  if (fromNaming) { toast('這個帳號還沒有存檔，先繼續新遊戲吧', 2600); renderAcct(); return; }
+  await Cloud.push(S).catch(() => {}); toast('已登入，存檔會自動備份', 2400); renderAcct();
+}
+function renderAcct() {
+  const b = $('acctBtn'); if (!b) return;
+  if (!window.Cloud || !Cloud.ready) { b.style.display = 'none'; return; }
+  b.style.display = ''; b.textContent = Cloud.user ? '☁ 已備份' : '☁ 登入備份';
+}
+window.onCloudUser = u => { renderAcct(); if ($('scr-home').classList.contains('on')) renderQuestDot(); let p = null; try { p = sessionStorage.getItem('zw-login'); } catch (e) {} if (u && p) cloudLogin(p === 'n', true); };   // 手機瀏覽器擋彈出視窗、改用整頁跳轉登入時，回來接著做
+save();
+const day = () => Math.floor((NOW() - S.firstDay) / 86400000) + 1;
+const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '萬' : Math.floor(n).toLocaleString();
+function addDiary(text) { S.diary.push({ day: day(), text }); save(); }
+
+// ═══ 第一次開遊戲的流程：開場影片 → 試玩 → 解說 A → 取名 → 解說 B → 首頁（只跑一次） ═══
+const params = new URLSearchParams(location.search);
+if (params.get('from') === 'trial' && S.intro === 'trial') { S.intro = 'explainA'; save(); history.replaceState(null, '', location.pathname); }
+let vidNext = null, vidReplay = false;
+function playVideo(src, next, opts) {
+  vidNext = next; vidReplay = !!(opts && opts.replay);
+  const v = $('vid'); v.src = src; v.currentTime = 0; $('tapStart').style.display = 'flex'; $('vidSub').style.opacity = 0;
+  show('video');
+  if (opts && opts.sub) { v.ontimeupdate = () => { $('vidSub').textContent = opts.sub; $('vidSub').style.opacity = v.currentTime < 2.4 ? 1 : 0; }; } else v.ontimeupdate = null;
+}
+$('tapStart').onclick = () => { $('tapStart').style.display = 'none'; const p = $('vid').play(); if (p && p.catch) p.catch(() => {}); };
+function endVideo() { const v = $('vid'); v.pause(); v.removeAttribute('src'); v.load(); const n = vidNext; vidNext = null; if (n) n(); }
+$('vid').onended = endVideo; $('skip').onclick = endVideo;
+
+function runIntro() {
+  if (S.intro === 'opening') playVideo('video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
+  else if (S.intro === 'trial') location.href = 'battle/?trial=1';
+  else if (S.intro === 'explainA') playVideo('video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
+  else if (S.intro === 'naming') startNaming();
+  else if (S.intro === 'explainB') playVideo('video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
+  else goHome();
+}
+function finishIntro() {
+  S.intro = 'done'; S.lastSeen = NOW();
+  // 試玩是零的「未來模擬」，模擬裡的敵人資料先記成「看過」（名字＋剪影），真的打倒才解鎖完整資料
+  ['zombie', 'dasher', 'heavy', 'mech'].forEach(k => S.codex.seen[k] = 1);
+  addDiary('加班加到穿越。主管還在問報告。'); addDiary(`零說我的三輪車是古董。它叫我「${S.hero}」的時候，語氣很像在念錯誤代碼。`);
+  save(); goHome(true);
+}
+
+// ═══ 取名 ═══
+let nameStep = 0;
+function startNaming() {
+  show('naming'); nameStep = 0; $('zeroLine').style.display = 'none';
+  $('nameAsk').innerHTML = '你叫什麼名字？'; $('nameIn').value = ''; $('nameIn').placeholder = '社畜';
+  $('loginOld').style.display = '';
+}
+$('nameOk').onclick = () => {
+  const v = $('nameIn').value.trim();
+  if (nameStep === 0) {
+    S.hero = v || '社畜'; nameStep = 1; save();
+    $('zeroLine').style.display = 'block';
+    $('zeroLine').textContent = `零：「${S.hero}……記下了。我是型號 ZR-0。要叫我什麼隨便你，反正你取的名字一定很難聽。」`;
+    $('nameAsk').innerHTML = '幫 AI 取名字<br><span style="font-size:14px;color:#8fa0ae">不改就叫「零」</span>'; $('nameIn').value = ''; $('nameIn').placeholder = '零';
+    $('loginOld').style.display = 'none';
+  } else {
+    S.ai = v || '零'; S.intro = 'explainB'; save(); runIntro();
+  }
+};
+$('loginOld').onclick = () => cloudLogin(true);
+
+// ═══ 首頁 ═══
+const VEH = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
+const VEH_SLOTS = [1, 2, 3, 3, 4, 4, 5, 6, 6];
+const FUEL_MAX = () => 100 + (S.fac.tank - 1) * 20;
+const IDLE_HOURS = () => 8 + (S.fac.battery - 1) * 1;
+const ZERO_LINES = () => [
+  `${S.hero}，油箱還有 ${S.res.fuel}。夠你出去被打一頓了。`,
+  '這台三輪車的時速，大概跟你的工作效率差不多。',
+  '主管又傳訊息了。我幫你已讀了，不用謝。',
+  '我分析過了：你活下去的機率比昨天高 0.3%。恭喜。',
+  '倉庫的廢鐵堆得像你的待辦清單。',
+  `第 ${day()} 天。你的手速總算比樹懶快一點。`,
+];
+function renderTop() {
+  const r = S.res, items = [['coin', fmt(r.coin)], ['scrap', fmt(r.scrap)], ['chip', fmt(r.chip)], ['fuel', `${r.fuel}/${FUEL_MAX()}`], ['core', fmt(r.core)]];
+  $('topbar').innerHTML = items.map(([k, v]) => `<div class="res"><img src="img/r_${k}.webp" alt="">${v}</div>`).join('');
+  $('who').innerHTML = `${S.hero}　＆　${S.ai}<small>第 ${day()} 天｜零號廢域</small>`;
+  $('vehicle').src = `img/v${S.tier}.webp`; document.querySelector('[data-go=garage] img').src = `img/v${S.tier}.webp`;
+  $('vehName').innerHTML = `${VEH[S.tier - 1]} <small>Lv.${S.tier}${S.sub ? ' +' + S.sub : ''}</small>`;
+  $('goCost').textContent = (NOW() - S.firstDay) < 3 * 86400000 ? '新手期間不花燃料' : '燃料 -10（頭目 -20）';
+}
+function tickResources() {   // 燃料自動回復：每 6 分鐘 1 點（離線也算）
+  const per = 6 * 60000, n = Math.floor((NOW() - S.fuelTs) / per);
+  if (n > 0) { S.res.fuel = Math.min(FUEL_MAX(), S.res.fuel + n); S.fuelTs += n * per; }
+  if (S.res.fuel >= FUEL_MAX()) S.fuelTs = NOW();
+}
+function idleReport() {   // 掛機收益：零的回收無人機（產出＝載具階級 × 回收站等級；最多累積 8 小時）
+  const mins = Math.min((NOW() - S.lastSeen) / 60000, IDLE_HOURS() * 60);
+  if (mins < 10) return;
+  const rate = S.tier * (1 + 0.25 * (S.fac.recycle - 1));
+  const scrap = Math.round(mins * 0.8 * rate), coin = Math.round(mins * 0.5 * rate);
+  const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+  $('repText').innerHTML = `你不在的 ${h ? h + ' 小時 ' : ''}${m} 分鐘，<br>我派無人機撿了這些。不用謝。`;
+  $('repGain').innerHTML = `<span><img src="img/r_scrap.webp" alt="">+${fmt(scrap)}</span><span><img src="img/r_coin.webp" alt="">+${fmt(coin)}</span>`;
+  $('report').style.display = 'block';
+  $('repOk').onclick = () => { S.res.scrap += scrap; S.res.coin += coin; save(); renderTop(); $('report').style.display = 'none'; };
+}
+let bubbleT;
+function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity = 1; clearTimeout(bubbleT); bubbleT = setTimeout(() => b.style.opacity = 0, 3600); }
+function goHome(first) {
+  tickResources(); show('home'); renderTop(); renderAcct(); renderQuestDot();
+  if (!first) idleReport();
+  S.lastSeen = NOW(); save();
+  setTimeout(() => zeroSay(first ? '走吧。先去撿廢鐵。不知道做什麼就看左上角的「任務」。' : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
+}
+$('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
+$('vehicle').onclick = () => openScreen('garage');
+$('goBtn').onclick = () => openScreen('map');
+document.querySelectorAll('.mbtn').forEach(b => b.onclick = () => openScreen(b.dataset.go));
+document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => goHome());
+setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(); renderTop(); } }, 30000);
+
+window.ZW_A2HS_OK = () => !!(S && S.intro === 'done' && $('scr-home').classList.contains('on'));   // 「加到主畫面」橫幅只在基地首頁出現
+function openScreen(k) {
+  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
+  show(k);
+}
+
+// ═══ 新手任務：一步一步帶玩家走完第一輪（打關 → 改裝 → 升級設施 → 升階 → 打頭目） ═══
+const facSum = () => Object.values(S.fac).reduce((a, b) => a + b, 0);
+const starSum = () => Object.values(S.stars || {}).reduce((a, b) => a + b, 0);
+const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標]）, 獎勵]
+  ['q1', '第一次出門', '打過零號廢域第 1 關', () => [Math.min(S.cleared.zero || 0, 1), 1], { coin: 200, scrap: 100 }],
+  ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { coin: 100 }],
+  ['q3', '改裝三輪車', '到車庫把載具改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
+  ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { core: 1 }],
+  ['q5', '甩掉屍群', '打過第一章 1-3（追逐）', () => [Math.min(S.cleared.zero || 0, 3), 3], { coin: 300, fuel: 20 }],
+  ['q6', '蓋點東西', '升級任一個基地設施', () => [Math.min(facSum() - 6, 1), 1], { coin: 300 }],
+  ['q7', '收集情報', '在零的資料庫解鎖 3 種敵人（打倒才算）', () => [Math.min(Object.keys(S.codex.kills).length, 3), 3], { chip: 30 }],
+  ['q8', '備份存檔', '首頁右上角「☁ 登入備份」用 Google 登入', () => [window.Cloud && Cloud.user ? 1 : 0, 1], { fuel: 30, core: 1 }],
+  ['q9', '拿星星', '在第一章累積 10 顆星', () => [Math.min(starSum(), 10), 10], { coin: 500, scrap: 300 }],
+  ['q10', '換台車', '把載具升到第 2 階「改裝邊車機車」', () => [Math.min(S.tier - 1, 1), 1], { core: 2, chip: 40 }],
+  ['q11', '找到避難所', '打過第一章 1-4（認識小禾）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 800, fuel: 30 }],
+  ['q12', '破解零號廢域', '打倒頭目「巨型機甲」', () => [(S.cleared.zero || 0) >= 5 ? 1 : 0, 1], { core: 5, coin: 1500 }],
+];
+const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '燃料', core: '青晶核心' };
+const rwText = r => Object.entries(r).map(([k, v]) => `${RW[k]} +${v}`).join('、');
+function questState(q) { const [cur, max] = q[3](); const claimed = (S.quests || {})[q[0]]; return { cur, max, done: cur >= max, claimed }; }
+function questReady() { return QUESTS.filter(q => { const st = questState(q); return st.done && !st.claimed; }).length; }
+function renderQuestDot() { const n = questReady(), d = $('questDot'); d.textContent = n; d.style.display = n ? 'block' : 'none'; }
+function renderQuests() {
+  S.quests = S.quests || {};
+  const order = QUESTS.map((q, i) => ({ q, i, st: questState(q) })).sort((a, b) => (a.st.claimed - b.st.claimed) || ((b.st.done && !b.st.claimed) - (a.st.done && !a.st.claimed)) || a.i - b.i);
+  $('questGrid').innerHTML = order.map(({ q, st }) => `<div class="card q ${st.claimed ? 'done' : ''}"><div class="qt"><div>${st.claimed ? '✅ ' : ''}${q[1]}</div><div class="sub">${q[2]}</div><div class="sub" style="color:#ffd23f">獎勵：${rwText(q[4])}</div><div class="bar"><i style="width:${Math.round(st.cur / st.max * 100)}%"></i></div></div>
+    <button data-q="${q[0]}" ${st.done && !st.claimed ? '' : 'disabled'}>${st.claimed ? '已領' : st.done ? '領取' : `${st.cur}/${st.max}`}</button></div>`).join('');
+  $('questGrid').querySelectorAll('button[data-q]').forEach(b => b.onclick = () => {
+    const q = QUESTS.find(x => x[0] === b.dataset.q); if (!q) return;
+    for (const [k, v] of Object.entries(q[4])) S.res[k] = k === 'fuel' ? Math.min(FUEL_MAX(), S.res.fuel + v) : (S.res[k] || 0) + v;
+    S.quests[q[0]] = 1; save(); toast('領取：' + rwText(q[4]), 2200); renderQuests();
+  });
+}
+$('questBtn').onclick = () => openScreen('quest');
+
+// ═══ 世界地圖＋關卡 ═══
+const ZONES = [   // 地圖上可以點的區域（位置對應 world_map 圖）
+  { k: 'zero', n: '零號廢域', sub: '城市廢墟｜機械屍群｜新手區', x: 20, y: 760, w: 250, h: 170 },
+  { k: 'sand', n: '一號廢域', sub: '沙海公路｜無人機群', x: 60, y: 560, w: 420, h: 160 },
+  { k: 'acid', n: '二號廢域', sub: '酸雨工業區｜改造獸', x: 160, y: 400, w: 360, h: 140 },
+  { k: 'ice', n: '三號廢域', sub: '冰封港口｜冰甲機械', x: 10, y: 300, w: 240, h: 160 },
+  { k: 'fort', n: '四號廢域', sub: '紅眼要塞｜紅眼軍團', x: 200, y: 180, w: 320, h: 150 },
+  { k: 'core', n: '母核', sub: '最終決戰', x: 160, y: 20, w: 240, h: 150 },
+];
+function renderMap() {
+  $('stageList').style.display = 'none';
+  $('mapZones').innerHTML = ZONES.map((z, i) => `<div data-z="${i}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px"></div>`).join('');
+  $('mapZones').querySelectorAll('div').forEach(d => d.onclick = () => openZone(+d.dataset.z));
+}
+function openZone(i) {
+  const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub;
+  if (i > 0) { $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 15px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
+  const cl = S.cleared.zero || 0;
+  $('nodes').innerHTML = Array.from({ length: 5 }, (_, j) => {
+    const boss = j === 4, open = j <= cl, done = j < cl;
+    const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
+    const st = (S.stars || {})['zero-' + (j + 1)] || 0;
+    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
+  }).join('');
+  $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
+    const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
+    const cost = j === 4 ? 20 : 10, free = (NOW() - S.firstDay) < 3 * 86400000;   // 新手前 3 天出發不花燃料
+    tickResources();
+    if (!free && S.res.fuel < cost) { toast('油箱見底。你可以等，也可以去撿。（每 6 分鐘回 1）', 2600); return; }
+    if (!free) S.res.fuel -= cost; S.lastSeen = NOW(); save();
+    location.href = 'battle/?stage=' + (j + 1);
+  });
+}
+
+// ═══ 車庫：9 階載具 ═══
+// 改裝：每 +1 傷害 +8%、裝甲 +10%，最多 +5；升階：第 1→2 階只要資源，第 2→3 階要零號廢域頭目的藍圖；第 4 階以後之後開放
+const subCost = () => ({ scrap: 120 * (S.sub + 1) * S.tier, coin: 80 * (S.sub + 1) * S.tier });
+const tierCost = () => ({ scrap: 900 * S.tier, coin: 600 * S.tier, chip: 60 * S.tier, blueprint: S.tier >= 2 ? 1 : 0 });
+const RN = { scrap: '廢鐵', coin: '金幣', chip: '電路板', blueprint: '藍圖' };
+const costText = c => Object.entries(c).filter(([, v]) => v).map(([k, v]) => `${RN[k]} ${fmt(v)}`).join('、');
+const afford = c => Object.entries(c).every(([k, v]) => (S.res[k] || 0) >= v);
+const pay = c => Object.entries(c).forEach(([k, v]) => S.res[k] -= v);
+function renderGarage() {
+  const cards = VEH.map((n, i) => {
+    const t = i + 1, have = t <= S.tier, cur = t === S.tier;
+    return `<div class="card ${cur ? 'cur' : ''} ${have ? '' : 'locked'}">${cur ? '<span class="tag">使用中</span>' : ''}<img src="img/v${t}.webp" alt=""><div>${have ? n : '第 ' + t + ' 階　？？？'}</div><div class="sub">${have ? '武器位 ' + VEH_SLOTS[i] : '需要：載具藍圖＋大量資源'}</div></div>`;
+  });
+  const sc = subCost(), tc = tierCost(), maxSub = S.sub >= 5, canTier = S.tier < 3;
+  const up = `<div class="card" style="grid-column:1/-1;text-align:left;padding:12px">
+    <div style="font:900 17px sans-serif;color:#9ff8ff">改裝 ${VEH[S.tier - 1]}（目前 +${S.sub}）</div>
+    <div class="sub" style="font-size:13px">${maxSub ? '已經改到最滿 +5，可以升階了' : `+${S.sub + 1}：傷害 +8%、裝甲 +10%｜花費：${costText(sc)}`}</div>
+    ${maxSub ? '' : `<button class="btn" id="upSub" style="position:relative;margin-top:8px;height:44px;width:100%;font-size:18px;${afford(sc) ? '' : 'opacity:.4'}">改裝 +${S.sub + 1}</button>`}
+    <div style="font:900 17px sans-serif;color:#ffd23f;margin-top:12px">升階 → ${S.tier < 9 ? VEH[S.tier] : '（最高了）'}</div>
+    <div class="sub" style="font-size:13px">${canTier ? `花費：${costText(tc)}${S.tier >= 2 ? '（藍圖：打倒零號廢域頭目）' : ''}` : '第 4 階以後：之後開放（要破解後面的廢域）'}</div>
+    ${canTier ? `<button class="btn" id="upTier" style="position:relative;margin-top:8px;height:44px;width:100%;font-size:18px;background:#ffd23f;color:#3a2600;${afford(tc) ? '' : 'opacity:.4'}">升到第 ${S.tier + 1} 階</button>` : ''}
+  </div>`;
+  $('garageGrid').innerHTML = up + cards.join('');
+  if ($('upSub')) $('upSub').onclick = () => { if (!afford(sc)) { toast('資源不夠：' + costText(sc)); return; } pay(sc); S.sub++; save(); toast(`改裝完成：+${S.sub}`); renderGarage(); };
+  if ($('upTier')) $('upTier').onclick = () => {
+    if (!afford(tc)) { toast('資源不夠：' + costText(tc), 2400); return; }
+    pay(tc); S.tier++; S.sub = 0; addDiary(`把車升級成「${VEH[S.tier - 1]}」了。零說：「終於不像垃圾車了。勉強像回收車。」`); save(); toast(`升階完成：${VEH[S.tier - 1]}！`, 2400); renderGarage();
+  };
+}
+// ═══ 設施 ═══
+const FAC = [
+  ['tank', '油箱', '燃料上限', l => `上限 ${100 + (l - 1) * 20}`],
+  ['store', '倉庫', '資源上限', l => `每種最多 ${fmt(2000 * l)}`],
+  ['recycle', '回收站', '掛機產出', l => `產出 ×${(1 + 0.25 * (l - 1)).toFixed(2)}`],
+  ['battery', '電池', '掛機最長時間', l => `最多 ${8 + (l - 1)} 小時`],
+  ['workshop', '工坊', '武器升級', l => `武器最高 Lv.${l * 5}`],
+  ['dock', '零的充電座', '零的進化', l => `零 Lv.${l}`],
+];
+const facCost = l => ({ coin: Math.round(250 * Math.pow(l, 1.6)), scrap: Math.round(100 * l) });
+function renderFac() {
+  $('facGrid').innerHTML = FAC.map(([k, n, what, eff]) => { const l = S.fac[k], c = facCost(l), mx = l >= 10;
+    return `<div class="card"><span class="tag">Lv.${l}</span><img src="img/f_${k}.webp" alt=""><div>${n}</div><div class="sub">${what}：${eff(l)}</div>
+    <div class="sub" style="color:#ffd23f">${mx ? '已經最高' : '下一級：' + eff(l + 1)}</div>
+    ${mx ? '' : `<button class="btn" data-fac="${k}" style="position:relative;margin-top:6px;height:36px;width:100%;font-size:14px;${afford(c) ? '' : 'opacity:.4'}">升級（${costText(c)}）</button>`}</div>`; }).join('');
+  $('facGrid').querySelectorAll('[data-fac]').forEach(b => b.onclick = () => { const k = b.dataset.fac, c = facCost(S.fac[k]);
+    if (!afford(c)) { toast('資源不夠：' + costText(c)); return; } pay(c); S.fac[k]++; save(); toast('升級完成'); renderFac(); });
+}
+// ═══ 日記本：日記／影片回放／紀錄 ═══
+let diaryTab = 'log';
+function openDiaryScreen() { $('diaryCover').style.display = 'flex'; $('diaryBook').style.display = 'none'; }
+$('openDiary').onclick = () => { S.flags = S.flags || {}; if (!S.flags.diary) { S.flags.diary = 1; save(); } $('diaryCover').style.display = 'none'; $('diaryBook').style.display = 'block'; renderDiary(); };
+document.querySelectorAll('.dtab').forEach(b => b.onclick = () => { diaryTab = b.dataset.tab; document.querySelectorAll('.dtab').forEach(x => x.classList.toggle('on', x === b)); renderDiary(); });
+function renderDiary() {
+  const B = $('diaryBody');
+  if (diaryTab === 'log') B.innerHTML = S.diary.slice().reverse().map(e => `<div class="entry"><b>第 ${e.day} 天</b>　${e.text}</div>`).join('') || '（還沒有日記）';
+  else if (diaryTab === 'video') {
+    const V = [['opening', '加班到穿越（開場）'], ['explainA', '這是什麼世界'], ['explainB', '從三輪車開始']];
+    if (S.story && S.story.c1s8) V.push(['c1_drama', '第一章章末：被丟掉的東西']);
+    B.innerHTML = V.map(([k, n]) => `<div class="vrow" data-v="${k}"><span>▶</span>${n}</div>`).join('') + '<div style="font-size:14px;color:#7a6440">' + (S.story && S.story.c1s8 ? '下一章破解後，會再解鎖新影片' : '打倒第一章頭目，會解鎖一支新影片') + '</div>';
+    B.querySelectorAll('.vrow').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
+  } else {
+    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 5 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 5 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
+    B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
+  }
+}
+// ═══ 怪物圖鑑「零的資料庫」 ═══
+const CODEX = [
+  ['zombie', 'e_zombie', '機械殭屍', '機械屍群', '零號廢域', '最常見的雜兵。被母核同化的人類，動作慢、數量多。', '數量是它唯一的優點。跟你的加班時數一樣。'],
+  ['dasher', 'e_dasher', '衝刺型', '機械屍群', '零號廢域', '攻擊倒數只有 1，每回合都會撲過來，血量低。', '腦袋跟速度成反比。建議優先處理。'],
+  ['heavy', 'e_heavy', '重裝型', '機械屍群', '零號廢域', '血很厚、攻擊很痛，但倒數比較長。', '它的裝甲比你的存款還厚。'],
+  ['bomber', 'e_bomber', '自爆型', '機械屍群', '零號廢域', '走到面前會自爆，對房車造成大傷害。', '在它走近之前打爆它。不然換你被打爆。'],
+  ['mech', 'b_mech', '巨型機甲', '頭目', '零號廢域', '零號廢域的頭目。血量一半以下會暴走，攻擊變頻繁。', '存活機率 3%。不過你的運氣一向很差。'],
+  ['scout', 'e_scout', '偵察機', '無人機群', '一號廢域', '飛在空中，只有機槍和閃電打得到。', '它在看你。我也在看你。差別是我比較嫌棄。'],
+  ['bombdrone', 'e_bombdrone', '轟炸機', '無人機群', '一號廢域', '從空中丟炸彈，會打亂你的零件。', '炸彈的準度比你的轉珠好。'],
+  ['shield', 'e_shield', '護盾機', '無人機群', '一號廢域', '幫隊友加護盾。先打它，護盾就會消失。', '它在保護別人。你連自己都保護不好。'],
+  ['ship', 'b_ship', '沙暴運輸艦', '頭目', '一號廢域', '會放出小無人機的空中運輸艦。', '大，而且吵。'],
+  ['wolf', 'e_wolf', '鐵甲狼', '改造獸', '二號廢域', '速度快、成群出現。', '建議你跑。算了，你跑不贏。'],
+  ['worm', 'e_worm', '分裂蟲', '改造獸', '二號廢域', '打死會分裂成小隻。用火焰一次清掉。', '越打越多。跟你的待辦事項一樣。'],
+  ['acid', 'e_acid', '酸液怪', '改造獸', '二號廢域', '吐酸液腐蝕裝甲，每回合持續扣血。', '它的口水有毒。你的嘴也是。'],
+  ['beast', 'b_beast', '酸蝕巨獸', '頭目', '二號廢域', '背著化工反應爐的巨獸。', '…………它很臭。'],
+  ['icetrooper', 'e_icetrooper', '冰甲步兵', '冰甲機械', '三號廢域', '冰殼裝甲，要先打碎外殼。', '冷靜的敵人。你應該學學。'],
+  ['icedog', 'e_icedog', '雪橇犬機', '冰甲機械', '三號廢域', '背著冰砲的機械犬。', '牠比你可愛。這是事實不是嘲諷。'],
+  ['icemage', 'e_icemage', '冰晶術士', '冰甲機械', '三號廢域', '會讓零件結冰，要消兩次才會碎。', '它在凍結你的零件。你的腦袋本來就凍結了。'],
+  ['iceship', 'b_iceship', '冰封戰艦', '頭目', '三號廢域', '破冰而出的機械戰艦。', '這艘船比你上一份工作還冷。'],
+  ['sniper', 'e_sniper', '狙擊兵', '紅眼軍團', '四號廢域', '遠距離高傷害，每 3 回合開一槍。', '它不會失手。所以你要先動手。'],
+  ['medic', 'e_medic', '治療兵', '紅眼軍團', '四號廢域', '會幫隊友補血，一定要優先打掉。', '連敵人都有醫療保險，你沒有。'],
+  ['summoner', 'e_summoner', '召喚兵', '紅眼軍團', '四號廢域', '胸口的傳送門會叫出增援。', '它在招人。比你的公司還會。'],
+  ['general', 'b_general', '紅眼將軍', '頭目', '四號廢域', '母核的最高指揮官。', '……這個我不想吐槽。小心。'],
+  ['core', 'b_core', '母核', '最終頭目', '母核', '失控的核心 AI。', '…………資料不足。'],
+];
+function renderCodex() {
+  const kills = S.codex.kills, seen = S.codex.seen; $('cxDetail').style.display = 'none';
+  $('cxCount').textContent = `${Object.keys(kills).length}/${CODEX.length}`;
+  $('cxGrid').innerHTML = CODEX.map(([k, img, n, fam, zone], i) => {
+    const full = kills[k], see = full || seen[k];
+    return `<div class="card cx ${full ? '' : 'locked'}" data-i="${i}"><img class="pic" src="img/${img}.webp" alt=""><img class="frame" src="img/codex_frame.webp" alt=""><div class="nm">${see ? n : '未知目標'}</div><div class="fam">${see ? fam + '｜' + zone : '？？？'}</div></div>`;
+  }).join('');
+  $('cxGrid').querySelectorAll('.cx').forEach(c => c.onclick = () => {
+    const [k, img, n, fam, zone, info, line] = CODEX[+c.dataset.i], full = kills[k], see = full || seen[k];
+    if (!see) { toast('還沒遇過。'); return; }
+    const D = $('cxDetail'); D.style.display = 'block';
+    D.innerHTML = `<button class="close" onclick="this.parentNode.style.display='none'">✕</button><img src="img/${img}.webp" alt="" style="${full ? '' : 'filter:brightness(0) drop-shadow(0 0 2px #3ff0ff)'}"><h3>${n}</h3>
+      <p>家族：${fam}｜出沒：${zone}</p>${full ? `<p>${info}</p><p style="color:#9ff8ff">零：「${line}」</p><p>已淨化：${kills[k]} 隻</p>` : '<p>零：「模擬裡見過。真的打倒一隻，我才會給你完整資料。」</p>'}`;
+  });
+}
+
+$('acctBtn').onclick = () => {
+  if (!Cloud.user) { ask('登入備份存檔', '用 Google 帳號登入後，存檔會自動備份到雲端，換手機也能接著玩。<br><span style="color:#8fa0ae;font-size:13px">只用來存遊戲進度，不會顯示或公開你的 Email。不登入也可以一直玩。</span>', [['用 Google 登入', () => cloudLogin(false), true], ['先不要']]); return; }
+  ask('存檔已備份', '登入中，進度會自動存到雲端。', [['立刻備份一次', () => Cloud.push(S).then(() => toast('已備份')), true], ['登出', () => Cloud.logout().then(() => { renderAcct(); toast('已登出（手機裡的存檔還在）'); })], ['關閉']]);
+};
+// ═══ 開始 ═══
+if (S.intro !== 'done') runIntro(); else goHome();
+window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
+</script>
+<script src="extras.js"></script>
+<script type="module">
+const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
+  apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
+  authDomain: "talkmakesgames-5cc95.firebaseapp.com",
+  projectId: "talkmakesgames-5cc95",
+  storageBucket: "talkmakesgames-5cc95.firebasestorage.app",
+  messagingSenderId: "755157409151",
+  appId: "1:755157409151:web:3e3ebed5c6a055d986ce4a"
+};
+if (FIREBASE_CONFIG) {
+  const V = '10.12.2', base = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const app = initializeApp(FIREBASE_CONFIG), auth = A.getAuth(app), db = F.getFirestore(app);
+  const ref = () => F.doc(db, 'wasteland_saves', auth.currentUser.uid);
+  window.Cloud = {
+    ready: true, user: null,
+    async login(mode) {
+      const p = new A.GoogleAuthProvider();
+      try { await A.signInWithPopup(auth, p); }
+      catch (e) { if (e && /popup-blocked|operation-not-supported/.test(e.code || '')) { try { sessionStorage.setItem('zw-login', mode || 'h'); } catch (x) {} await A.signInWithRedirect(auth, p); } else throw e; }
+    },
+    logout: () => A.signOut(auth),
+    async pull() { const d = await F.getDoc(ref()); return d.exists() ? JSON.parse(d.data().save) : null; },
+    push: s => F.setDoc(ref(), { save: JSON.stringify(s), updated: F.serverTimestamp(), day: Math.floor((Date.now() - s.firstDay) / 86400000) + 1, tier: s.tier || 1 }),
+  };
+  A.onAuthStateChanged(auth, u => { Cloud.user = u; if (window.onCloudUser) window.onCloudUser(u); });
+  if (window.onCloudUser) window.onCloudUser(null);
+}
+</script>
+<div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:10px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。排行榜只存你自己輸入的名字和成績。</div>
+<!-- 2026-11-26 廢域方舟「加到主畫面」橫幅（由 tools/site_build.py 插入 zero-test 首頁；來源 tools/a2hs_snippet.html 改字） -->
+<style>
+#tmgA2hs{position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:520px;margin:0 auto;background:#0b1118;color:#fff;border:2px solid #3ff0ff;border-radius:18px;box-shadow:0 8px 28px rgba(0,0,0,.35);padding:12px 12px 12px 14px;display:none;align-items:center;gap:10px;font:700 15px/1.35 -apple-system,'Microsoft JhengHei','PingFang TC',sans-serif}
+#tmgA2hs.show{display:flex}
+#tmgA2hs img{width:44px;height:44px;border-radius:10px;flex:none}
+#tmgA2hs .t{flex:1;min-width:0}
+#tmgA2hs .t small{display:block;font-weight:500;font-size:12px;opacity:.75;margin-top:2px}
+#tmgA2hs button{font:800 15px/1 inherit;border:0;border-radius:999px;cursor:pointer}
+#tmgA2hs .go{background:#3ff0ff;color:#1a1d2e;padding:10px 14px;flex:none}
+#tmgA2hs .x{background:transparent;color:#fff;opacity:.6;font-size:20px;padding:4px 6px;flex:none}
+#tmgA2hsHelp{position:fixed;inset:0;z-index:10000;background:rgba(10,12,20,.82);display:none;align-items:flex-end;justify-content:center;font:600 17px/1.5 -apple-system,'Microsoft JhengHei','PingFang TC',sans-serif}
+#tmgA2hsHelp.show{display:flex}
+#tmgA2hsHelp .card{background:#fff;color:#1a1d2e;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:22px 22px 30px;box-sizing:border-box}
+#tmgA2hsHelp h3{margin:0 0 12px;font-size:20px}
+#tmgA2hsHelp ol{margin:0;padding-left:1.4em}
+#tmgA2hsHelp li{margin:8px 0}
+#tmgA2hsHelp .ic{display:inline-block;background:#eef1f6;border-radius:8px;padding:0 8px;font-weight:800}
+#tmgA2hsHelp .ok{display:block;width:100%;margin-top:18px;background:#1a1d2e;color:#3ff0ff;border:0;border-radius:999px;padding:14px;font:800 17px/1 inherit;cursor:pointer}
+#tmgA2hsHelp.mid{align-items:center}
+#tmgA2hsHelp.mid .card{border-radius:22px;width:calc(100% - 32px)}
+#tmgA2hsHelp .arrow{pointer-events:none;position:fixed;font-size:44px;color:#3ff0ff;text-shadow:0 2px 6px #000;animation:tmgBob 1s ease-in-out infinite}
+@keyframes tmgBob{50%{transform:translateY(8px)}}
+</style>
+<div id="tmgA2hs" role="dialog" aria-label="加到主畫面">
+  <img src="icons/apple-touch-icon.png" alt="">
+  <div class="t">把廢域方舟加到主畫面<small>像 App 一樣，一點就回到廢土</small></div>
+  <button class="go" type="button">📲 加入</button>
+  <button class="x" type="button" aria-label="不用了">✕</button>
+</div>
+<div id="tmgA2hsHelp"><div class="arrow" style="display:none"></div><div class="card"></div></div>
+<script>
+(function () {
+  var KEY = 'zw-a2hs-hide', bar = document.getElementById('tmgA2hs'), help = document.getElementById('tmgA2hsHelp');
+  var ua = navigator.userAgent || '', deferred = null;
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function track(n, p) { try { window.tmgTrack && window.tmgTrack(n, p); } catch (e) {} }
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var android = /Android/.test(ua);
+  var inApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|musical_ly|Bytedance|BytedanceWebview|Threads|Barcelona|MicroMessenger|YouTube|; wv\)/i.test(ua);
+  var kind = inApp ? 'inapp' : ios ? 'ios' : android ? 'android' : '';
+
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (!kind) kind = 'android'; maybeShow(); });
+  window.addEventListener('appinstalled', function () { bar.classList.remove('show'); store(KEY, 'installed'); track('a2hs_installed'); });
+
+  function maybeShow() {
+    if (standalone || !kind || store(KEY)) return;
+    if (window.ZW_A2HS_OK && !window.ZW_A2HS_OK()) { setTimeout(maybeShow, 4000); return; }   // 開場、劇情中不打擾
+    setTimeout(function () { if (window.ZW_A2HS_OK && !window.ZW_A2HS_OK()) { maybeShow(); return; } bar.classList.add('show'); track('zw_a2hs_banner', { kind: kind }); }, 2500);
+  }
+  function showHelp(html, arrow) {
+    help.querySelector('.card').innerHTML = html + '<button class="ok" type="button">知道了</button>';
+    var a = help.querySelector('.arrow');
+    if (arrow) { a.textContent = arrow.t; a.style.cssText = 'display:block;' + arrow.pos; } else { a.style.display = 'none'; }
+    help.classList.toggle('mid', !!(arrow && arrow.mid));   // 箭頭在下面時，卡片放中間，不會被擋住
+    help.classList.add('show');
+  }
+  help.addEventListener('click', function (e) { if (e.target === help || e.target.classList.contains('ok')) help.classList.remove('show'); });
+
+  bar.querySelector('.x').onclick = function () { bar.classList.remove('show'); store(KEY, 'no'); track('a2hs_dismiss', { kind: kind }); };
+  bar.querySelector('.go').onclick = function () {
+    track('a2hs_click', { kind: kind });
+    if (deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(function (r) { track('a2hs_choice', { outcome: r.outcome }); if (r.outcome === 'accepted') { bar.classList.remove('show'); store(KEY, 'installed'); } deferred = null; });
+      return;
+    }
+    if (kind === 'inapp') {
+      showHelp('<h3>先用瀏覽器打開 👀</h3><ol><li>點右上角的 <span class="ic">⋯</span> 或 <span class="ic">⋮</span></li><li>選「用瀏覽器開啟」' + (ios ? '（Safari）' : '（Chrome）') + '</li><li>打開後再按一次「📲 加入」</li></ol><p style="font-size:14px;opacity:.7;margin:12px 0 0">IG、TikTok、YouTube 裡面的瀏覽器沒辦法加到主畫面</p>',
+        { t: '↗', pos: 'top:10px;right:18px' });
+    } else if (kind === 'ios') {
+      showHelp('<h3>加到主畫面只要 2 步 📲</h3><ol><li>點下方的「分享」按鈕 <span class="ic">⬆︎</span>（方框加向上箭頭）</li><li>往下滑，點「<b>加入主畫面</b>」</li></ol><p style="font-size:14px;opacity:.7;margin:12px 0 0">之後在桌面點「廢域方舟」就能直接玩</p>',
+        { t: '⬇', pos: 'bottom:8px;left:50%;margin-left:-14px', mid: true });
+    } else {
+      showHelp('<h3>加到主畫面只要 2 步 📲</h3><ol><li>點右上角的 <span class="ic">⋮</span></li><li>點「<b>加到主畫面</b>」或「<b>安裝應用程式</b>」</li></ol>',
+        { t: '↗', pos: 'top:10px;right:18px' });
+    }
+  };
+  maybeShow();
+})();
+</script>
+
+</body>
+</html>
