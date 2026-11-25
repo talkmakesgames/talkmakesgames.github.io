@@ -136,7 +136,7 @@
     <div id="bubble"></div>
     <img id="vehicle" src="img/v1.webp" alt="">
     <div id="vehName"></div>
-    <button class="btn" id="goBtn">出發<small>燃料 -10</small></button>
+    <button class="btn" id="goBtn">出發<small id="goCost">燃料 -10</small></button>
     <div id="menu">
       <div class="mbtn" data-go="garage"><img src="img/v1.webp" alt="">車庫</div>
       <div class="mbtn" data-go="facility"><img src="img/f_recycle.webp" alt="">設施</div>
@@ -284,6 +284,7 @@ function renderTop() {
   $('who').innerHTML = `${S.hero}　＆　${S.ai}<small>第 ${day()} 天｜零號廢域</small>`;
   $('vehicle').src = `img/v${S.tier}.webp`; document.querySelector('[data-go=garage] img').src = `img/v${S.tier}.webp`;
   $('vehName').innerHTML = `${VEH[S.tier - 1]} <small>Lv.${S.tier}${S.sub ? ' +' + S.sub : ''}</small>`;
+  $('goCost').textContent = (NOW() - S.firstDay) < 3 * 86400000 ? '新手期間不花燃料' : '燃料 -10（頭目 -20）';
 }
 function tickResources() {   // 燃料自動回復：每 6 分鐘 1 點（離線也算）
   const per = 6 * 60000, n = Math.floor((NOW() - S.fuelTs) / per);
@@ -342,20 +343,47 @@ function openZone(i) {
   $('nodes').innerHTML = Array.from({ length: 11 }, (_, j) => {
     const boss = j === 10, open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
-    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : j + 1}</div>`;
+    const st = (S.stars || {})['zero-' + (j + 1)] || 0;
+    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : j + 1}<div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
   }).join('');
   $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
     const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
-    toast(`零號廢域 第 ${j === 10 ? '頭目' : j + 1} 關：正式關卡製作中（工作清單第 9 步）`, 2600);
+    const cost = j === 10 ? 20 : 10, free = (NOW() - S.firstDay) < 3 * 86400000;   // 新手前 3 天出發不花燃料
+    tickResources();
+    if (!free && S.res.fuel < cost) { toast('油箱見底。你可以等，也可以去撿。（每 6 分鐘回 1）', 2600); return; }
+    if (!free) S.res.fuel -= cost; S.lastSeen = NOW(); save();
+    location.href = 'battle/?stage=' + (j + 1);
   });
 }
 
 // ═══ 車庫：9 階載具 ═══
+// 改裝：每 +1 傷害 +8%、裝甲 +10%，最多 +5；升階：第 1→2 階只要資源，第 2→3 階要零號廢域頭目的藍圖；第 4 階以後之後開放
+const subCost = () => ({ scrap: 120 * (S.sub + 1) * S.tier, coin: 80 * (S.sub + 1) * S.tier });
+const tierCost = () => ({ scrap: 900 * S.tier, coin: 600 * S.tier, chip: 60 * S.tier, blueprint: S.tier >= 2 ? 1 : 0 });
+const RN = { scrap: '廢鐵', coin: '金幣', chip: '電路板', blueprint: '藍圖' };
+const costText = c => Object.entries(c).filter(([, v]) => v).map(([k, v]) => `${RN[k]} ${fmt(v)}`).join('、');
+const afford = c => Object.entries(c).every(([k, v]) => (S.res[k] || 0) >= v);
+const pay = c => Object.entries(c).forEach(([k, v]) => S.res[k] -= v);
 function renderGarage() {
-  $('garageGrid').innerHTML = VEH.map((n, i) => {
+  const cards = VEH.map((n, i) => {
     const t = i + 1, have = t <= S.tier, cur = t === S.tier;
     return `<div class="card ${cur ? 'cur' : ''} ${have ? '' : 'locked'}">${cur ? '<span class="tag">使用中</span>' : ''}<img src="img/v${t}.webp" alt=""><div>${have ? n : '第 ' + t + ' 階　？？？'}</div><div class="sub">${have ? '武器位 ' + VEH_SLOTS[i] : '需要：載具藍圖＋大量資源'}</div></div>`;
-  }).join('');
+  });
+  const sc = subCost(), tc = tierCost(), maxSub = S.sub >= 5, canTier = S.tier < 3;
+  const up = `<div class="card" style="grid-column:1/-1;text-align:left;padding:12px">
+    <div style="font:900 17px sans-serif;color:#9ff8ff">改裝 ${VEH[S.tier - 1]}（目前 +${S.sub}）</div>
+    <div class="sub" style="font-size:13px">${maxSub ? '已經改到最滿 +5，可以升階了' : `+${S.sub + 1}：傷害 +8%、裝甲 +10%｜花費：${costText(sc)}`}</div>
+    ${maxSub ? '' : `<button class="btn" id="upSub" style="position:relative;margin-top:8px;height:44px;width:100%;font-size:18px;${afford(sc) ? '' : 'opacity:.4'}">改裝 +${S.sub + 1}</button>`}
+    <div style="font:900 17px sans-serif;color:#ffd23f;margin-top:12px">升階 → ${S.tier < 9 ? VEH[S.tier] : '（最高了）'}</div>
+    <div class="sub" style="font-size:13px">${canTier ? `花費：${costText(tc)}${S.tier >= 2 ? '（藍圖：打倒零號廢域頭目）' : ''}` : '第 4 階以後：之後開放（要破解後面的廢域）'}</div>
+    ${canTier ? `<button class="btn" id="upTier" style="position:relative;margin-top:8px;height:44px;width:100%;font-size:18px;background:#ffd23f;color:#3a2600;${afford(tc) ? '' : 'opacity:.4'}">升到第 ${S.tier + 1} 階</button>` : ''}
+  </div>`;
+  $('garageGrid').innerHTML = up + cards.join('');
+  if ($('upSub')) $('upSub').onclick = () => { if (!afford(sc)) { toast('資源不夠：' + costText(sc)); return; } pay(sc); S.sub++; save(); toast(`改裝完成：+${S.sub}`); renderGarage(); };
+  if ($('upTier')) $('upTier').onclick = () => {
+    if (!afford(tc)) { toast('資源不夠：' + costText(tc), 2400); return; }
+    pay(tc); S.tier++; S.sub = 0; addDiary(`把車升級成「${VEH[S.tier - 1]}」了。零說：「終於不像垃圾車了。勉強像回收車。」`); save(); toast(`升階完成：${VEH[S.tier - 1]}！`, 2400); renderGarage();
+  };
 }
 // ═══ 設施 ═══
 const FAC = [
@@ -366,8 +394,14 @@ const FAC = [
   ['workshop', '工坊', '武器升級', l => `武器最高 Lv.${l * 5}`],
   ['dock', '零的充電座', '零的進化', l => `零 Lv.${l}`],
 ];
+const facCost = l => ({ coin: Math.round(250 * Math.pow(l, 1.6)), scrap: Math.round(100 * l) });
 function renderFac() {
-  $('facGrid').innerHTML = FAC.map(([k, n, what, eff]) => `<div class="card"><span class="tag">Lv.${S.fac[k]}</span><img src="img/f_${k}.webp" alt=""><div>${n}</div><div class="sub">${what}：${eff(S.fac[k])}</div><div class="sub" style="color:#ffd23f">升級：之後開放</div></div>`).join('');
+  $('facGrid').innerHTML = FAC.map(([k, n, what, eff]) => { const l = S.fac[k], c = facCost(l), mx = l >= 10;
+    return `<div class="card"><span class="tag">Lv.${l}</span><img src="img/f_${k}.webp" alt=""><div>${n}</div><div class="sub">${what}：${eff(l)}</div>
+    <div class="sub" style="color:#ffd23f">${mx ? '已經最高' : '下一級：' + eff(l + 1)}</div>
+    ${mx ? '' : `<button class="btn" data-fac="${k}" style="position:relative;margin-top:6px;height:36px;width:100%;font-size:14px;${afford(c) ? '' : 'opacity:.4'}">升級（${costText(c)}）</button>`}</div>`; }).join('');
+  $('facGrid').querySelectorAll('[data-fac]').forEach(b => b.onclick = () => { const k = b.dataset.fac, c = facCost(S.fac[k]);
+    if (!afford(c)) { toast('資源不夠：' + costText(c)); return; } pay(c); S.fac[k]++; save(); toast('升級完成'); renderFac(); });
 }
 // ═══ 日記本：日記／影片回放／紀錄 ═══
 let diaryTab = 'log';
@@ -382,7 +416,7 @@ function renderDiary() {
     B.innerHTML = V.map(([k, n]) => `<div class="vrow" data-v="${k}"><span>▶</span>${n}</div>`).join('') + '<div style="font-size:14px;color:#7a6440">之後每破解一個廢域，會解鎖一支新影片</div>';
     B.querySelectorAll('.vrow').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
   } else {
-    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', '0 / 6'], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
+    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 11 ? 1 : 0} / 6`], ['零號廢域進度', `${S.cleared.zero || 0} / 11 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
   }
 }
