@@ -21,6 +21,13 @@
   .panel { position:absolute; left:18px; right:18px; background:rgba(4,12,16,.94); border:1.5px solid var(--cyan); border-radius:14px; box-shadow:0 0 30px rgba(63,240,255,.25); }
   .close { position:absolute; top:14px; right:14px; width:46px; height:46px; border-radius:50%; background:rgba(4,14,18,.85); border:1.5px solid var(--cyan); color:var(--cyan); font:900 24px sans-serif; z-index:5; }
   .title { position:absolute; top:22px; left:0; right:0; text-align:center; font:900 30px "Microsoft JhengHei",sans-serif; color:var(--ink); text-shadow:0 0 14px var(--cyan); }
+  #acctBtn { position:absolute; top:104px; right:12px; padding:6px 12px; border-radius:999px; background:rgba(4,12,16,.85); border:1.5px solid rgba(63,240,255,.7); color:#c8fbff; font:800 13px sans-serif; z-index:4; }
+  #modal { position:absolute; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:60; }
+  #modal .box { width:460px; background:rgba(4,12,16,.97); border:1.5px solid var(--cyan); border-radius:14px; padding:20px; text-align:center; }
+  #modal h3 { margin:0 0 10px; font:900 22px sans-serif; color:var(--cyan); }
+  #modal p { margin:6px 0 14px; font:700 15px sans-serif; color:#d8f6fa; line-height:1.6; }
+  #modal button { display:block; width:100%; margin-top:10px; height:50px; border-radius:12px; border:1.5px solid var(--cyan); background:rgba(63,240,255,.12); color:#e8ffff; font:800 16px sans-serif; }
+  #modal button.main { background:var(--cyan); color:#00262c; }
   #toast { position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:rgba(4,14,18,.94); border:1.5px solid var(--cyan); color:#c8fbff; padding:12px 18px; border-radius:10px; font:700 16px sans-serif; z-index:50; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; }
   #toast.show { opacity:1; }
   /* 影片 */
@@ -132,6 +139,7 @@
     <div id="topbar"></div>
     <div id="who"></div>
     <img id="homeLogo" src="img/logo.webp" alt="">
+    <button id="acctBtn">☁ 登入備份</button>
     <img id="zeroHome" src="img/zero.webp" alt="零">
     <div id="bubble"></div>
     <img id="vehicle" src="img/v1.webp" alt="">
@@ -184,6 +192,7 @@
     <div class="grid" id="cxGrid" style="grid-template-columns:1fr 1fr 1fr"></div>
     <div class="panel" id="cxDetail"></div>
   </div>
+  <div id="modal"><div class="box" id="modalBox"></div></div>
   <div id="toast"></div>
 </div>
 
@@ -208,7 +217,38 @@ function newSave() {
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
 if (!S || S.v !== 1) S = newSave();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (window.Cloud && Cloud.user && S.intro === 'done') { clearTimeout(save.t); save.t = setTimeout(() => Cloud.push(S).catch(() => {}), 3000); } }
+// ═══ 選擇視窗 ═══
+function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]]
+  $('modalBox').innerHTML = `<h3>${title}</h3><p>${text}</p>` + buttons.map(([t], i) => `<button data-i="${i}" class="${buttons[i][2] ? 'main' : ''}">${t}</button>`).join('');
+  $('modal').style.display = 'flex';
+  $('modalBox').querySelectorAll('button').forEach(b => b.onclick = () => { $('modal').style.display = 'none'; const f = buttons[+b.dataset.i][1]; if (f) f(); });
+}
+const VEHN = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
+const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜零號廢域 ${(x.cleared && x.cleared.zero) || 0}/11`;
+// ═══ 帳號（Google 登入，只用來備份存檔；不存、不顯示 Email） ═══
+async function cloudLogin(fromNaming, already) {
+  if (!window.Cloud || !Cloud.ready) { toast('帳號系統還沒設定好', 2200); return; }
+  if (!already) { try { await Cloud.login(fromNaming ? 'n' : 'h'); } catch (e) { toast('登入沒有完成', 2000); return; } }
+  try { sessionStorage.removeItem('zw-login'); } catch (e) {}
+  let remote = null; try { remote = await Cloud.pull(); } catch (e) { toast('讀取雲端存檔失敗', 2000); return; }
+  const localReal = S.intro === 'done';
+  if (remote && !localReal) { S = remote; S.intro = 'done'; save(); toast('已載入雲端存檔', 2000); goHome(); return; }
+  if (remote && localReal) {
+    ask('找到雲端存檔', `雲端：${saveInfo(remote)}<br>這支手機：${saveInfo(S)}<br>要用哪一個？（另一個會被蓋掉）`, [
+      ['用雲端存檔', () => { S = remote; save(); goHome(); toast('已換成雲端存檔'); }, true],
+      ['用這支手機的存檔', () => { Cloud.push(S).then(() => toast('已備份到雲端')); renderAcct(); }]]);
+    return;
+  }
+  if (fromNaming) { toast('這個帳號還沒有存檔，先繼續新遊戲吧', 2600); renderAcct(); return; }
+  await Cloud.push(S).catch(() => {}); toast('已登入，存檔會自動備份', 2400); renderAcct();
+}
+function renderAcct() {
+  const b = $('acctBtn'); if (!b) return;
+  if (!window.Cloud || !Cloud.ready) { b.style.display = 'none'; return; }
+  b.style.display = ''; b.textContent = Cloud.user ? '☁ 已備份' : '☁ 登入備份';
+}
+window.onCloudUser = u => { renderAcct(); let p = null; try { p = sessionStorage.getItem('zw-login'); } catch (e) {} if (u && p) cloudLogin(p === 'n', true); };   // 手機瀏覽器擋彈出視窗、改用整頁跳轉登入時，回來接著做
 save();
 const day = () => Math.floor((NOW() - S.firstDay) / 86400000) + 1;
 const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '萬' : Math.floor(n).toLocaleString();
@@ -263,7 +303,7 @@ $('nameOk').onclick = () => {
     S.ai = v || '零'; S.intro = 'explainB'; save(); runIntro();
   }
 };
-$('loginOld').onclick = () => toast('帳號登入還在製作中（工作清單第 8 步）', 2400);
+$('loginOld').onclick = () => cloudLogin(true);
 
 // ═══ 首頁 ═══
 const VEH = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
@@ -305,7 +345,7 @@ function idleReport() {   // 掛機收益：零的回收無人機（產出＝載
 let bubbleT;
 function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity = 1; clearTimeout(bubbleT); bubbleT = setTimeout(() => b.style.opacity = 0, 3600); }
 function goHome(first) {
-  tickResources(); show('home'); renderTop();
+  tickResources(); show('home'); renderTop(); renderAcct();
   if (!first) idleReport();
   S.lastSeen = NOW(); save();
   setTimeout(() => zeroSay(first ? '走吧。先去撿廢鐵。按下面的「出發」。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
@@ -461,8 +501,41 @@ function renderCodex() {
   });
 }
 
+$('acctBtn').onclick = () => {
+  if (!Cloud.user) { ask('登入備份存檔', '用 Google 帳號登入後，存檔會自動備份到雲端，換手機也能接著玩。<br><span style="color:#8fa0ae;font-size:13px">只用來存遊戲進度，不會顯示或公開你的 Email。不登入也可以一直玩。</span>', [['用 Google 登入', () => cloudLogin(false), true], ['先不要']]); return; }
+  ask('存檔已備份', '登入中，進度會自動存到雲端。', [['立刻備份一次', () => Cloud.push(S).then(() => toast('已備份')), true], ['登出', () => Cloud.logout().then(() => { renderAcct(); toast('已登出（手機裡的存檔還在）'); })], ['關閉']]);
+};
 // ═══ 開始 ═══
 if (S.intro !== 'done') runIntro(); else goHome();
+</script>
+<script type="module">
+const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
+  apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
+  authDomain: "talkmakesgames-5cc95.firebaseapp.com",
+  projectId: "talkmakesgames-5cc95",
+  storageBucket: "talkmakesgames-5cc95.firebasestorage.app",
+  messagingSenderId: "755157409151",
+  appId: "1:755157409151:web:3e3ebed5c6a055d986ce4a"
+};
+if (FIREBASE_CONFIG) {
+  const V = '10.12.2', base = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const app = initializeApp(FIREBASE_CONFIG), auth = A.getAuth(app), db = F.getFirestore(app);
+  const ref = () => F.doc(db, 'wasteland_saves', auth.currentUser.uid);
+  window.Cloud = {
+    ready: true, user: null,
+    async login(mode) {
+      const p = new A.GoogleAuthProvider();
+      try { await A.signInWithPopup(auth, p); }
+      catch (e) { if (e && /popup-blocked|operation-not-supported/.test(e.code || '')) { try { sessionStorage.setItem('zw-login', mode || 'h'); } catch (x) {} await A.signInWithRedirect(auth, p); } else throw e; }
+    },
+    logout: () => A.signOut(auth),
+    async pull() { const d = await F.getDoc(ref()); return d.exists() ? JSON.parse(d.data().save) : null; },
+    push: s => F.setDoc(ref(), { save: JSON.stringify(s), updated: F.serverTimestamp(), day: Math.floor((Date.now() - s.firstDay) / 86400000) + 1, tier: s.tier || 1 }),
+  };
+  A.onAuthStateChanged(auth, u => { Cloud.user = u; if (window.onCloudUser) window.onCloudUser(u); });
+  if (window.onCloudUser) window.onCloudUser(null);
+}
 </script>
 <div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:10px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。</div>
 </body>
