@@ -187,7 +187,7 @@ let G;
 function newGame(s) {
   if (s != null) seed = s;
   G = {
-    state: 'title', t: 0, board: [], held: null, dragX: 0, dragY: 0, swapped: false, timer: 0, timeLimit: 6,
+    state: 'title', t: 0, board: [], held: null, dragX: 0, dragY: 0, swapped: false, timer: 0, timeLimit: CHASE ? 5 : 6,   /* 追逐：手忙腳亂，轉珠只有 5 秒 */
     wave: 0, enemies: [], armor: ARMOR0, armorMax: ARMOR0, hitstop: 0, critSfxT: 0, tutKey: '', tutPath: null, moves: 0, maxHit: 0, ptype: [0, 0, 0, 0, 0], kills: {}, energy: 0, combo: 0, maxCombo: 0, totalDmg: 0, turns: 0, parts: 0,
     queue: [], groups: [], phaseT: 0, attackIdx: 0, enemyIdx: 0,
     mods: { light: 1, burn: false, time: 0, plus: 5, energy: 1, steel: false },
@@ -200,6 +200,7 @@ function newGame(s) {
   };
   G.board = makeBoard();
 }
+function newType() { return STAGE === 4 && rnd() < 0.12 ? 3 : ri(5); }   // 1-4（避難所外）：灰色零件比較多，小禾比較好充能
 function makeCell(t, c, r, fromY) {
   const p = cellPos(c, r);
   return { t, plus: false, x: p.x, y: fromY != null ? fromY : p.y, vy: 0, s: 1, born: 0 };
@@ -211,7 +212,7 @@ function makeBoard() {
     b.push([]);
     for (let c = 0; c < COLS; c++) {
       let t;
-      do { t = ri(5); } while ((c >= 2 && b[r][c - 1].t === t && b[r][c - 2].t === t) || (r >= 2 && b[r - 1][c].t === t && b[r - 2][c].t === t));
+      do { t = newType(); } while ((c >= 2 && b[r][c - 1].t === t && b[r][c - 2].t === t) || (r >= 2 && b[r - 1][c].t === t && b[r - 2][c].t === t));
       b[r].push(makeCell(t, c, r));
     }
   }
@@ -357,7 +358,7 @@ function say(s) { G.ai.line = s; G.ai.lineT = 2.8; G.heLineT = 0; }
 function startGame() {
   newGame(OT ? OT_SEED : undefined); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start)); playBGM('battle');
   if (STAGE === 1) { G.energy = 100; G.ai.fullSaid = true; say('能量是滿的。點我。'); }
-  if (CHASE) { G.bannerText = `撐 ${CHASE} 回合，衝進地下入口！`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
+  if (CHASE) { G.bannerText = `撐 ${CHASE} 回合！轉珠只有 5 秒`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
   if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次小禾一滿就用。'), 2000);
   if (STAGE === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
 }
@@ -515,7 +516,7 @@ function gravity() {
     let k = 0;
     for (let r = ROWS - 1; r >= 0; r--) {
       if (k < col.length) G.board[r][c] = col[k++];
-      else { const nc = makeCell(ri(5), c, r, BY - CELL * (ROWS - r) * 0.9 - 30); nc.born = 0.2; G.board[r][c] = nc; }
+      else { const nc = makeCell(newType(), c, r, BY - CELL * (ROWS - r) * 0.9 - 30); nc.born = 0.2; G.board[r][c] = nc; }
     }
   }
 }
