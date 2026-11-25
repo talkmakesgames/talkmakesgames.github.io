@@ -37,6 +37,16 @@
   #sty .shk{animation:styshk .45s}
   @keyframes styshk{20%{transform:translate(-8px,4px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(4px,-2px)}}
   #sty.orbm .pt,#sty.orbm .top,#sty.orbm .ttl,#sty.orbm .shade{display:none}#sty.orbm .tb{bottom:auto;top:96px}
+  #sty .hold{position:absolute;left:50%;top:42%;width:170px;height:170px;margin:-85px 0 0 -85px;border-radius:50%;display:none;align-items:center;justify-content:center;flex-direction:column;color:#bff8ff;font:900 22px sans-serif;text-shadow:0 2px 8px #000;z-index:4}
+  #sty .hold.on{display:flex}
+  #sty .hold svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  #sty .hold small{font-size:14px;opacity:.8;margin-top:4px}
+  #sty .hold::before{content:'';position:absolute;inset:18px;border-radius:50%;background:radial-gradient(rgba(63,240,255,.35),rgba(63,240,255,0) 70%);animation:stypu 1.2s infinite}
+  @keyframes stypu{50%{transform:scale(1.15);opacity:.6}}
+  #sty .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(63,240,255,.85),rgba(63,240,255,0) 60%);opacity:0;pointer-events:none;transition:opacity .5s;z-index:3}
+  #sty .chs{position:absolute;left:30px;right:30px;bottom:240px;display:none;flex-direction:column;gap:12px;z-index:4}
+  #sty .chs.on{display:flex}
+  #sty .chs button{height:60px;border-radius:14px;border:2px solid #3ff0ff;background:rgba(4,14,20,.92);color:#e8ffff;font:800 21px sans-serif}
   #sty video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
   `;
   let root, box, actx;
@@ -81,12 +91,15 @@
       const top = el('div', 'top'), bAuto = el('button', Story.auto ? 'on' : '', top), bSkip = el('button', '', top);
       bAuto.textContent = '自動'; bSkip.textContent = '跳過 ▶▶';
       const endEl = el('div', 'end');
+      const glow = el('div', 'glow'), hold = el('div', 'hold'), chs = el('div', 'chs');
+      hold.innerHTML = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="6"/><circle class="pg" cx="50" cy="50" r="44" fill="none" stroke="#3ff0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><span>按住</span><small>把手放上去</small>';
+      const lines = sc.lines.slice(); let waitAct = false, holdT = null, holdStart = 0;
       let i = -1, typing = null, full = '', audio = null, autoT = null, done = false, waitOrb = false;
       const setBg = src => { if (!src) return; bg.style.backgroundImage = `url("${base}img/${src}")`; bg.style.animation = 'none'; void bg.offsetWidth; bg.style.animation = ''; };
       setBg(sc.cg || sc.bg);
       function stopAudio() { if (audio) { audio.pause(); audio = null; } clearTimeout(autoT); }
       function finish() { if (done) return; done = true; stopAudio(); clearInterval(typing); unmount(); o.onDone && o.onDone(); }
-      function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb) autoT = setTimeout(next, ms); }
+      function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms); }
       function show(L) {
         if (L.cg || L.bg) setBg(L.cg || L.bg);
         if (L.sfx) tone(L.sfx);
@@ -114,6 +127,17 @@
           const pr = audio.play(); if (pr && pr.catch) pr.catch(() => scheduleAuto(wait));
         } else scheduleAuto(L.end ? 2600 : L.phone ? 2200 : wait);
         waitOrb = !!L.orb;
+        if (L.hold) {   // 按住畫面（淨化）：要親手按住才會往下
+          waitAct = true; hold.classList.add('on'); const pg = hold.querySelector('.pg');
+          const tick = () => { const k = Math.min(1, (performance.now() - holdStart) / 1400); pg.style.strokeDashoffset = 276.5 * (1 - k); glow.style.opacity = k * 0.7;
+            if (k >= 1) { clearInterval(holdT); holdT = null; hold.classList.remove('on'); tone('join'); glow.style.opacity = 1; setTimeout(() => { glow.style.opacity = 0; }, 700); waitAct = false; setTimeout(next, 500); } };
+          root.onpointerdown = () => { if (!waitAct || holdT) return; holdStart = performance.now(); holdT = setInterval(tick, 30); };
+          root.onpointerup = root.onpointercancel = () => { if (holdT) { clearInterval(holdT); holdT = null; pg.style.strokeDashoffset = 276.5; glow.style.opacity = 0; } };
+        }
+        if (L.choice) {   // 選擇：選完插入對應的台詞
+          waitAct = true; chs.innerHTML = ''; chs.classList.add('on');
+          L.choice.forEach((c, ci) => { const b = document.createElement('button'); b.textContent = c.label; b.onclick = ev => { ev.stopPropagation(); chs.classList.remove('on'); lines.splice(i + 1, 0, ...c.lines); waitAct = false; try { o.onChoice && o.onChoice(ci); } catch (e) {} next(); }; chs.appendChild(b); });
+        }
         if (L.orb && o.onOrb) { // 戰鬥中的報告珠：玩家要親手點掉，劇情先停住
           nx.textContent = ''; setTimeout(() => { root.style.pointerEvents = 'none'; root.style.background = 'transparent'; root.classList.add('orbm'); o.onOrb(() => { root.style.pointerEvents = ''; root.classList.remove('orbm'); waitOrb = false; next(); }); }, 900);
         }
@@ -121,15 +145,16 @@
       function next() {
         if (done) return;
         if (typing) { clearInterval(typing); typing = null; tx.textContent = full; nx.style.visibility = ''; return; }
-        if (waitOrb) return;
+        if (waitOrb || waitAct) return;
         i++;
-        if (i >= sc.lines.length) { finish(); return; }
-        show(sc.lines[i]);
+        if (i >= lines.length) { finish(); return; }
+        show(lines[i]);
       }
       root.addEventListener('click', e => { if (e.target === bAuto || e.target === bSkip) return; next(); });
       bAuto.onclick = () => { Story.auto = !Story.auto; bAuto.className = Story.auto ? 'on' : ''; try { localStorage.setItem('zw-story-auto', Story.auto ? '1' : '0'); } catch (e) {} if (Story.auto && !typing && !(audio && !audio.paused)) scheduleAuto(400); };
       bSkip.onclick = () => { if (waitOrb) return; // 報告珠那一步不能跳
-        const rest = sc.lines.slice(i + 1); const oi = rest.findIndex(L => L.orb);
+        if (holdT) { clearInterval(holdT); holdT = null; }
+        const rest = lines.slice(i + 1); const oi = rest.findIndex(L => L.orb);
         if (oi >= 0 && o.onOrb) { i = i + oi; typing = null; next(); } else finish(); };
       setTimeout(next, sc.over ? 200 : 500);
     },

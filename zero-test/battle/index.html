@@ -124,7 +124,7 @@ const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
 const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1))) : 120;
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB)) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const STAGE_HP = [0, 0.62, 1.0, 0.85, 1.1, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 1.1, 0.68][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const STAGE_HP = [0, 0.62, 1.0, 0.85, 1.1, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 1.0, 0.68][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = 5;   // 第一章（零號廢域）：4 關＋第 5 關頭目
 const STAGE_WAVES = {
   1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 上路：第一波零的大招、第二波教轉珠
@@ -196,7 +196,7 @@ function newGame(s) {
     ai: { x: SPRITE_ON ? 468 : 330, y: SPRITE_ON ? 286 : 292, ox: 0, line: '', lineT: 0, hurtMove: 0, lowSaid: false, fullSaid: false },
     turretAng: [-1.2, -1.4, -1.6], turretKick: [0, 0, 0],
     cards: null, cardT: 0, bannerText: '', bannerT: 0, bossTaunt: 0, result: null, empT: 0,
-    he: STAGE === 4 ? 70 : 0, heLine: '', heLineT: 0, dogUsed: false, dogT: 0, rustSaid: false, orb: null, firstSaid: false,
+    he: STAGE === 4 ? 70 : STAGE === ZN ? 100 : 0, heLine: '', heLineT: 0, dogUsed: false, dogT: 0, rustSaid: false, orb: null, firstSaid: false,
   };
   G.board = makeBoard();
 }
@@ -631,8 +631,8 @@ function stepEnemy() {
     else if (rnd() < 0.35) say(pick(AI_LINES.hurt));
   }
 }
-function rustify(n) {   // 頭目攻擊時把幾顆零件鏽掉（同時最多 6 格）
-  const now = G.board.flat().filter(p => p && p.t === RUST).length; n = Math.min(n, 6 - now); if (n <= 0) return;
+function rustify(n) {   // 頭目攻擊時把幾顆零件鏽掉（同時最多 5 格）
+  const now = G.board.flat().filter(p => p && p.t === RUST).length; n = Math.min(n, 5 - now); if (n <= 0) return;
   G.bannerText = '⚠ 鏽化攻擊'; G.bannerT = 1.2;
   const cand = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const p = G.board[r][c]; if (p && p.t !== RUST && !p.plus) cand.push([c, r]); }
   for (let i = 0; i < n && cand.length; i++) {
@@ -648,7 +648,7 @@ function breakRust(c, r) {
 }
 const HE_BTN = { x: 8, y: 218, w: 76, h: 76 };
 let pickRects = [];
-function heColors() { return [0, 1, 2, 4].filter(t => t === 4 || SLOTS.includes(t)); }
+function heColors() { return [0, 1, 2, 4]; }   // 四色都能選（車上沒裝的武器，主角會自己丟能量彈）
 function heConvert(t) {   // 小禾改裝：玩家點的那一排（沒點就挑灰色＋鏽塊最多的）→ 選的顏色
   let best = 0, bestN = -1;
   if (G.heRowSel != null) { best = G.heRowSel; bestN = 1e9; G.heRowSel = null; }
@@ -709,7 +709,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   if (win) { if (rnd() < 0.25) r.core += 1; if (STAGE === ZN) { r.core += 3; if (before < ZN) r.blueprint = 1; } }
   if (!win) r.fuel += STAGE === ZN ? 10 : 5;
   if (DOG_ON) r.scrap += 20;   // 鐵鏽多撿的一份   // 打輸退一半燃料
-  const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= 6 ? 1 : 0) : 0;
+  const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= STAR_COMBO ? 1 : 0) : 0;
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
   for (const key in r) { if (key === 'scrap' || key === 'chip') S0.res[key] = Math.min(cap, (S0.res[key] || 0) + r[key]); else if (key === 'fuel') S0.res.fuel = Math.min(100 + ((S0.fac.tank || 1) - 1) * 20, S0.res.fuel + r.fuel); else S0.res[key] = (S0.res[key] || 0) + r[key]; }
   S0.codex = S0.codex || { seen: {}, kills: {} };
@@ -728,6 +728,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
   return { r, stars };
 }
+const STAR_COMBO = STAGE === 1 ? 3 : STAGE === 2 ? 4 : 6;   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
 function goStage(n) {   // 結算直接打下一關／再試一次：燃料規則跟首頁一樣（每 6 分鐘回 1；新手前 3 天免費；頭目 20）
   let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
@@ -1240,7 +1241,7 @@ function drawUI() {
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
   ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
   ctx.fillStyle = '#8fa0ae'; ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' ? '按住零件拖動，連成 3 個以上就合成' : '', x0, FIELD_H + 88);
+  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' ? (STAGE === 1 && !G.empUsed ? '先點右邊的零，放出大招' : '按住零件拖動，連成 3 個以上就合成') : '', x0, FIELD_H + 88);
   // 零件盤底
   const pg = ctx.createLinearGradient(0, BY - 6, 0, H); pg.addColorStop(0, '#15191e'); pg.addColorStop(1, '#07090b');
   ctx.fillStyle = pg; ctx.fillRect(0, BY - 6, W, H - BY + 6);
@@ -1386,6 +1387,7 @@ function drawResult() {
   if (STAGE && G.reward) {
     const R = G.reward.r, st = G.reward.stars;
     ctx.font = '900 34px sans-serif'; ctx.fillStyle = '#ffd23f'; ctx.fillText('★'.repeat(st) + '☆'.repeat(3 - st), W / 2, 232);
+    if (win) { const cond = [['過關', true], ['裝甲剩一半', G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, G.maxCombo >= STAR_COMBO]]; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText((ok ? '★ ' : '☆ ') + t, W / 2 + (i - 1) * 110, 252); }); }
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
     const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
@@ -1403,7 +1405,8 @@ function drawResult() {
   ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? (nextN ? (win ? `下一關（${nextN === ZN ? '頭目' : '1-' + nextN}）` : '再試一次') : '回基地') : TRIAL_FLOW ? '繼續' : OT ? '再加班一次' : '再玩一次', W / 2, btnRect.y + 33);
   if (btn2Rect) { ctx.fillStyle = 'rgba(4,14,18,0.9)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(btn2Rect.x, btn2Rect.y, btn2Rect.w, btn2Rect.h, 22); ctx.fill(); ctx.stroke();
     ctx.fillStyle = CYAN; ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.fillText('回基地', W / 2, btn2Rect.y + 23); }
-  if (STAGE && nextN) { ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === ZN ? '頭目關要花燃料 20' : '要花燃料 10', W / 2, 716); }
+  const freeFuel = SV && Date.now() - SV.firstDay < 3 * 86400000;
+  if (STAGE && nextN && !freeFuel) { ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === ZN ? '頭目關要花燃料 20' : '要花燃料 10', W / 2, 716); }
   if (fuelMsg) { ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText(fuelMsg, W / 2, 864); }
   ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; if (!fuelMsg) ctx.fillText('廢域方舟｜動嘴做遊戲', W / 2, 880);
   ctx.restore();
@@ -1450,12 +1453,14 @@ function drawC1() {
     ctx.font = '800 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = full ? '#ffd29a' : '#9aa6b2'; ctx.fillText(full ? '點我改裝' : '小禾', cx, b.y + b.h + 8);
   }
   if (DOG_ON) {   // 鐵鏽小頭像：擋過攻擊就變暗
-    const x = 30, y = 112, used = G.dogUsed, armed = G.dogArmed;
+    const x = 30, y = 300, used = G.dogUsed, armed = G.dogArmed;   // 左側、主角頭上，不擋敵人
+    const danger = !used && !armed && G.state === 'player' && alive().some(e => e.k !== 'boss' && e.cd <= 1);
+    if (danger) { ctx.save(); ctx.strokeStyle = `rgba(255,90,90,${0.5 + 0.5 * Math.sin(G.t * 10)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 27, 0, 7); ctx.stroke(); ctx.restore(); }
     if (armed) { ctx.save(); ctx.strokeStyle = '#ffd28a'; ctx.shadowColor = '#ffd28a'; ctx.shadowBlur = 16; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 26 + 3 * Math.sin(G.t * 8), 0, 7); ctx.stroke(); ctx.restore(); }
     ctx.save(); ctx.globalAlpha = used ? 0.45 : 1; ctx.beginPath(); ctx.arc(x + (G.dogT > 0 ? Math.sin(G.t * 40) * 4 : 0), y, 20, 0, 7); ctx.fillStyle = '#2a2018'; ctx.fill(); ctx.clip();
     if (ICON.dog) ctx.drawImage(ICON.dog, x - 20, y - 20, 40, 40); ctx.restore();
     ctx.strokeStyle = used ? '#56616b' : '#ffd28a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 21, 0, 7); ctx.stroke();
-    ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = used ? '#6b7680' : '#ffd28a'; ctx.fillText(used ? '已擋過' : armed ? '待命中' : '點我護車', x + 6, y + 32);
+    ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = used ? '#6b7680' : '#ffd28a'; ctx.fillText(used ? '已擋過' : armed ? '待命中' : danger ? '現在點！' : '護車', x + 6, y + 32);
   }
   if (CHASE && G.state !== 'result') {   // 追逐倒數
     const left = Math.max(0, CHASE - G.turns); ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(W / 2 - 92, 60, 184, 34, 17); ctx.fill();
@@ -1475,11 +1480,12 @@ function drawC1() {
   if (G.state === 'hePick') {   // 選顏色
     ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, BY - 70, W, ROWS * CELL + 90);
     ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd29a'; ctx.fillText('小禾：要改成什麼顏色？', W / 2, BY - 36);
-    const cs = heColors(), bw = 96, gap = 16, x0 = W / 2 - (cs.length * bw + (cs.length - 1) * gap) / 2; pickRects = [];
+    const cs = heColors(), bw = 100, gap = 12, x0 = W / 2 - (cs.length * bw + (cs.length - 1) * gap) / 2; pickRects = [];
     cs.forEach((t, i) => { const r = { x: x0 + i * (bw + gap), y: BY + 70, w: bw, h: 120, t }; pickRects.push(r);
       ctx.fillStyle = TYPES[t].dark; ctx.strokeStyle = TYPES[t].color; ctx.lineWidth = 3; roundRect(r.x, r.y, r.w, r.h, 14); ctx.fill(); ctx.stroke();
       drawPiece({ t, plus: false }, r.x + r.w / 2, r.y + 46, 0.9);
-      ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(TYPES[t].fx, r.x + r.w / 2, r.y + 100); });
+      ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(TYPES[t].fx, r.x + r.w / 2, r.y + 100); if (t <= 2 && !SLOTS.includes(t)) { ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('（車上沒裝）', r.x + r.w / 2, r.y + 114); } });
+    if (G.heRowSel != null) { ctx.strokeStyle = '#ffb35c'; ctx.lineWidth = 3; ctx.strokeRect(BX + 2, BY + G.heRowSel * CELL + 2, COLS * CELL - 4, CELL - 4); }
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('這一排的灰色零件和鏽塊都會改成這個顏色（點空白處取消）', W / 2, BY + 230);
   }
   if (G.orb) {   // 黑色報告珠
@@ -1543,7 +1549,7 @@ cv.addEventListener('pointerdown', ev => {
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
   if (G.state === 'heRow') { const cell = boardCellAt(p.x, p.y); if (cell.inside) { G.heRowSel = cell.r; G.state = 'hePick'; SFX.card(); } else G.state = 'player'; return; }
   if (G.state === 'hePick') { const r = pickRects.find(r => inRect(p, r)); if (r) heConvert(r.t); else { G.state = 'player'; G.heRowSel = null; } return; }
-  if (G.state === 'player' && DOG_ON && !G.dogUsed && Math.hypot(p.x - 30, p.y - 112) < 30) { G.dogArmed = !G.dogArmed; SFX.card(); say(G.dogArmed ? '鐵鏽待命。這回合的小攻擊牠會擋。' : '鐵鏽退下了。'); return; }
+  if (G.state === 'player' && DOG_ON && !G.dogUsed && Math.hypot(p.x - 30, p.y - 300) < 30) { G.dogArmed = !G.dogArmed; SFX.card(); say(G.dogArmed ? '鐵鏽待命。這回合的小攻擊牠會擋。' : '鐵鏽退下了。'); return; }
   if (G.state === 'player' && HE_ON && Math.hypot(p.x - (HE_BTN.x + HE_BTN.w / 2), p.y - (HE_BTN.y + HE_BTN.h / 2)) < 42) { if (G.he >= 100) { G.state = 'heRow'; SFX.card(); } else { G.heLine = `灰色零件再多一點（${Math.floor(G.he)}%）`; G.heLineT = 1.8; } return; }
   if (G.state === 'player') {
     if (G.ai.drawX && Math.hypot(p.x - G.ai.drawX, p.y - G.ai.drawY) < 48 && G.energy >= 100) { useEMP(); return; }
@@ -1604,6 +1610,5 @@ window.__dev = {
   he(i) { if (G.he >= 100 && G.state === 'player') { G.state = 'hePick'; heConvert(heColors()[i || 0]); } },
 };
 </script>
-<div class="tmg-privacy" style="font-size:11px;line-height:1.6;opacity:.7;text-align:center;margin:10px auto 0;max-width:520px">本站使用 Google Analytics 統計匿名瀏覽數據，不收集個人身分資料。排行榜只存你自己輸入的名字和成績。</div>
 </body>
 </html>
