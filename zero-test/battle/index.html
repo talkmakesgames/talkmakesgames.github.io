@@ -338,7 +338,7 @@ function spawnWave() {
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
     const y = boss ? (SPRITE_ON ? 228 : 185) : 150 + ((i % 2) ? 60 : 0) + (k === 'heavy' ? -10 : 0) + (k === 'dasher' ? 20 : 0);
     return { k, K, hp: Math.round(K.hp * (boss ? bsc : sc)), maxHp: Math.round(K.hp * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
-      x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6 };
+      x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6, vs: boss ? 1 : [1, 0.92, 1.07, 0.96, 1.03][i % 5] };
   });
   G.bannerText = BOSS_WAVE() ? '⚠ 頭目來襲' : CHASE ? '又追上來了！' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1} 波`; G.bannerT = 1.6;
   if (BOSS_WAVE()) {
@@ -1110,7 +1110,7 @@ HERO.handAt = () => { return heroHand(); };
 
 // ── 敵人（剪影＋紅色發光眼） ──
 function drawEnemy(e) {
-  const K = e.K, s = K.s, boss = e.k === 'boss';
+  const K = e.K, s = K.s * (e.vs || 1), boss = e.k === 'boss';   // 同一種敵人大小略有不同
   const dieA = e.dead ? Math.max(0, 1 - e.dieT / 0.35) : 1;
   if (dieA <= 0) return;
   const lungeY = e.lunge > 0 ? Math.sin((1 - e.lunge) * Math.PI) * 60 : 0;
@@ -1262,7 +1262,7 @@ function drawUI() {
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
   ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
   ctx.fillStyle = '#a9b6c2'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' ? (STAGE === 1 && !G.empUsed ? '先點右邊的零，放出大招' : '按住零件拖動，連成 3 個以上就合成') : '', x0, FIELD_H + 88);
+  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' && (tutDone || G.moves > 2 || (STAGE === 1 && !G.empUsed)) ? (STAGE === 1 && !G.empUsed ? '先點右邊的零，放出大招' : '按住零件拖動，連成 3 個以上就合成') : '', x0, FIELD_H + 88);
   // 零件盤底
   const pg = ctx.createLinearGradient(0, BY - 6, 0, H); pg.addColorStop(0, '#15191e'); pg.addColorStop(1, '#07090b');
   ctx.fillStyle = pg; ctx.fillRect(0, BY - 6, W, H - BY + 6);
