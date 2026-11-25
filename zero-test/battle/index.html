@@ -332,7 +332,7 @@ function drawMusicBtn() {
 
 // ── 波次 ──
 function spawnWave() {
-  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.41 * (STAGE === ZN ? Math.pow(0.88, Math.min(2, (SV && SV.bossFails) || 0)) : 1) : 1;
+  const list = OT ? otWave(G.wave) : WAVES[G.wave], n = list.length, sc = OT ? 0.55 * (1 + 0.22 * G.wave) : STAGE ? STAGE_HP * (1 + 0.1 * G.wave) : (1 + 0.12 * G.wave) * WAVE_HP[G.wave], bsc = STAGE ? 0.41 * (TIER === 1 ? 0.86 : 1) * (STAGE === ZN ? Math.pow(0.88, Math.min(2, (SV && SV.bossFails) || 0)) : 1) : 1;
   G.enemies = list.map((k, i) => {
     const K = KINDS[k], boss = k === 'boss';
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
@@ -1396,7 +1396,7 @@ function drawCards() {
 function drawResult() {
   if (G.state !== 'result') { btnRect = null; return; }
   const t = clamp(G.phaseT * 2, 0, 1), win = G.result.win;
-  ctx.fillStyle = `rgba(2,6,8,${0.85 * t})`; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = `rgba(2,6,8,${0.95 * t})`; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = t; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
   ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? '第一章　完' : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
@@ -1416,7 +1416,7 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const QW = { 1: ['第一戰。你沒有尖叫，進步了。', '……運氣成分很高。'], 2: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 3: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 4: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 5: ['……第一章，結束。下一站：冰港。', '……第一章，結束。下一站：冰港。'] }[STAGE] || ['還行。'];
+    const QW = { 1: ['第一戰。你沒有尖叫，進步了。', '……運氣成分很高。'], 2: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 3: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 4: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 5: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
     const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
