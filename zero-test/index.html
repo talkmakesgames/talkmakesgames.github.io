@@ -210,6 +210,9 @@
   <div id="toast"></div>
 </div>
 
+<script src="story/ch1.js"></script>
+<script src="story/intro.js"></script>
+<script src="story/story.js"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -222,7 +225,8 @@ function show(id) { document.querySelectorAll('.scr').forEach(s => s.classList.t
 // ═══ 存檔（先存在手機裡；之後做帳號登入時搬到帳號） ═══
 const KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';
 // 2026-11-26 快節奏版（給使用者比較）：網址加 ?quick=1 → 開場用 59 秒精簡版（原版 70 秒）；解說A 精簡版評審覺得看不懂，不用；?quick=0 換回原版
-const QUICK = (() => { try { const m = location.search.match(/[?&]quick=([01])/); if (m) localStorage.setItem('zw-quick', m[1]); return localStorage.getItem('zw-quick') === '1'; } catch (e) { return false; } })();   // 測試網址用另一份存檔，不影響正式版
+const QMODE = (() => { try { const m = location.search.match(/[?&]quick=([012])/); if (m) localStorage.setItem('zw-quick', m[1]); return localStorage.getItem('zw-quick') || '0'; } catch (e) { return '0'; } })();
+const QUICK = QMODE === '1' || QMODE === '2', QUICK2 = QMODE === '2';   // ?quick=2：開場精簡版＋解說A 改成可以點的劇情對話   // 測試網址用另一份存檔，不影響正式版
 const NOW = () => Date.now();
 function newSave() {
   return { v: 1, intro: 'opening', hero: '', ai: '零', firstDay: NOW(), lastSeen: NOW(), fuelTs: NOW(),
@@ -287,6 +291,7 @@ $('vid').onended = endVideo; $('skip').onclick = endVideo;
 function runIntro() {
   if (S.intro === 'opening') playVideo(QUICK ? 'video/opening_short.mp4' : 'video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
   else if (S.intro === 'trial') location.replace('battle/?trial=1');
+  else if (S.intro === 'explainA' && QUICK2 && window.Story && window.STORY_INTRO) Story.play('introA', { data: window.STORY_INTRO, name: '我', base: '', onDone: () => { S.intro = 'naming'; save(); startNaming(); } });   // ?quick=2：互動版
   else if (S.intro === 'explainA') playVideo('video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
   else if (S.intro === 'naming') startNaming();
   else if (S.intro === 'explainB') playVideo('video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
@@ -569,8 +574,6 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
-<script src="story/ch1.js"></script>
-<script src="story/story.js"></script>
 <script src="extras.js"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
