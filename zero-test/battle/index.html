@@ -23,10 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../story/ch1.js?v=11262304"></script>
-<script src="../story/story.js?v=11262304"></script>
-<script src="../gear.js?v=11262304"></script>
-<script src="../wide.js?v=11262304"></script>
+<script src="../i18n.js?v=11262316"></script>
+<script src="../story/ch1.js?v=11262316"></script>
+<script src="../story/story.js?v=11262316"></script>
+<script src="../gear.js?v=11262316"></script>
+<script src="../wide.js?v=11262316"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -1652,35 +1653,36 @@ if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[
   Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); } });
 }
 
-// ── 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊空白換成模糊背景＋左右資訊欄；直式手機不受影響 ──
+// ── 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊空白換成模糊背景＋左右資訊欄；直式手機不受影響（文字用 tr()，見 i18n.js）──
 if (window.ZW_WIDE) {
+  const tr = window.tr || (s => s);
   ZW_WIDE.init({ bg: (FIELD_ALT && FIELD_ALT[0]) || '../img/home_bg.webp', stageW: () => W * SCALE });
   const fmtN = n => Math.round(n || 0).toLocaleString('en-US');
   const bar = (v, c) => `<div class="bar"><i style="width:${Math.max(0, Math.min(100, v * 100)).toFixed(1)}%;background:${c}"></i></div>`;
-  const LABEL = OT ? '加班模式' : STAGE ? (STAGE === ZN ? '第一章　頭目戰' : `第一章　1-${STAGE}`) : '試玩（247 天後）';
-  const VEH = TIER === 6 ? '青晶房車' : VEH_NAMES[TIER - 1];
+  const LABEL = OT ? tr('加班模式') : STAGE ? (STAGE === ZN ? tr('第一章　頭目戰') : tr('第一章　1-{n}', { n: STAGE })) : tr('試玩（247 天後）');
+  const VEH = tr(TIER === 6 ? '青晶房車' : VEH_NAMES[TIER - 1]);
   const wideTick = () => {
     if (!ZW_WIDE.on || !G) return;
     const inBattle = !['title', 'story'].includes(G.state);
-    let l = `<h4>我方</h4><div class="big">${VEH}${SUB ? ' +' + SUB : ''}</div><div class="dim">駕駛：${heroName()}　AI：零</div>`;
+    let l = `<h4>${tr('我方')}</h4><div class="big">${VEH}${SUB ? ' +' + SUB : ''}</div><div class="dim">${tr('駕駛：{name}　AI：零', { name: heroName() })}</div>`;
     if (inBattle) {
       const a = G.armor / G.armorMax;
-      l += `<hr><div class="row"><span>裝甲</span><span>${fmtN(G.armor)} / ${fmtN(G.armorMax)}</span></div>${bar(a, a > 0.3 ? '#3ff0ff' : '#ff4a4a')}`;
-      l += `<div class="row"><span>零的 EMP</span><span>${G.energy >= 100 ? '⚡ 點零發動' : Math.floor(G.energy) + '%'}</span></div>${bar(G.energy / 100, '#b46bff')}`;
-      l += `<div class="row"><span>連擊</span><span>目前 ${G.combo || 0}　最高 ${G.maxCombo || 0}</span></div>`;
-      if (STAGE && !OT) l += `<div class="dim">第三顆星：${STAR_COMBO} 連擊以上</div>`;
-      if (DOG_ON || HE_ON) l += '<hr><h4>隊友</h4>';
-      if (DOG_ON) l += `<div class="row"><span>🐕 鐵鏽</span><span class="dim">${G.dogUsed ? '已經出手' : G.dogArmed ? '待命中' : '可以擋一次小攻擊'}</span></div>`;
-      if (HE_ON) l += `<div class="row"><span>🔧 小禾 改裝</span><span>${Math.floor(G.he)}%</span></div>${bar(G.he / 100, '#ffd23f')}`;
+      l += `<hr><div class="row"><span>${tr('裝甲')}</span><span>${fmtN(G.armor)} / ${fmtN(G.armorMax)}</span></div>${bar(a, a > 0.3 ? '#3ff0ff' : '#ff4a4a')}`;
+      l += `<div class="row"><span>${tr('零的 EMP')}</span><span>${G.energy >= 100 ? tr('⚡ 點零發動') : Math.floor(G.energy) + '%'}</span></div>${bar(G.energy / 100, '#b46bff')}`;
+      l += `<div class="row"><span>${tr('連擊')}</span><span>${tr('目前 {a}　最高 {b}', { a: G.combo || 0, b: G.maxCombo || 0 })}</span></div>`;
+      if (STAGE && !OT) l += `<div class="dim">${tr('第三顆星：{n} 連擊以上', { n: STAR_COMBO })}</div>`;
+      if (DOG_ON || HE_ON) l += `<hr><h4>${tr('隊友')}</h4>`;
+      if (DOG_ON) l += `<div class="row"><span>🐕 ${tr('鐵鏽')}</span><span class="dim">${tr(G.dogUsed ? '已經出手' : G.dogArmed ? '待命中' : '可以擋一次小攻擊')}</span></div>`;
+      if (HE_ON) l += `<div class="row"><span>🔧 ${tr('小禾 改裝')}</span><span>${Math.floor(G.he)}%</span></div>${bar(G.he / 100, '#ffd23f')}`;
     }
-    let r = `<h4>戰況</h4><div class="big">${LABEL}</div>`;
+    let r = `<h4>${tr('戰況')}</h4><div class="big">${LABEL}</div>`;
     if (inBattle) {
-      r += `<div class="dim">${CHASE ? `撐過 ${CHASE} 回合就到入口（已撐 ${Math.min(G.turns || 0, CHASE)} 回合）` : OT ? `第 ${G.wave + 1} 波` : `第 ${Math.min(G.wave + 1, WAVES.length)} / ${WAVES.length} 波`}</div><hr><h4>敵人</h4>`;
+      r += `<div class="dim">${CHASE ? tr('撐過 {n} 回合就到入口（已撐 {k} 回合）', { n: CHASE, k: Math.min(G.turns || 0, CHASE) }) : OT ? tr('第 {n} 波', { n: G.wave + 1 }) : tr('第 {n} / {m} 波', { n: Math.min(G.wave + 1, WAVES.length), m: WAVES.length })}</div><hr><h4>${tr('敵人')}</h4>`;
       const es = G.enemies.filter(e => e.hp > 0);
-      r += es.length ? es.map(e => `<div class="en row"><span>${e.K.name}</span><span class="dim">${e.cd} 回合後攻擊</span></div>${bar(e.hp / e.maxHp, '#ff4a4a')}`).join('') : '<div class="dim">這一波清空了</div>';
-      r += `<hr><div class="row"><span>總傷害</span><span>${fmtN(G.totalDmg)}</span></div><div class="row"><span>最高一擊</span><span>${fmtN(G.maxHit)}</span></div><div class="row"><span>回合</span><span>${G.turns || 0}</span></div>`;
+      r += es.length ? es.map(e => `<div class="en row"><span>${tr(e.K.name)}</span><span class="dim">${tr('{n} 回合後攻擊', { n: e.cd })}</span></div>${bar(e.hp / e.maxHp, '#ff4a4a')}`).join('') : `<div class="dim">${tr('這一波清空了')}</div>`;
+      r += `<hr><div class="row"><span>${tr('總傷害')}</span><span>${fmtN(G.totalDmg)}</span></div><div class="row"><span>${tr('最高一擊')}</span><span>${fmtN(G.maxHit)}</span></div><div class="row"><span>${tr('回合')}</span><span>${G.turns || 0}</span></div>`;
     }
-    r += `<div class="tip">🖱 滑鼠按住零件拖曳，放開就合成。<br>畫面會跟著視窗大小自動調整。</div>`;
+    r += `<div class="tip">🖱 ${tr('滑鼠按住零件拖曳，放開就合成。')}<br>${tr('畫面會跟著視窗大小自動調整。')}</div>`;
     ZW_WIDE.set('L', l); ZW_WIDE.set('R', r);
   };
   setInterval(wideTick, 250); wideTick();

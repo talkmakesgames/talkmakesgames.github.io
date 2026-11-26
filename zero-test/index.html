@@ -237,11 +237,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11262304"></script>
-<script src="story/intro.js?v=11262304"></script>
-<script src="story/story.js?v=11262304"></script>
-<script src="gear.js?v=11262304"></script>
-<script src="wide.js?v=11262304"></script>
+<script src="i18n.js?v=11262316"></script>
+<script src="story/ch1.js?v=11262316"></script>
+<script src="story/intro.js?v=11262316"></script>
+<script src="story/story.js?v=11262316"></script>
+<script src="gear.js?v=11262316"></script>
+<script src="wide.js?v=11262316"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -680,8 +681,9 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 
-// ═══ 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊放模糊背景＋左右資訊欄；直式手機不受影響 ═══
+// ═══ 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊放模糊背景＋左右資訊欄；直式手機不受影響（文字用 tr()，見 i18n.js）═══
 if (window.ZW_WIDE) {
+  const tr = window.tr || (s => s);
   ZW_WIDE.init({ bg: 'img/home_bg.webp', stageW: () => 540 * Math.min(innerWidth / 540, innerHeight / 960) });
   const RES_N = [['coin', '金幣'], ['scrap', '廢鐵'], ['chip', '電路板'], ['fuel', '燃料'], ['core', '青晶核心']], CH1 = 6;
   const wideTick = () => {
@@ -690,19 +692,19 @@ if (window.ZW_WIDE) {
     let l = '<img src="img/logo.webp" alt="" style="width:100%;display:block;margin:-4px 0 8px">';
     if (ready) {
       const cl = Math.min((S.cleared && S.cleared.zero) || 0, CH1);
-      l += `<h4>倖存者</h4><div class="big">${S.hero || '我'}</div><div class="dim">載具：${VEH[(S.tier || 1) - 1]}${S.sub ? ' +' + S.sub : ''}</div>`;
-      l += `<hr><h4>第一章　零號廢域</h4><div class="row"><span>進度</span><span>${cl} / ${CH1} 關</span></div><div class="bar"><i style="width:${cl / CH1 * 100}%;background:#3ff0ff"></i></div>`;
-    } else l += '<div class="dim">穿越到末日廢土的社畜，和 AI「零」一起把三輪貨車改成方舟。</div>';
+      l += `<h4>${tr('倖存者')}</h4><div class="big">${S.hero || tr('我')}</div><div class="dim">${tr('載具：{v}', { v: tr(VEH[(S.tier || 1) - 1]) })}${S.sub ? ' +' + S.sub : ''}</div>`;
+      l += `<hr><h4>${tr('第一章　零號廢域')}</h4><div class="row"><span>${tr('進度')}</span><span>${tr('{n} / {m} 關', { n: cl, m: CH1 })}</span></div><div class="bar"><i style="width:${cl / CH1 * 100}%;background:#3ff0ff"></i></div>`;
+    } else l += `<div class="dim">${tr('穿越到末日廢土的社畜，和 AI「零」一起把三輪貨車改成方舟。')}</div>`;
     let r = '';
-    if (ready && S.res) r += '<h4>倉庫</h4>' + RES_N.map(([k, n]) => `<div class="row"><span><img class="ic" src="img/r_${k}.webp" alt="">${n}</span><span>${k === 'fuel' ? S.res.fuel + ' / ' + FUEL_MAX() : fmt(S.res[k] || 0)}</span></div>`).join('');
-    r += '<div class="tip">🖱 電腦版用滑鼠點選操作。<br>手機直拿是手機版面；電腦或橫拿平板會自動換成這個版面。</div>';
+    if (ready && S.res) r += `<h4>${tr('倉庫')}</h4>` + RES_N.map(([k, n]) => `<div class="row"><span><img class="ic" src="img/r_${k}.webp" alt="">${tr(n)}</span><span>${k === 'fuel' ? S.res.fuel + ' / ' + FUEL_MAX() : fmt(S.res[k] || 0)}</span></div>`).join('');
+    r += `<div class="tip">🖱 ${tr('電腦版用滑鼠點選操作。')}<br>${tr('手機直拿是手機版面；電腦或橫拿平板會自動換成這個版面。')}</div>`;
     ZW_WIDE.set('L', l); ZW_WIDE.set('R', r);
   };
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11262304"></script>
-<script src="team.js?v=11262304"></script>
+<script src="extras.js?v=11262316"></script>
+<script src="team.js?v=11262316"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
