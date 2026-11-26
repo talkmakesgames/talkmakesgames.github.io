@@ -248,6 +248,8 @@ window.STORY_C1={
 "t": "這個……能吃嗎？",
 "e": "1",
 "hl": "scrap",
+"pop": "r_scrap.webp",
+"popT": "？？？",
 "v": "voice/c1/c1base1_1.mp3"
 },
 {
@@ -255,6 +257,8 @@ window.STORY_C1={
 "t": "不能。那是廢鐵，拿來改裝車子。",
 "e": "n",
 "hl": "scrap",
+"pop": "r_scrap.webp",
+"popT": "廢鐵",
 "v": "voice/c1/c1base1_2.mp3"
 },
 {
@@ -262,6 +266,8 @@ window.STORY_C1={
 "t": "那這罐油……能喝嗎？",
 "e": "2",
 "hl": "fuel",
+"pop": "r_fuel.webp",
+"popT": "？？？",
 "v": "voice/c1/c1base1_3.mp3"
 },
 {
@@ -269,18 +275,24 @@ window.STORY_C1={
 "t": "不能。燃料，每次出發都要用。",
 "e": "n",
 "hl": "fuel",
+"pop": "r_fuel.webp",
+"popT": "燃料",
 "v": "voice/c1/c1base1_4.mp3"
 },
 {
 "w": "narr",
 "t": "{名字}拿起一塊綠色的板子，張開嘴——",
-"hl": "chip"
+"hl": "chip",
+"pop": "story/c1_chip_bite.webp",
+"popW": 1
 },
 {
 "w": "zero",
 "t": "不用問。不能吃。電路板，拿來讓我和夥伴變強。",
 "e": "a",
 "hl": "chip",
+"pop": "r_chip.webp",
+"popT": "電路板",
 "v": "voice/c1/c1base1_6.mp3"
 },
 {
@@ -288,6 +300,8 @@ window.STORY_C1={
 "t": "還有這個。金幣，舊硬幣，這附近還有人收。",
 "e": "n",
 "hl": "coin",
+"pop": "r_coin.webp",
+"popT": "金幣",
 "v": "voice/c1/c1base1_7.mp3"
 },
 {
@@ -295,6 +309,8 @@ window.STORY_C1={
 "t": "什麼都能買，除了你的尊嚴。",
 "e": "n",
 "hl": "coin",
+"pop": "r_coin.webp",
+"popT": "金幣",
 "v": "voice/c1/c1base1_8.mp3"
 },
 {

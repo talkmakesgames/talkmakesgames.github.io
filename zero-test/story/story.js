@@ -58,6 +58,12 @@
   #sty .tapg small{font:800 18px sans-serif;color:#ffe9b0}
   #sty .tapg .tm{width:100%;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}#sty .tapg .tm i{display:block;height:100%;background:#ff5a5a}
   #sty .chs button{height:60px;border-radius:14px;border:2px solid #3ff0ff;background:rgba(4,14,20,.92);color:#e8ffff;font:800 21px sans-serif}
+  #sty .pop{position:absolute;left:50%;top:230px;width:280px;transform:translateX(-50%) scale(.7);opacity:0;transition:opacity .25s,transform .3s cubic-bezier(.3,1.6,.5,1);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;z-index:2}
+  #sty .pop.on{opacity:1;transform:translateX(-50%) scale(1)}
+  #sty .pop .pf{width:240px;height:240px;border-radius:24px;background:radial-gradient(rgba(255,210,63,.35),rgba(8,12,18,.92) 70%);border:3px solid #ffd23f;box-shadow:0 0 30px rgba(255,210,63,.55);display:flex;align-items:center;justify-content:center}
+  #sty .pop .pf img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+  #sty .pop b{font:900 30px sans-serif;color:#ffd23f;letter-spacing:4px;text-shadow:0 2px 8px #000}
+  #sty .pop.w{top:185px;width:470px}#sty .pop.w .pf{width:440px;height:320px;border-radius:18px;background:#000;overflow:hidden}#sty .pop.w .pf img{width:100%;height:100%;object-fit:cover}
   #sty video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
   `;
   let root, box, actx;
@@ -108,7 +114,7 @@
       const ptL = el('img', 'pt L'), ptR = el('img', 'pt R');
       ptL.onerror = ptR.onerror = function () { this.style.visibility = 'hidden'; };
       const ttl = el('div', 'ttl'); ttl.textContent = sc.title ? '— ' + sc.title + ' —' : '';
-      const ph = el('div', 'ph');
+      const ph = el('div', 'ph'); const pop = el('div', 'pop');
       const tb = el('div', 'tb'), nm = el('div', 'nm', tb), tx = el('div', '', tb), nx = el('div', 'nx', tb); nx.textContent = '▼';
       const top = el('div', 'top'), bAuto = el('button', Story.auto ? 'on' : '', top), bSkip = el('button', '', top);
       bAuto.textContent = '自動'; bSkip.textContent = '跳過 ▶▶';
@@ -120,7 +126,7 @@
       let i = -1, typing = null, full = '', audio = null, autoT = null, done = false, waitOrb = false;
       const setBg = src => { if (!src) return; bg.style.backgroundImage = `url("${base}img/${src}")`; const fu = root.querySelector('.full'); if (fu) fu.style.backgroundImage = bg.style.backgroundImage; bg.style.animation = 'none'; void bg.offsetWidth; bg.style.animation = ''; };
       // 先把這一段會用到的圖都載入，換圖時才不會黑一下
-      [sc.cg, sc.bg, ...sc.lines.map(L => L.cg || L.bg)].filter(Boolean).forEach(src => { const im = new Image(); im.src = base + 'img/' + src; });
+      [sc.cg, sc.bg, ...sc.lines.map(L => L.cg || L.bg), ...sc.lines.map(L => L.pop)].filter(Boolean).forEach(src => { const im = new Image(); im.src = base + 'img/' + src; });
       setBg(sc.cg || sc.bg);
       function stopAudio() { if (audio) { audio.pause(); audio = null; } clearTimeout(autoT); }
       // 背景音樂（每段劇情自己的氣氛）
@@ -135,6 +141,8 @@
         try { o.onLine && o.onLine(L); } catch (e) {}   // 給基地用：講到哪個資源就亮哪一格
         if (L.cg || L.bg) setBg(L.cg || L.bg);
         if (L.sfx) tone(L.sfx);
+        if (L.pop) { const src = base + 'img/' + L.pop; if (pop.dataset.src !== src) { pop.innerHTML = '<div class="pf"><img></div><b></b>'; pop.querySelector('img').src = src; pop.dataset.src = src; pop.classList.remove('on'); void pop.offsetWidth; }
+          pop.querySelector('b').textContent = L.popT || ''; pop.className = 'pop on' + (L.popW ? ' w' : ''); } else { pop.classList.remove('on'); pop.dataset.src = ''; }   // 中間放大的圖（資源／小插圖）
         if (L.shake) { box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); }
         full = L.t.replace(/\{名字\}/g, name);
         tb.className = 'tb' + (L.w === 'narr' ? ' narr' : L.w === 'sys' ? ' sys' : '');

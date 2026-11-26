@@ -37,7 +37,7 @@
   #modal p { margin:6px 0 14px; font:700 15px sans-serif; color:#d8f6fa; line-height:1.6; }
   #modal button { display:block; width:100%; margin-top:10px; height:50px; border-radius:12px; border:1.5px solid var(--cyan); background:rgba(63,240,255,.12); color:#e8ffff; font:800 16px sans-serif; }
   #modal button.main { background:var(--cyan); color:#00262c; }
-  #toast { position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:rgba(4,14,18,.94); border:1.5px solid var(--cyan); color:#c8fbff; padding:12px 18px; border-radius:10px; font:700 16px sans-serif; z-index:50; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; }
+  #toast { position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:rgba(4,14,18,.94); border:1.5px solid var(--cyan); color:#c8fbff; padding:12px 18px; border-radius:10px; font:700 16px sans-serif; z-index:70; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; }
   #toast.show { opacity:1; }
   /* 影片 */
   #scr-video { background:#000; }
@@ -72,9 +72,13 @@
   .sti { display:flex; gap:12px; align-items:flex-start; color:var(--ink); font:700 14px sans-serif; } .sti img { width:70px; height:70px; object-fit:contain; flex:none; } .sti .gi.big { font-size:56px; width:70px; text-align:center; flex:none; }
   .sti b { font:900 18px sans-serif; } .sti small { color:#9ff8ff; font:800 14px sans-serif; } .sti p { margin:6px 0 0; line-height:1.5; } .sti .dimt { color:var(--dim); font-size:12px; }
   .stbar { height:6px; border-radius:3px; background:rgba(255,255,255,.1); margin-top:6px; overflow:hidden; } .stbar i { display:block; height:100%; background:#3ff0ff; }
-  #vehArrow { position:absolute; left:50%; transform:translateX(-50%); z-index:6; display:none; flex-direction:column; align-items:center; animation:vabob .8s ease-in-out infinite alternate; cursor:pointer; }
-  #vehArrow span { background:#ffd23f; color:#2a1c00; font:900 20px sans-serif; padding:8px 16px; border-radius:999px; box-shadow:0 0 18px rgba(255,210,63,.7); white-space:nowrap; }
-  #vehArrow b { color:#ffd23f; font-size:44px; line-height:1; text-shadow:0 0 12px rgba(255,210,63,.8); }
+  #guide { position:fixed; inset:0; z-index:60; }
+  #guide .ghole { position:fixed; border-radius:18px; box-shadow:0 0 0 9999px rgba(0,0,0,.62), 0 0 22px 6px rgba(255,210,63,.8) inset; border:3px solid #ffd23f; pointer-events:none; transition:all .2s; }
+  #guide .garr { position:fixed; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; pointer-events:none; animation:vabob .8s ease-in-out infinite alternate; }
+  #guide .garr.nudge span { animation:gnud .4s; }
+  @keyframes gnud { 25% { transform:translateX(-8px) } 75% { transform:translateX(8px) } }
+  #guide .garr span, #vehArrow span { background:#ffd23f; color:#2a1c00; font:900 20px sans-serif; padding:8px 16px; border-radius:999px; box-shadow:0 0 18px rgba(255,210,63,.7); white-space:nowrap; }
+  #guide .garr b, #vehArrow b { color:#ffd23f; font-size:44px; line-height:1; text-shadow:0 0 12px rgba(255,210,63,.8); }
   @keyframes vabob { from { margin-top:0 } to { margin-top:18px } }
   #vehName { position:absolute; left:0; right:0; top:576px; text-align:center; font:900 17px sans-serif; text-shadow:0 0 6px #000,0 0 3px #000; }
   #vehName small { color:var(--cyan); }
@@ -231,10 +235,10 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11261416"></script>
-<script src="story/intro.js?v=11261416"></script>
-<script src="story/story.js?v=11261416"></script>
-<script src="gear.js?v=11261416"></script>
+<script src="story/ch1.js?v=11261911"></script>
+<script src="story/intro.js?v=11261911"></script>
+<script src="story/story.js?v=11261911"></script>
+<script src="gear.js?v=11261911"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -421,12 +425,27 @@ function goHome(first) {
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
 $('vehicle').onclick = () => { if (!menuOpen('garage')) { toast('🔒 ' + MENU_NEED.garage[1]); return; } openScreen('garage'); };   // 點基地中間的車 → 載具升級
-function renderVehArrow() {   // 第一次改裝的引導：箭頭指著基地中間的車，要玩家自己點
-  let a = $('vehArrow');
-  if (!a) { a = document.createElement('div'); a.id = 'vehArrow'; a.innerHTML = '<span>點車子改裝</span><b>▼</b>'; $('scr-home').appendChild(a); a.onclick = () => $('vehicle').onclick(); }
-  const on = S.flags && S.flags.firstUp === 1 && menuOpen('garage'); a.style.display = on ? 'flex' : 'none';
-  if (on) { const v = $('vehicle'); a.style.top = (v.offsetTop - v.offsetHeight + 10) + 'px'; }
+// 新手引導：畫面變暗、只留一個洞，只能點那裡（箭頭＋字指著它）
+let guideEl = null;
+function guideOff() { if (guideEl) { guideEl.remove(); guideEl = null; } removeEventListener('resize', guidePos); }
+function guidePos() { if (!guideEl || !guideEl._t) return; const r = guideEl._t.getBoundingClientRect(), p = 8, h = guideEl.querySelector('.ghole'), a = guideEl.querySelector('.garr');
+  Object.assign(h.style, { left: r.left - p + 'px', top: r.top - p + 'px', width: r.width + p * 2 + 'px', height: r.height + p * 2 + 'px' });
+  a.style.left = r.left + r.width / 2 + 'px'; a.style.top = Math.max(8, r.top - p - a.offsetHeight - 6) + 'px'; }
+function guideOn(target, text, onTap) {
+  guideOff(); if (!target) return;
+  guideEl = document.createElement('div'); guideEl.id = 'guide'; guideEl._t = target;
+  guideEl.innerHTML = `<div class="ghole"></div><div class="garr"><span>${text}</span><b>▼</b></div>`;
+  document.body.appendChild(guideEl); guidePos(); setTimeout(guidePos, 300); addEventListener('resize', guidePos);
+  guideEl.onclick = e => { const r = target.getBoundingClientRect(), p = 8;
+    if (e.clientX >= r.left - p && e.clientX <= r.right + p && e.clientY >= r.top - p && e.clientY <= r.bottom + p) { guideOff(); onTap(); }
+    else { const a = guideEl.querySelector('.garr'); a.classList.remove('nudge'); void a.offsetWidth; a.classList.add('nudge'); } };
 }
+function firstUpGuide() { return S.flags && S.flags.firstUp === 1 && menuOpen('garage') && afford(subCost()); }   // 錢不夠就不鎖畫面，免得卡住
+function renderVehArrow() {   // 第一次改裝：箭頭指著基地中間的車，其他地方都不能點
+  if (!firstUpGuide() || !$('scr-home').classList.contains('on') || document.getElementById('sty')) { if (guideEl && guideEl._t === $('vehicle')) guideOff(); return; }
+  guideOn($('vehicle'), '點車子改裝', () => { $('vehicle').onclick(); setTimeout(garageGuide, 120); });
+}
+function garageGuide() { if (firstUpGuide() && $('upSub')) guideOn($('upSub'), '點這裡改裝', () => $('upSub').onclick()); }
 $('goBtn').onclick = () => openScreen('map');
 const MENU_NEED = { garage: [1, '打過 1-1 開放'], store: [1, '打過 1-1 開放'], diary: [1, '打過 1-1 開放'], codex: [1, '打過 1-1 開放'], team: [3, '在 1-3 遇到夥伴後開放'], facility: [4, '打過 1-4 開放'] };   // 基地按鈕一步一步開放
 const menuOpen = k => !MENU_NEED[k] || ((S.cleared && S.cleared.zero) || 0) >= MENU_NEED[k][0];
@@ -656,8 +675,8 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
-<script src="extras.js?v=11261416"></script>
-<script src="team.js?v=11261416"></script>
+<script src="extras.js?v=11261911"></script>
+<script src="team.js?v=11261911"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
