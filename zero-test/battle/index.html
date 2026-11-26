@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11262341"></script>
-<script src="../story/ch1.js?v=11262341"></script>
-<script src="../story/story.js?v=11262341"></script>
-<script src="../gear.js?v=11262341"></script>
-<script src="../wide.js?v=11262341"></script>
+<script src="../i18n.js?v=11262358"></script>
+<script src="../story/ch1.js?v=11262358"></script>
+<script src="../story/story.js?v=11262358"></script>
+<script src="../gear.js?v=11262358"></script>
+<script src="../wide.js?v=11262358"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -140,7 +140,7 @@ const STAGE_WAVES = {
 };
 const CHASE = SL === 3 ? 6 : 0;          // 追逐：撐過 6 回合就到地下入口
 const DOG_ON = SL >= 3;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
-const HE_ON = SL >= 4;                   // 小禾（1-4 開始）：灰色零件充能，點頭像改裝一排
+const HE_ON = false;                     // 2026-11-26 第一章 v2：小禾搬到第二章（之後第二章再打開）
 const RUST_ON = STAGE === ZN;               // 頭目會把零件鏽掉
 const RUST = 9;                             // 鏽塊的零件種類（不會被合成）
 const C1 = () => window.STORY_C1 || { battle: {}, scenes: {} };
@@ -366,7 +366,7 @@ function startGame() {
   if (STAGE === 1) { G.bannerText = '目標：騎到商場街（3 km）'; G.bannerT = 2.2; }
   if (STAGE === 2) { G.bannerText = '商場街 還有 2.4 km'; G.bannerT = 2.2; }
   if (CHASE) { G.bannerText = `撐 ${CHASE} 回合！轉珠只有 5 秒`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
-  if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次小禾一滿就用。'), 2000);
+  if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次在旁邊合成灰零件，先敲碎它。'), 2000);
   if (SL === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
 }
 function update(dt) {
@@ -734,18 +734,21 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   const d = Math.floor((Date.now() - S0.firstDay) / 86400000) + 1;
   if (win && STAGE > before) {
     S0.cleared = S0.cleared || {}; S0.cleared.zero = STAGE;
-    const DI = { 1: '肚子餓到不行，出發去商場街找吃的。在翻倒的貨車裡找到一個過期 400 天的飯糰。我沒吃。還沒。',
-      2: '往商場街的路上，零說我騎車會哼歌，很難聽。我不記得我有哼歌。',
+    const DI = { 1: '肚子餓到不行。翻倒的貨車裡只剩半包餅乾和一瓶水。零說要合成會做食物的機器人。',
+      2: '找到加油站了。油槽是乾的，但零說可以把幫浦合成到車上。我好像在幫自己加帳單。',
       3: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。',
-      4: '被一大群殭屍追了一路。鐵鏽撲上去替車子擋了一下。我好像開始習慣這裡了——這才可怕。',
-      5: '有個女生拿槍指著零。我擋在前面，說它是我的……我也不知道該怎麼說。',
+      4: '救了四個倖存者。帶頭的叫老周。零躲在帆布底下，我說車上載的是廢鐵。',
+      5: '到了商場街的營地。便利商店的東西都在這裡。賣東西的阿珍說，她不收 AI 做的東西。',
       6: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' };
     if (DI[STAGE]) S0.diary.push({ day: d, text: DI[STAGE] });
   }
   let item = null; if (win && window.ZW_GEAR) item = ZW_GEAR.drop(S0, STAGE);   // 第一次過關掉裝備
+  let frag = null;   // 2026-11-26 拼圖碎片（設備的特殊材料）：不同關卡掉不同的碎片
+  if (win) { const FK = { 1: 'scrap', 2: 'oil', 3: 'scrap', 4: 'power', 5: 'scrap', 6: 'oil' }[STAGE], FIRST = { 1: 'scrap', 2: 'oil', 4: 'power' }[STAGE];
+    if (FK) { const n = STAGE > before && FIRST ? 9 : 2 + Math.floor(rnd() * 3); S0.frag = S0.frag || {}; S0.frag[FK] = (S0.frag[FK] || 0) + n; frag = { k: FK, n }; } }
   S0.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
-  return { r, stars, item };
+  return { r, stars, item, frag };
 }
 const STAR_COMBO = SL === 1 ? 3 : SL === 2 ? 4 : 6;   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
@@ -774,7 +777,7 @@ function otRecord() {
   try { localStorage.setItem('zw-ot-best', JSON.stringify(b)); } catch (e) {}
   try { window.tmgTrack && window.tmgTrack('zw_ot_end', { waves: w }); } catch (e) {}
 }
-const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 5: 'c1s6' };
+const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 4: 'c1s4b', 5: 'c1s6' };   // 2026-11-26 第一章 v2
 function storySeen(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.story && s.story[k]); } catch (e) { return false; } }
 function storyMark(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return; s.story = s.story || {}; s.story[k] = 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} }
 function heroName() { return (SV && SV.hero) || '我'; }
@@ -1426,14 +1429,14 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const QW = { 1: ['飯糰找到了。雖然是過期的。', '第一戰。你沒有尖叫，進步了。'], 2: ['路清了。商場街越來越近。', '……運氣成分很高。'], 3: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 4: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 5: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 6: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
-    const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
+    const QW = { 1: ['貨車清空了。看看裡面還有什麼吃的。', '第一戰。你沒有尖叫，進步了。'], 2: ['加油站清空了。去看看還有沒有油。', '……運氣成分很高。'], 3: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 4: ['甩掉了。那幾個人好像也逃出來了。', '你的方向盤技術……勉強。'], 5: ['門守住了。……我繼續躲。', '他們沒發現我。算是好評。'], 6: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
+    const q = !win ? (STAGE === ZN ? '鏽塊別放著。在旁邊合成灰零件，就能敲碎它。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
     ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
-    const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : ''].filter(Boolean).join('　');
+    const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : '', G.reward.frag ? `🧩${{ scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' }[G.reward.frag.k]}碎片 ×${G.reward.frag.n}` : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
   }
   rows.forEach(([k, v], i) => {
@@ -1486,8 +1489,7 @@ function drawTitle() {
 }
 const TIPS = {
   3: { t: '鐵鏽：護車', d: ['點牠的頭像 → 這一回合的小攻擊，牠會全部擋下。', '每關只能用一次。', '敵人頭上的數字變成 1 的時候，最適合點。'], x: 34, y: 178, r: 30 },
-  4: { t: '小禾：改裝', d: ['合成灰色零件，會幫小禾充能。', '充滿後點她 → 點一排 → 選顏色，', '那一排的灰色零件全部變成你要的顏色。'], x: 46, y: 256, r: 42 },
-  5: { t: '頭目：鏽塊', d: ['頭目會把零件鏽掉。鏽塊不能合成，', '而且每回合都會腐蝕車子。', '在旁邊合成灰色零件可以敲碎，或用小禾改掉。'], x: W / 2, y: BY + 2 * CELL, r: 70 },
+  5: { t: '頭目：鏽塊', d: ['頭目會把零件鏽掉。鏽塊不能合成，', '而且每回合都會腐蝕車子。', '在旁邊合成灰色零件可以敲碎它。'], x: W / 2, y: BY + 2 * CELL, r: 70 },
 };
 function tipSeen(n) { try { return localStorage.getItem('zw-tip-' + n) === '1'; } catch (e) { return false; } }
 function drawTip() {

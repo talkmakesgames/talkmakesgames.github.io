@@ -238,12 +238,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11262341"></script>
-<script src="story/ch1.js?v=11262341"></script>
-<script src="story/intro.js?v=11262341"></script>
-<script src="story/story.js?v=11262341"></script>
-<script src="gear.js?v=11262341"></script>
-<script src="wide.js?v=11262341"></script>
+<script src="i18n.js?v=11262358"></script>
+<script src="story/ch1.js?v=11262358"></script>
+<script src="story/intro.js?v=11262358"></script>
+<script src="story/story.js?v=11262358"></script>
+<script src="gear.js?v=11262358"></script>
+<script src="wide.js?v=11262358"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -335,10 +335,18 @@ function finishIntro() {
   S.intro = 'done'; S.lastSeen = NOW();
   // 試玩是零的「未來模擬」，模擬裡的敵人資料先記成「看過」（名字＋剪影），真的打倒才解鎖完整資料
   ['zombie', 'dasher', 'heavy', 'mech'].forEach(k => S.codex.seen[k] = 1);
-  addDiary('加班加到穿越。主管還在問報告。'); addDiary(`零說我的三輪車是古董。它叫我「${S.hero}」的時候，語氣很像在念錯誤代碼。`);
-  save(); goHome(true);
+  addDiary('加班加到穿越。主管還在問報告。');
+  save(); bikeIntro();
 }
 
+function bikeIntro() {   // 2026-11-26 第一章 v2：撿來的破腳踏車 → 第一次合成（拼圖）→ 三輪車
+  const done = () => { S.flags = S.flags || {}; S.flags.trike = 1; S.story = S.story || {}; S.story.c1bike = 1; S.story.c1bike2 = 1;
+    addDiary(`撿到一台壞掉的腳踏車，用手把它合成成三輪車。零說時速跟我的工作效率差不多。它叫我「${S.hero}」的時候，語氣很像在念錯誤代碼。`); save(); goHome(true); };
+  if (!window.Story || !window.STORY_C1 || !window.Puzzle) { done(); return; }
+  show('home'); renderTop();
+  Story.play('c1bike', { name: S.hero, base: '', onDone: () => Puzzle.open({ img: 'img/v1.webp', size: 3, title: '合成：三輪車', noCancel: true,
+    onDone: () => Story.play('c1bike2', { name: S.hero, base: '', onDone: done }) }) });
+}
 // ═══ 取名 ═══
 let nameStep = 0;
 function startNaming() {
@@ -381,18 +389,20 @@ function renderTop() {
   $('goCost').textContent = S.dev.oil ? '汽油 -10（頭目 -20）' : '🚲 踩腳踏車，不花汽油';
 }
 // ═══ 設備＝機器人：一開始什麼都不會自動來；合成機器人以後才自動採集。所有設備都耗電，沒電就停工 ═══
-const DEV = [   // [代號, 名字, 說明, 圖（之後換成機器人的圖）, 最高等級, 打過幾關開放（暫定，第一章劇情改完後改成劇情開放）, 開放說明]
-  ['food', '食物機器人', '從空氣裡的水分和一些不明材料做出食物。味道不保證。', 'img/drone.webp', 1, 0, '一開始就能合成'],
-  ['scrap', '廢鐵採集機器人', '自動去附近撿廢鐵。', 'img/f_recycle.webp', 5, 1, '打過 1-1 開放'],
-  ['oil', '石油收集器', '裝在三輪車上，自動收集汽油。裝上以後車子有引擎，出發要花汽油。', 'img/f_tank.webp', 5, 2, '找到加油站後開放（暫定：打過 1-2）'],
-  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。', 'img/f_battery.webp', 5, 4, '暫定：打過 1-4 開放'],
+const DEV = [   // [代號, 名字, 說明, 圖（之後換成機器人的圖）, 最高等級, 開放條件（劇情）, 開放說明]
+  ['food', '食物機器人', '從空氣裡的水分和一些不明材料做出食物。味道不保證。', 'img/drone.webp', 1, () => S.story && S.story.c1base1, '打完 1-1 回到車旁開放'],
+  ['scrap', '廢鐵採集機器人', '自動去附近撿廢鐵。碎片：1-1、1-3、1-5 掉落', 'img/f_recycle.webp', 5, () => S.dev.food, '合成食物機器人後開放'],
+  ['oil', '石油收集器', '裝在三輪車上，自動收集汽油。裝上以後車子有引擎，出發要花汽油。碎片：1-2、1-6 掉落', 'img/f_tank.webp', 5, () => S.story && S.story.c1s1d, '找到加油站後開放（1-2）'],
+  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。碎片：1-4 掉落', 'img/f_battery.webp', 5, () => S.story && S.story.c1s4b, '救了老周後開放（1-4）'],
 ];
 const PZ_SIZE = [0, 3, 4, 4, 5, 6];   // 合成＝3×3，升級越高拼圖越大
 const devUse = () => (S.dev.scrap ? 2 + S.dev.scrap : 0) + (S.dev.oil ? 2 + S.dev.oil : 0);   // 每小時耗電
 const devGen = () => S.dev.power ? 4 + 4 * S.dev.power : 0;   // 每小時發電
 const POWER_MAX = () => 100 + 50 * (S.dev.power || 0);
 const DEV_OUT = { scrap: l => 40 * l, oil: l => 4 + 2 * l };   // 每小時產出
-const devCost = lv => ({ coin: Math.round(150 * Math.pow(lv, 1.7)), scrap: 60 * lv, chip: 8 * (lv - 1), core: Math.max(0, lv - 2) });   // Lv.3 起要青晶核心（特殊材料）
+const devCost = lv => ({ coin: Math.round(150 * Math.pow(lv, 1.7)), scrap: 60 * lv, chip: 8 * (lv - 1) });
+const fragNeed = lv => PZ_SIZE[lv] * PZ_SIZE[lv];   // 特殊材料＝拼圖碎片：碎片數＝拼圖格數
+const fragHave = k => (S.frag && S.frag[k]) || 0;
 const devTier = lv => Math.max(1, lv - 1);   // 升級要載具等級夠高
 const devSum = () => Object.values(S.dev).reduce((a, b) => a + b, 0);
 function runDevices() {   // 從上次算到現在：耗電、發電、產出
@@ -435,12 +445,12 @@ function hlRes(k) {
 }
 function baseStory() {
   if (S.intro !== 'done' || !window.Story || !window.STORY_C1) return false;
-  // 目前：每次打完 1-1（網址帶 ?from=s1）都播，方便測試；之後確認好再改成只播一次（看 S.story.c1base1）
-  if (/[?&]from=s1/.test(location.search) && ((S.cleared && S.cleared.zero) || 0) >= 1) {
+  // 2026-11-26：只播一次（打過 1-1、還沒看過）
+  if (((S.cleared && S.cleared.zero) || 0) >= 1 && !(S.story && S.story.c1base1)) {
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     setTimeout(() => Story.play('c1base1', { name: S.hero, base: '', onLine: L => hlRes(L.hl), onDone: () => {
-      hlRes(null); S.story = S.story || {}; S.story.c1base1 = 1; S.flags = S.flags || {}; if ((S.sub || 0) === 0 && S.tier === 1) S.flags.firstUp = 1; save(); renderMenu();
-      toast('🔓 倉庫、日記、資料庫開放了。點車子可以改裝載具', 3000); renderVehArrow();
+      hlRes(null); S.story = S.story || {}; S.story.c1base1 = 1; S.frag = S.frag || {}; S.frag.food = Math.max(S.frag.food || 0, 9); save(); renderMenu();
+      toast('🔓 倉庫、日記、資料庫開放了。拿到 🧩食物機器人碎片 ×9', 3000); setTimeout(foodGuide, 600);
     } }), 500);
     return true;
   }
@@ -450,10 +460,11 @@ function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity 
 function goHome(first) {
   const devR = runDevices(); pedalPower(); show('home'); renderTop(); renderAcct(); renderQuestDot(); renderMenu(); setTimeout(renderVehArrow, 50);
   if (baseStory()) return;
+  setTimeout(foodGuide, 400);
   S.flags = S.flags || {}; for (const k of ['team', 'facility']) if (S.intro === 'done' && menuOpen(k) && !S.flags['m_' + k]) { S.flags['m_' + k] = 1; setTimeout(() => toast('🔓 ' + (k === 'team' ? '隊伍' : '設備') + '開放了', 2400), 900); }
   if (!first) idleReport(devR);
   S.lastSeen = NOW(); save();
-  const NEXT = ['你的肚子在叫。去商場街找吃的——點「出發」。', '商場街還有 2.4 公里。走吧。', '巷子裡那個聲音……去看看？', '鐵鏽一直往前面聞。跟著牠走。', '地下入口到了。裡面好像有人。', '前面的廣場……小禾說那裡有大傢伙。'][(S.cleared && S.cleared.zero) || 0];   // 回基地時零說下一步（劇情接得上）
+  const NEXT = ['你的肚子在叫。去貨車那裡找吃的——點「出發」。', '往商場街的路上有加油站。去看看還有沒有油。', '巷子裡那個聲音……去看看？', '鐵鏽一直對著遠方叫。好像有人。', '跟老周去商場街。營地門口好像不太平靜。', '廣場上那個大傢伙……老周說它會來掃營地。'][(S.cleared && S.cleared.zero) || 0];   // 回基地時零說下一步（劇情接得上）
   setTimeout(() => zeroSay(first ? NEXT || '走吧。不知道做什麼就看左上角的「任務」。' : NEXT && Math.random() < 0.7 ? NEXT : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
@@ -472,6 +483,10 @@ function guideOn(target, text, onTap) {
   guideEl.onclick = e => { const r = target.getBoundingClientRect(), p = 8;
     if (e.clientX >= r.left - p && e.clientX <= r.right + p && e.clientY >= r.top - p && e.clientY <= r.bottom + p) { guideOff(); onTap(); }
     else { const a = guideEl.querySelector('.garr'); a.classList.remove('nudge'); void a.offsetWidth; a.classList.add('nudge'); } };
+}
+function foodGuide() {   // 第一次合成機器人：只能點「設備」→ 食物機器人
+  if (S.dev.food || !(S.story && S.story.c1base1) || !$('scr-home').classList.contains('on') || document.getElementById('sty')) return;
+  guideOn(document.querySelector('.mbtn[data-go=facility]'), '點「設備」合成晚餐', () => { openScreen('facility'); setTimeout(() => { const bt = document.querySelector('[data-dev=food]'); if (bt) guideOn(bt, '合成食物機器人', () => bt.onclick()); }, 150); });
 }
 function firstUpGuide() { return S.flags && S.flags.firstUp === 1 && menuOpen('garage') && afford(subCost()); }   // 錢不夠就不鎖畫面，免得卡住
 function renderVehArrow() {   // 第一次改裝：箭頭指著基地中間的車，其他地方都不能點
@@ -507,7 +522,7 @@ const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標
   ['q8', '備份存檔', '首頁右上角「☁ 登入備份」用 Google 登入', () => [window.Cloud && Cloud.user ? 1 : 0, 1], { fuel: 30, core: 1 }],
   ['q9', '拿星星', '在第一章累積 10 顆星', () => [Math.min(starSum(), 10), 10], { coin: 500, scrap: 300 }],
   ['q10', '換台車', '把載具升到第 2 階「改裝邊車機車」', () => [Math.min(S.tier - 1, 1), 1], { core: 2, chip: 40 }],
-  ['q11', '找到避難所', '打過第一章 1-5（認識小禾）', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 800, fuel: 30 }],
+  ['q11', '找到營地', '打過第一章 1-5（到商場街營地）', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 800, fuel: 30 }],
   ['q12', '破解零號廢域', '打倒頭目「巨型機甲」', () => [(S.cleared.zero || 0) >= 6 ? 1 : 0, 1], { core: 5, coin: 1500 }],
 ];
 const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '燃料', core: '青晶核心' };
@@ -595,6 +610,28 @@ function renderGarage() {
 // ═══ 倉庫：撿回來的東西（數量／上限／用途）、還沒穿的裝備、擴建 ═══
 const STORE_RES = [['coin', '金幣', '舊硬幣。什麼都能買，除了尊嚴'], ['scrap', '廢鐵', '改裝載具'], ['chip', '電路板', '讓零和夥伴變強'], ['fuel', '燃料', '每次出發都要用'], ['core', '青晶核心', '稀有。高級升級要用'], ['blueprint', '藍圖', '載具升階要用']];
 function resCap(k) { return k === 'scrap' || k === 'chip' ? 2000 * (S.fac.store || 1) : k === 'fuel' ? FUEL_MAX() : 0; }
+// ═══ 交易所（商場街營地的阿珍）：打過 1-5 開放 ═══
+function tradeList() {
+  const L = [['廢鐵 200 → 金幣 100', { scrap: 200 }, { coin: 100 }], ['金幣 300 → 電路板 15', { coin: 300 }, { chip: 15 }], ['金幣 200 → 汽油 20', { coin: 200 }, { fuel: 20 }]];
+  DEV.forEach(([k, n, , , mx, need]) => { if (mx > 1 && need()) L.push([`金幣 400 → 🧩${n}碎片 ×1`, { coin: 400 }, { frag: k }]); });
+  return L;
+}
+function tradeHtml() {
+  if (!(S.story && S.story.c1s6)) return '';
+  return `<div class="sthead" style="margin-bottom:10px;flex-direction:column;align-items:stretch;gap:8px"><div>🏪 交易所 <small>商場街營地・阿珍：「AI 做的東西不收。」</small></div>` +
+    tradeList().map(([t, give], i) => `<button data-tr="${i}" class="${afford(give) ? '' : 'dim'}" style="text-align:left">${t}</button>`).join('') + '</div>';
+}
+function bindTrade() {
+  $('storeGrid').querySelectorAll('[data-tr]').forEach(b => b.onclick = () => {
+    const [t, give, get] = tradeList()[+b.dataset.tr];
+    if (!afford(give)) { toast('不夠換：' + costText(give), 2000); return; }
+    if (get.fuel && S.res.fuel >= FUEL_MAX()) { toast('油箱滿了', 1800); return; }
+    pay(give);
+    if (get.frag) { S.frag = S.frag || {}; S.frag[get.frag] = (S.frag[get.frag] || 0) + 1; }
+    else for (const k in get) S.res[k] = k === 'fuel' ? Math.min(FUEL_MAX(), S.res.fuel + get[k]) : (S.res[k] || 0) + get[k];
+    save(); renderTop(); renderStore(); toast('換好了：' + t, 1800);
+  });
+}
 const GEAR_ICON = { badge: '🪪', wrench: '🔧', box: '📦', tag: '🏷️', keyring: '🔑', helmet: '⛑️', nailgun: '🔩' };
 let storeSel = 'scrap';
 function renderStore() {   // 格子倉庫：點格子，下面顯示詳細
@@ -603,10 +640,11 @@ function renderStore() {   // 格子倉庫：點格子，下面顯示詳細
   if (G) S.gear.own.forEach(id => { const on = Object.values(S.gear.eq).includes(id); cells.push({ id: 'g:' + id, html: `<span class="gi">${GEAR_ICON[id] || '❔'}</span>${on ? '<em>E</em>' : ''}` }); });
   const slots = Math.max(20, Math.ceil(cells.length / 5) * 5);
   const l = S.fac.store || 1, c = facCost(l), mx = l >= 10;
-  let html = `<div class="sthead"><div>倉庫 <b>Lv.${l}</b>　<small>廢鐵、電路板最多 ${fmt(2000 * l)}</small></div>${mx ? '' : `<button id="stUp" class="${afford(c) ? '' : 'dim'}">擴建</button>`}</div><div class="stgrid">`;
+  let html = tradeHtml() + `<div class="sthead"><div>倉庫 <b>Lv.${l}</b>　<small>廢鐵、電路板最多 ${fmt(2000 * l)}</small></div>${mx ? '' : `<button id="stUp" class="${afford(c) ? '' : 'dim'}">擴建</button>`}</div><div class="stgrid">`;
   for (let k = 0; k < slots; k++) { const cl = cells[k]; html += cl ? `<div class="stc${cl.id === storeSel ? ' sel' : ''}${cl.hid ? ' hid' : ''}" data-id="${cl.id}">${cl.html}</div>` : '<div class="stc empty"></div>'; }
   html += '</div><div class="stinfo" id="stInfo"></div>';
   $('storeGrid').innerHTML = html;
+  bindTrade();
   $('storeGrid').querySelectorAll('.stc[data-id]').forEach(e => e.onclick = () => { storeSel = e.dataset.id; renderStore(); });
   if ($('stUp')) $('stUp').onclick = () => { if (!afford(c)) { toast('擴建要：' + costText(c), 2200); return; } pay(c); S.fac.store++; save(); renderTop(); toast('倉庫擴建完成'); renderStore(); };
   let info = '';
@@ -634,17 +672,18 @@ function devEff(k, l) {
   if (k === 'power') return `發電 ${4 + 4 * l}/小時｜電池 ${100 + 50 * l}`;
 }
 function renderFac() {
-  const cl = (S.cleared && S.cleared.zero) || 0, use = devUse(), gen = devGen();
+  const use = devUse(), gen = devGen();
   let html = `<div class="card" style="grid-column:1/-1;text-align:left;padding:12px 14px"><div style="font:900 18px sans-serif">⚡ 電力 ${Math.floor(S.res.power)} / ${POWER_MAX()}</div>
     <div class="sub">每小時：發電 ${gen}｜耗電 ${use}${use > gen ? `｜大約 ${Math.max(0, Math.floor(S.res.power / (use - gen)))} 小時後沒電` : ''}</div>
     <div class="sub" style="color:#9ff8ff">沒電機器人就停工。每打完一關，踩踏板會發電 +15。</div></div>`;
   html += DEV.map(([k, n, d, img, mx, need, needT]) => {
-    const l = S.dev[k] || 0, lock = cl < need;
+    const l = S.dev[k] || 0, lock = !need();
     if (lock) return `<div class="card" style="opacity:.45;filter:grayscale(1)"><span class="tag">🔒</span><img src="${img}" alt=""><div>${n}</div><div class="sub">${needT}</div></div>`;
-    const nl = l + 1, c = devCost(nl), top = l >= mx, tierOk = S.tier >= devTier(nl), ok = afford(c) && tierOk;
+    const nl = l + 1, c = devCost(nl), top = l >= mx, tierOk = S.tier >= devTier(nl), fOk = fragHave(k) >= fragNeed(nl), ok = afford(c) && tierOk && fOk;
     return `<div class="card"><span class="tag">${l ? 'Lv.' + l : '未合成'}</span><img src="${img}" alt=""><div>${n}</div>
       <div class="sub">${l ? devEff(k, l) : d}</div>
       ${top ? '<div class="sub" style="color:#ffd23f">已經最高</div>' : `<div class="sub" style="color:#ffd23f">${l ? '下一級：' + devEff(k, nl) : '合成後：' + devEff(k, 1)}</div>
+      <div class="sub" style="color:${fOk ? '#9ff8ff' : '#ff9a9a'}">🧩 碎片 ${fragHave(k)} / ${fragNeed(nl)}</div>
       ${tierOk ? '' : `<div class="sub" style="color:#ff9a9a">要載具 Lv.${devTier(nl)}</div>`}
       <button class="btn" data-dev="${k}" style="position:relative;margin-top:6px;height:auto;min-height:36px;padding:4px;width:100%;font-size:13px;${ok ? '' : 'opacity:.4'}">${l ? '升級' : '合成'}（${PZ_SIZE[nl]}×${PZ_SIZE[nl]} 拼圖）<br>${costText(c)}</button>`}</div>`;
   }).join('');
@@ -659,12 +698,14 @@ function renderFac() {
   $('facGrid').querySelectorAll('[data-dev]').forEach(b => b.onclick = () => {
     const k = b.dataset.dev, row = DEV.find(x => x[0] === k), l = S.dev[k] || 0, nl = l + 1, c = devCost(nl);
     if (S.tier < devTier(nl)) { toast(`載具要先升到 Lv.${devTier(nl)}`, 2200); return; }
+    if (fragHave(k) < fragNeed(nl)) { toast(`🧩 碎片不夠（${fragHave(k)} / ${fragNeed(nl)}）。去關卡裡收集。`, 2600); return; }
     if (!afford(c)) { toast('材料不夠：' + costText(c), 2400); return; }
     Puzzle.open({ img: row[3], size: PZ_SIZE[nl], title: (l ? '升級：' : '合成：') + row[1] + (l ? ` Lv.${nl}` : ''), onDone: () => {
       if (!afford(c)) { toast('材料不夠了', 2000); return; }
-      runDevices(); pay(c); S.dev[k] = nl; save(); renderTop(); renderFac();
+      runDevices(); pay(c); S.frag[k] -= fragNeed(nl); S.dev[k] = nl; save(); renderTop(); renderFac();
       toast(l ? `${row[1]} 升到 Lv.${nl}！` : `${row[1]} 合成成功！`, 2400);
       if (!l) addDiary(`用手合成了「${row[1]}」。零說零件放錯一塊就會爆炸，我沒問它是不是在開玩笑。`);
+      if (k === 'food' && !l && window.Story && window.STORY_C1) { S.story.c1food = 1; save(); setTimeout(() => Story.play('c1food', { name: S.hero, base: '', onDone: renderFac }), 400); }
     } });
   });
 }
@@ -679,7 +720,7 @@ function renderDiary() {
   else if (diaryTab === 'video') {
     // 照劇情時間排成一條：開場三支影片 → 第一章各段劇情（看過的）→ 章末影片插在「拒絕」和「營火」中間
     const SC = (window.STORY_C1 && window.STORY_C1.scenes) || {}, seen = k => S.story && S.story[k];
-    const ORDER = ['c1s1', 'c1s1b', 'c1base1', 'c1s1c', 'c1s1d', 'c1s2', 'c1s3', 'c1s4', 'c1s5', 'c1s6', 'c1s7', 'c1s8', '@c1_drama', 'c1s9'];
+    const ORDER = ['c1bike', 'c1bike2', 'c1s1', 'c1s1b', 'c1base1', 'c1food', 'c1s1c', 'c1s1d', 'c1s2', 'c1s3', 'c1s4', 'c1s4b', 'c1s5', 'c1s6', 'c1s7', 'c1s8', '@c1_drama', 'c1s9'];
     Object.keys(SC).forEach(k => { if (!ORDER.includes(k)) ORDER.push(k); });   // 之後新增的段落接在最後
     const row = (attr, n) => `<div class="vrow" ${attr}><span>▶</span>${n}</div>`;
     let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening"', '加班到穿越（開場）') + row('data-v="explainA"', '這是什麼世界') + row('data-v="explainB"', '從三輪車開始');
@@ -765,9 +806,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11262341"></script>
-<script src="team.js?v=11262341"></script>
-<script src="puzzle.js?v=11262341"></script>
+<script src="extras.js?v=11262358"></script>
+<script src="team.js?v=11262358"></script>
+<script src="puzzle.js?v=11262358"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });

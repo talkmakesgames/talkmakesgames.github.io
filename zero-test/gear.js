@@ -8,7 +8,7 @@
     box:     { n: '紙箱護甲', slot: 'gear', eff: { hp: 0.08 }, txt: '車子耐久 +8%', d: '路邊的紙箱，綁在身上。聊勝於無。', from: 2 },
     tag:     { n: '舊狗牌', slot: 'charm', eff: { hp: 0.05, start: 10 }, txt: '耐久 +5%、開場能量 10%', d: '從鐵鏽脖子上掉下來的。上面的名字磨掉了。', from: 3 },
     keyring: { n: '員工旅遊鑰匙圈', slot: 'charm', eff: { crit: 0.05 }, txt: '暴擊率 +5%', d: '去年員工旅遊沒去成。鑰匙圈倒是發了。', from: 4 },
-    helmet:  { n: '工地安全帽', slot: 'gear', eff: { hp: 0.15 }, txt: '車子耐久 +15%', d: '小禾丟給你的：「戴著。笨蛋的頭比較脆。」', from: 5 },
+    helmet:  { n: '工地安全帽', slot: 'gear', eff: { hp: 0.15 }, txt: '車子耐久 +15%', d: '老周丟給你的：「戴著。騎三輪車救人的瘋子，頭比較脆。」', from: 5 },
     nailgun: { n: '改裝釘槍', slot: 'tool', eff: { atk: 0.14 }, txt: '傷害 +14%', d: '從巨型機甲的殘骸拆下來的零件做的。', from: 6 },
   };
   const DROP = {}; for (const k in ITEMS) if (ITEMS[k].from) DROP[ITEMS[k].from] = k;   // 第一次打過這一關掉的裝備
@@ -16,7 +16,7 @@
     { id: 'hero', img: 'img/face0.webp', role: '轉珠的手', eff: l => `武器傷害 +${6 * (l - 1)}%｜車子耐久 +${5 * (l - 1)}%`, cost: l => ({ coin: 80 * l, scrap: 50 * l }), need: 0 },
     { id: 'zero', img: 'img/story/p_zero_n.webp', role: '大招：電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ coin: 120 * l, chip: 15 * l }), need: 0 },
     { id: 'dog', name: '鐵鏽', img: 'img/story/i_dog.webp', role: '護車＋撿零件', eff: l => `每關多撿廢鐵 +${20 + 10 * (l - 1)}`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 3 },
-    { id: 'he', name: '小禾', img: 'img/story/p_he_smile.webp', role: '改裝：灰零件變色', eff: l => `充能速度 +${12 * (l - 1)}%`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 5 },
+    { id: 'he', name: '小禾', img: 'img/story/p_he_smile.webp', role: '改裝：灰零件變色', eff: l => `充能速度 +${12 * (l - 1)}%`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 99 },   // 2026-11-26 小禾搬到第二章
   ];
   const MAXLV = 10;
   function ensure(S) {   // 舊存檔補上隊伍和裝備；已經打過的關補發裝備
