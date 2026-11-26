@@ -3,8 +3,8 @@
 //       Story.video('../video/c1_drama.mp4', onDone)
 (function () {
   const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？', zhou: '老周', zhen: '阿珍', zs: '零（小聲）' };
-  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp' };
-  const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R' };
+  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp', zhou: () => 'img/story/p_zhou.webp', zhen: () => 'img/story/p_zhen.webp' };
+  const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R', zhou: 'R', zhen: 'R' };
   const css = `
   #sty{position:fixed;inset:0;z-index:50;background:#000;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   #sty.over{background:rgba(0,0,0,.35)}
@@ -20,7 +20,7 @@
   #sty .pt{position:absolute;bottom:236px;height:210px;width:210px;object-fit:cover;object-position:top;border-radius:16px;border:2px solid rgba(63,240,255,.55);background:linear-gradient(#26313c,#0c1117);box-shadow:0 8px 22px rgba(0,0,0,.7);transition:opacity .25s,transform .25s;opacity:0;transform:translateY(14px)}
   #sty .pt.L{left:22px}#sty .pt.R{right:22px}
   #sty .pt.on{opacity:1;transform:none}
-  #sty .pt.he{border-color:#ffb35c}#sty .pt.hero{border-color:#e8edf2}
+  #sty .pt.he{border-color:#ffb35c}#sty .pt.zhou{border-color:#b8c98a}#sty .pt.zhen{border-color:#e9b1cf}#sty .pt.hero{border-color:#e8edf2}
   #sty .tb{position:absolute;left:18px;right:18px;bottom:60px;min-height:150px;box-sizing:border-box;padding:30px 24px 22px;border-radius:14px;background:rgba(8,12,18,.88);border:1.5px solid rgba(63,240,255,.35);color:#eef6fa;font-size:25px;line-height:1.55;letter-spacing:.5px}
   #sty .nm{position:absolute;top:-19px;left:18px;padding:5px 16px;border-radius:8px;background:#3ff0ff;color:#031016;font-weight:800;font-size:20px}
   #sty .nm.he{background:#ffb35c}#sty .nm.hero{background:#e8edf2}#sty .nm.doc{background:#c9b48a}#sty .nm.radio{background:#8a949e}#sty .nm.gen{background:#ff2d3c;color:#fff}#sty .nm.zhou{background:#b8c98a}#sty .nm.zhen{background:#e9b1cf}#sty .nm.zs{background:rgba(63,240,255,.45);color:#dffcff}

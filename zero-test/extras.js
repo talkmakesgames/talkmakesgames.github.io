@@ -158,13 +158,15 @@
   function flagsSet(o) { for (const k in (o || {})) localStorage.setItem(k, o[k]); }
   function infoOf(S) { const c = (S.cleared && S.cleared.zero) || 0, d = new Date(); return `第一章 ${c}/6｜${S.hero || '?'} Lv.${(S.team && S.team.hero) || 1}｜第 ${S.tier} 階 +${S.sub || 0}｜${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
   function sure(q, fn) { open(`<h3>確定嗎？</h3><div class="sub" style="font-size:15px;color:#e8f6f8">${q}</div><button class="m main" id="ok">確定</button><button class="m" id="no">取消</button>`); $('ok').onclick = fn; $('no').onclick = testTools; }
-  const JUMPS = [['剛取完名字', 0], ['1-1 打完（看資源介紹）', 1, true], ['1-3 前（救狗）', 2], ['1-4 前（追逐）', 3], ['1-5 前（小禾）', 4], ['頭目前', 5], ['第一章破關', 6]];
-  const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 5: 'c1s6' };
+  const JUMPS = [['合成好三輪車', 0], ['1-1 打完（資源介紹＋食物機器人）', 1, true], ['1-3 前（救狗）', 2], ['1-4 前（倖存者）', 3], ['1-5 前（營地門口）', 4], ['頭目前', 5], ['第一章破關', 6]];   // 2026-11-27 第一章 v2
+  const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 4: 'c1s4b', 5: 'c1s6' };
   function jump(n) {
     const old = getS() || {}, S = (typeof newSave === 'function') ? newSave() : JSON.parse(JSON.stringify(old));
     S.intro = 'done'; S.hero = old.hero || '阿哲'; S.ai = old.ai || '零'; S.cleared = { zero: n }; S.story = {}; S.stars = {}; S.flags = { diary: 1 };
     for (let i = 1; i <= n; i++) { if (PRE[i]) S.story[PRE[i]] = 1; if (POST[i]) S.story[POST[i]] = 1; S.stars['zero-' + i] = 3; }
-    if (n >= 2) S.story.c1base1 = 1;   // 「1-1 打完」那一格故意不標記，回基地會播資源介紹
+    S.flags.trike = 1; S.story.c1bike = 1; S.story.c1bike2 = 1;   // 開場後的腳踏車→三輪車
+    if (n >= 2) { S.story.c1base1 = 1; S.story.c1food = 1; }   // 「1-1 打完」那一格故意不標記，回車旁會播資源介紹＋引導合成食物機器人
+    S.dev = { food: n >= 2 ? 1 : 0, scrap: n >= 2 ? 1 : 0, oil: n >= 3 ? 1 : 0, power: n >= 5 ? 1 : 0 }; S.frag = { scrap: n >= 1 ? 9 : 0 }; S.devTs = Date.now(); S.pedalSeen = 0;
     if (n >= 3) S.flags.m_team = 1; if (n >= 4) S.flags.m_facility = 1;
     if (n >= 6) { S.story.c1s8 = 1; S.story.c1s9 = 1; S.res.blueprint = 1; S.res.core = 3; }
     if (n >= 2) { S.sub = Math.min(5, n - 1); }
