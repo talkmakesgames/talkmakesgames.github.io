@@ -24,7 +24,7 @@
     S.team = S.team || { hero: 1, zero: 1, dog: 1, he: 1 };
     if (!S.gear) S.gear = { own: ['badge'], eq: { tool: null, gear: null, charm: 'badge' }, fresh: [] };
     const c = (S.cleared && S.cleared.zero) || 0;
-    for (let i = 1; i <= c; i++) if (DROP[i] && !S.gear.own.includes(DROP[i])) S.gear.own.push(DROP[i]);
+    for (let i = 1; i <= c; i++) if (DROP[i] && !S.gear.own.includes(DROP[i])) { S.gear.own.push(DROP[i]); const sl = ITEMS[DROP[i]].slot; if (!S.gear.eq[sl]) S.gear.eq[sl] = DROP[i]; }   // 補發時，空的那一格直接穿上
     return S;
   }
   function maxLv(S, id) { return id === 'zero' ? Math.min(MAXLV, 2 * ((S.fac && S.fac.dock) || 1)) : MAXLV; }   // 零的上限看「零的充電座」
