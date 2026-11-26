@@ -212,10 +212,10 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11260812"></script>
-<script src="story/intro.js?v=11260812"></script>
-<script src="story/story.js?v=11260812"></script>
-<script src="gear.js?v=11260812"></script>
+<script src="story/ch1.js?v=11260854"></script>
+<script src="story/intro.js?v=11260854"></script>
+<script src="story/story.js?v=11260854"></script>
+<script src="gear.js?v=11260854"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -249,7 +249,7 @@ function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]
   $('modalBox').querySelectorAll('button').forEach(b => b.onclick = () => { $('modal').style.display = 'none'; const f = buttons[+b.dataset.i][1]; if (f) f(); });
 }
 const VEHN = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
-const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜第一章 ${(x.cleared && x.cleared.zero) || 0}/5`;
+const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜第一章 ${(x.cleared && x.cleared.zero) || 0}/6`;
 // ═══ 帳號（Google 登入，只用來備份存檔；不存、不顯示 Email） ═══
 async function cloudLogin(fromNaming, already) {
   if (!window.Cloud || !Cloud.ready) { toast('帳號系統還沒設定好', 2200); return; }
@@ -346,7 +346,7 @@ const ZERO_LINES = () => [
 ];
 function renderTop() {
   const r = S.res, items = [['coin', fmt(r.coin)], ['scrap', fmt(r.scrap)], ['chip', fmt(r.chip)], ['fuel', `${r.fuel}/${FUEL_MAX()}`], ['core', fmt(r.core)]];
-  $('topbar').innerHTML = items.map(([k, v]) => `<div class="res"><img src="img/r_${k}.webp" alt="">${v}</div>`).join('');
+  $('topbar').innerHTML = items.map(([k, v]) => `<div class="res" data-r="${k}"><img src="img/r_${k}.webp" alt="">${v}</div>`).join('');
   $('who').innerHTML = `${S.hero}　＆　${S.ai}<small>第 ${day()} 天｜零號廢域</small>`;
   $('vehicle').src = `img/v${S.tier}.webp`; document.querySelector('[data-go=garage] img').src = `img/v${S.tier}.webp`;
   $('vehName').innerHTML = `${VEH[S.tier - 1]} <small>Lv.${S.tier}${S.sub ? ' +' + S.sub : ''}</small>`;
@@ -369,18 +369,42 @@ function idleReport() {   // 掛機收益：零的回收無人機（產出＝載
   $('repOk').onclick = () => { S.res.scrap += scrap; S.res.coin += coin; save(); renderTop(); $('report').style.display = 'none'; };
 }
 let bubbleT;
+// 1-1 打完回基地：主角把撿到的東西倒在地上，零一個一個介紹資源（劇情對話＋資源格發光）→ 打開車庫 → 帶去第一次改裝
+let hlRing = null;
+function hlRes(k) {
+  if (!hlRing) { hlRing = document.createElement('div'); hlRing.style.cssText = 'position:fixed;z-index:55;border:3px solid #ffd23f;border-radius:14px;box-shadow:0 0 18px #ffd23f,inset 0 0 12px rgba(255,210,63,.5);pointer-events:none;transition:all .25s;display:none'; document.body.appendChild(hlRing); }
+  const e = k && document.querySelector(`#topbar .res[data-r="${k}"]`);
+  if (!e) { hlRing.style.display = 'none'; return; }
+  const r = e.getBoundingClientRect(); Object.assign(hlRing.style, { display: 'block', left: r.left - 4 + 'px', top: r.top - 4 + 'px', width: r.width + 8 + 'px', height: r.height + 8 + 'px' });
+}
+function baseStory() {
+  if (S.intro !== 'done' || !window.Story || !window.STORY_C1) return false;
+  if (((S.cleared && S.cleared.zero) || 0) >= 1 && !(S.story && S.story.c1base1)) {
+    setTimeout(() => Story.play('c1base1', { name: S.hero, base: '', onLine: L => hlRes(L.hl), onDone: () => {
+      hlRes(null); S.story = S.story || {}; S.story.c1base1 = 1; S.flags = S.flags || {}; if ((S.sub || 0) === 0 && S.tier === 1) S.flags.firstUp = 1; save(); renderMenu();
+      toast('🔓 車庫、日記、資料庫開放了', 2400); setTimeout(() => openScreen('garage'), 900);
+    } }), 500);
+    return true;
+  }
+  return false;
+}
 function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity = 1; clearTimeout(bubbleT); bubbleT = setTimeout(() => b.style.opacity = 0, 3600); }
 function goHome(first) {
-  tickResources(); show('home'); renderTop(); renderAcct(); renderQuestDot();
+  tickResources(); show('home'); renderTop(); renderAcct(); renderQuestDot(); renderMenu();
+  if (baseStory()) return;
+  S.flags = S.flags || {}; for (const k of ['team', 'facility']) if (S.intro === 'done' && menuOpen(k) && !S.flags['m_' + k]) { S.flags['m_' + k] = 1; setTimeout(() => toast('🔓 ' + (k === 'team' ? '隊伍' : '設施') + '開放了', 2400), 900); }
   if (!first) idleReport();
   S.lastSeen = NOW(); save();
-  const NEXT = ['你的肚子在叫。去商場街找吃的——點「出發」。', '商場街還有 2.4 公里。巷子裡那個聲音……去看看？', '鐵鏽一直往前面聞。跟著牠走。', '地下入口到了。裡面好像有人。', '前面的廣場……小禾說那裡有大傢伙。'][(S.cleared && S.cleared.zero) || 0];   // 回基地時零說下一步（劇情接得上）
+  const NEXT = ['你的肚子在叫。去商場街找吃的——點「出發」。', '商場街還有 2.4 公里。走吧。', '巷子裡那個聲音……去看看？', '鐵鏽一直往前面聞。跟著牠走。', '地下入口到了。裡面好像有人。', '前面的廣場……小禾說那裡有大傢伙。'][(S.cleared && S.cleared.zero) || 0];   // 回基地時零說下一步（劇情接得上）
   setTimeout(() => zeroSay(first ? NEXT || '走吧。不知道做什麼就看左上角的「任務」。' : NEXT && Math.random() < 0.7 ? NEXT : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
 $('vehicle').onclick = () => openScreen('garage');
 $('goBtn').onclick = () => openScreen('map');
-document.querySelectorAll('.mbtn').forEach(b => b.onclick = () => openScreen(b.dataset.go));
+const MENU_NEED = { garage: [1, '打過 1-1 開放'], diary: [1, '打過 1-1 開放'], codex: [1, '打過 1-1 開放'], team: [3, '在 1-3 遇到夥伴後開放'], facility: [4, '打過 1-4 開放'] };   // 基地按鈕一步一步開放
+const menuOpen = k => !MENU_NEED[k] || ((S.cleared && S.cleared.zero) || 0) >= MENU_NEED[k][0];
+function renderMenu() { document.querySelectorAll('.mbtn').forEach(b => { const ok = menuOpen(b.dataset.go); b.style.opacity = ok ? '' : '.35'; b.style.filter = ok ? '' : 'grayscale(1)'; }); }
+document.querySelectorAll('.mbtn').forEach(b => b.onclick = () => { if (!menuOpen(b.dataset.go)) { toast('🔒 ' + MENU_NEED[b.dataset.go][1]); return; } openScreen(b.dataset.go); });
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => goHome());
 setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(); renderTop(); } }, 30000);
 
@@ -398,14 +422,14 @@ const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標
   ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { coin: 100 }],
   ['q3', '改裝三輪車', '到車庫把載具改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
   ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { core: 1 }],
-  ['q5', '甩掉屍群', '打過第一章 1-3（追逐）', () => [Math.min(S.cleared.zero || 0, 3), 3], { coin: 300, fuel: 20 }],
+  ['q5', '甩掉屍群', '打過第一章 1-4（追逐）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 300, fuel: 20 }],
   ['q6', '蓋點東西', '升級任一個基地設施', () => [Math.min(facSum() - 6, 1), 1], { coin: 300 }],
   ['q7', '收集情報', '在零的資料庫解鎖 3 種敵人（打倒才算）', () => [Math.min(Object.keys(S.codex.kills).length, 3), 3], { chip: 30 }],
   ['q8', '備份存檔', '首頁右上角「☁ 登入備份」用 Google 登入', () => [window.Cloud && Cloud.user ? 1 : 0, 1], { fuel: 30, core: 1 }],
   ['q9', '拿星星', '在第一章累積 10 顆星', () => [Math.min(starSum(), 10), 10], { coin: 500, scrap: 300 }],
   ['q10', '換台車', '把載具升到第 2 階「改裝邊車機車」', () => [Math.min(S.tier - 1, 1), 1], { core: 2, chip: 40 }],
-  ['q11', '找到避難所', '打過第一章 1-4（認識小禾）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 800, fuel: 30 }],
-  ['q12', '破解零號廢域', '打倒頭目「巨型機甲」', () => [(S.cleared.zero || 0) >= 5 ? 1 : 0, 1], { core: 5, coin: 1500 }],
+  ['q11', '找到避難所', '打過第一章 1-5（認識小禾）', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 800, fuel: 30 }],
+  ['q12', '破解零號廢域', '打倒頭目「巨型機甲」', () => [(S.cleared.zero || 0) >= 6 ? 1 : 0, 1], { core: 5, coin: 1500 }],
 ];
 const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '燃料', core: '青晶核心' };
 const rwText = r => Object.entries(r).map(([k, v]) => `${RW[k]} +${v}`).join('、');
@@ -443,16 +467,16 @@ function openZone(i) {
   const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub;
   if (i > 0) { $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 15px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
   const cl = S.cleared.zero || 0;
-  $('nodes').innerHTML = Array.from({ length: 5 }, (_, j) => {
-    const boss = j === 4, open = j <= cl, done = j < cl;
+  $('nodes').innerHTML = Array.from({ length: 6 }, (_, j) => {
+    const boss = j === 5, open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
     const st = (S.stars || {})['zero-' + (j + 1)] || 0;
-    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#9ff8ff;font-size:11px;height:13px">${open ? ['肚子餓', '巷子裡的叫聲', '被追', '地下入口', '清除單位'][j] : ''}</div><div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
+    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#9ff8ff;font-size:11px;height:13px">${open ? ['肚子餓', '上路', '巷子裡的叫聲', '被追', '地下入口', '清除單位'][j] : ''}</div><div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
   }).join('');
   $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
     const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
-    if (j === 4 && S.tier === 1 && (S.sub || 0) === 0 && !n.dataset.ok) { ask('零的建議', '前面那台機甲很硬。<br>建議先去車庫改裝一下車子，再出發。', [['先去車庫', () => openScreen('garage'), true], ['不管了，直接出發', () => { n.dataset.ok = 1; n.onclick(); }]]); return; }
-    const cost = j === 4 ? 20 : 10, free = (NOW() - S.firstDay) < 3 * 86400000;   // 新手前 3 天出發不花燃料
+    if (j === 5 && S.tier === 1 && (S.sub || 0) === 0 && !n.dataset.ok) { ask('零的建議', '前面那台機甲很硬。<br>建議先去車庫改裝一下車子，再出發。', [['先去車庫', () => openScreen('garage'), true], ['不管了，直接出發', () => { n.dataset.ok = 1; n.onclick(); }]]); return; }
+    const cost = j === 5 ? 20 : 10, free = (NOW() - S.firstDay) < 3 * 86400000;   // 新手前 3 天出發不花燃料
     tickResources();
     if (!free && S.res.fuel < cost) { toast('油箱見底。你可以等，也可以去撿。（每 6 分鐘回 1）', 2600); return; }
     if (!free) S.res.fuel -= cost; S.lastSeen = NOW(); save();
@@ -483,7 +507,7 @@ function renderGarage() {
     ${canTier ? `<button class="btn" id="upTier" style="position:relative;margin-top:8px;height:44px;width:100%;font-size:18px;background:#ffd23f;color:#3a2600;${afford(tc) ? '' : 'opacity:.4'}">升到第 ${S.tier + 1} 階</button>` : ''}
   </div>`;
   $('garageGrid').innerHTML = up + cards.join('');
-  if ($('upSub')) $('upSub').onclick = () => { if (!afford(sc)) { toast('資源不夠：' + costText(sc)); return; } pay(sc); S.sub++; save(); toast(`改裝完成：+${S.sub}`); renderGarage(); };
+  if ($('upSub')) $('upSub').onclick = () => { if (!afford(sc)) { toast('資源不夠：' + costText(sc)); return; } pay(sc); S.sub++; if (S.flags && S.flags.firstUp === 1) { S.flags.firstUp = 2; toast('改裝完成 +1。零：「……勉強像一台車了。」', 3200); } else toast(`改裝完成：+${S.sub}`); save(); renderGarage(); };
   if ($('upTier')) $('upTier').onclick = () => {
     if (!afford(tc)) { toast('資源不夠：' + costText(tc), 2400); return; }
     pay(tc); S.tier++; S.sub = 0; addDiary(`把車升級成「${VEH[S.tier - 1]}」了。零說：「終於不像垃圾車了。勉強像回收車。」`); save(); toast(`升階完成：${VEH[S.tier - 1]}！`, 2400); renderGarage();
@@ -527,7 +551,7 @@ function renderDiary() {
       B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
     }
   } else {
-    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 5 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 5 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
+    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 6 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
   }
 }
@@ -580,8 +604,8 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
-<script src="extras.js?v=11260812"></script>
-<script src="team.js?v=11260812"></script>
+<script src="extras.js?v=11260854"></script>
+<script src="team.js?v=11260854"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",

@@ -23,9 +23,9 @@ canvas{display:block;margin:0 auto;touch-action:none}
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../story/ch1.js?v=11260812"></script>
-<script src="../story/story.js?v=11260812"></script>
-<script src="../gear.js?v=11260812"></script>
+<script src="../story/ch1.js?v=11260854"></script>
+<script src="../story/story.js?v=11260854"></script>
+<script src="../gear.js?v=11260854"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -126,18 +126,19 @@ const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
 const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) * GE.atk) : 120;
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const STAGE_HP = [0, 0.62, 1.0, 0.85, 0.95, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 0.9, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
-const ZN = 5;   // 第一章（零號廢域）：4 關＋第 5 關頭目
+const SL = STAGE <= 1 ? STAGE : STAGE - 1;   // 2026-11-26 新增 1-1 肚子餓：1-1、1-2 用同一套規則，後面的關卡往後移一關（SL＝原本的關卡規則編號）
+const STAGE_HP = [0, 0.55, 0.62, 1.0, 0.85, 0.95, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.4, 0.45, 0.75, 1.05, 0.9, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const ZN = 6;   // 第一章（零號廢域）：5 關＋第 6 關頭目
 const STAGE_WAVES = {
-  1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 上路：第一波零的大招、第二波教轉珠
+  1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 肚子餓、1-2 上路
   2: [['zombie', 'dasher', 'zombie'], ['dasher', 'heavy']],  // 1-2 被追的狗：打完淨化
   3: [['zombie', 'dasher'], ['dasher', 'zombie', 'dasher'], ['zombie', 'heavy', 'dasher'], ['dasher', 'dasher', 'zombie', 'zombie']],   // 1-3 追逐：撐回合
   4: [['zombie', 'dasher', 'zombie'], ['heavy', 'zombie']],  // 1-4 小禾改裝教學
   5: [['zombie', 'dasher'], ['boss']],                       // 頭目：巨型機甲（鏽塊）
 };
-const CHASE = STAGE === 3 ? 6 : 0;          // 追逐：撐過 6 回合就到地下入口
-const DOG_ON = STAGE >= 3;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
-const HE_ON = STAGE >= 4;                   // 小禾（1-4 開始）：灰色零件充能，點頭像改裝一排
+const CHASE = SL === 3 ? 6 : 0;          // 追逐：撐過 6 回合就到地下入口
+const DOG_ON = SL >= 3;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
+const HE_ON = SL >= 4;                   // 小禾（1-4 開始）：灰色零件充能，點頭像改裝一排
 const RUST_ON = STAGE === ZN;               // 頭目會把零件鏽掉
 const RUST = 9;                             // 鏽塊的零件種類（不會被合成）
 const C1 = () => window.STORY_C1 || { battle: {}, scenes: {} };
@@ -156,7 +157,7 @@ const WAVES_TRIAL = [
   ['heavy', 'zombie', 'dasher', 'zombie', 'heavy'],
   ['boss'],
 ];
-const WAVES = STAGE ? STAGE_WAVES[STAGE] : WAVES_TRIAL;
+const WAVES = STAGE ? STAGE_WAVES[SL] : WAVES_TRIAL;
 const LAST = () => !CHASE && !OT && G.wave >= WAVES.length - 1;
 const OT_POOL = ['zombie', 'dasher', 'zombie', 'heavy', 'dasher', 'heavy'];
 function otWave(n) { const k = Math.min(5, 2 + Math.floor(n / 2)), out = []; for (let i = 0; i < k; i++) out.push(OT_POOL[(n * 3 + i * 5) % Math.min(OT_POOL.length, 2 + n)]); return out; }
@@ -171,7 +172,7 @@ const CARDS = [
   { id: 'steel', t: '鋼鐵尖刺', d: '鋼鐵零件也會\n造成少量傷害' },
 ];
 const AI_LINES = {
-  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : ({ 2: ['那隻狗在發抖。先把追兵打掉。'], 3: ['踩油門。別回頭看。'], 4: ['她在看。別丟我的臉。', '證明給她看：你比 AI 有用。'], 5: ['……那個東西，在等我們。'] })[STAGE] || (STAGE ? ['出發。別把車弄壞，零件很貴。', '敵人接近。建議你動手，而不是發呆。'] : ['第 247 天。你的手速總算能看了。', '敵人接近。青晶房車全武裝，別浪費。']),
+  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : ({ 1: ['先清路。商場街在前面。'], 2: ['商場街還有 2.4 公里。清掉擋路的。'], 3: ['那隻狗在發抖。先把追兵打掉。'], 4: ['踩油門。別回頭看。'], 5: ['她在看。別丟我的臉。', '證明給她看：你比 AI 有用。'], 6: ['……那個東西，在等我們。'] })[STAGE] || (STAGE ? ['出發。別把車弄壞，零件很貴。', '敵人接近。建議你動手，而不是發呆。'] : ['第 247 天。你的手速總算能看了。', '敵人接近。青晶房車全武裝，別浪費。']),
   combo: ['不錯。你的手比你的腦袋有用。', '連擊有效。繼續保持，別得意。', '這種程度……勉強及格。'],
   hurt: ['裝甲受損。我建議你認真一點。', '再被打幾下，我們就一起變廢鐵。'],
   low: ['裝甲剩 30%。我建議你認真一點。'],
@@ -198,11 +199,11 @@ function newGame(s) {
     ai: { x: SPRITE_ON ? 468 : 330, y: SPRITE_ON ? 286 : 292, ox: 0, line: '', lineT: 0, hurtMove: 0, lowSaid: false, fullSaid: false },
     turretAng: [-1.2, -1.4, -1.6], turretKick: [0, 0, 0],
     cards: null, cardT: 0, bannerText: '', bannerT: 0, bossTaunt: 0, result: null, empT: 0,
-    he: STAGE === 4 ? 70 : STAGE === ZN ? 100 : 0, heLine: '', heLineT: 0, dogUsed: false, dogT: 0, rustSaid: false, orb: null, firstSaid: false,
+    he: SL === 4 ? 70 : STAGE === ZN ? 100 : 0, heLine: '', heLineT: 0, dogUsed: false, dogT: 0, rustSaid: false, orb: null, firstSaid: false,
   };
   G.board = makeBoard();
 }
-function newType() { return STAGE === 4 && rnd() < 0.12 ? 3 : ri(5); }   // 1-4（避難所外）：灰色零件比較多，小禾比較好充能
+function newType() { return SL === 4 && rnd() < 0.12 ? 3 : ri(5); }   // 1-4（避難所外）：灰色零件比較多，小禾比較好充能
 function makeCell(t, c, r, fromY) {
   const p = cellPos(c, r);
   return { t, plus: false, x: p.x, y: fromY != null ? fromY : p.y, vy: 0, s: 1, born: 0 };
@@ -360,10 +361,11 @@ function say(s) { G.ai.line = s; G.ai.lineT = 2.8; G.heLineT = 0; }
 function startGame() {
   newGame(OT ? OT_SEED : undefined); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start)); playBGM('battle');
   if (STAGE && GE.start) G.energy = GE.start;
-  if (STAGE === 1) { G.energy = 100; G.ai.fullSaid = true; say('能量是滿的。點我。'); G.bannerText = '目標：騎到商場街（3 km）'; G.bannerT = 2.2; }
+  if (STAGE === 1) { G.bannerText = '目標：騎到商場街（3 km）'; G.bannerT = 2.2; }
+  if (STAGE === 2) { G.bannerText = '商場街 還有 2.4 km'; G.bannerT = 2.2; }
   if (CHASE) { G.bannerText = `撐 ${CHASE} 回合！轉珠只有 5 秒`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
   if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次小禾一滿就用。'), 2000);
-  if (STAGE === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
+  if (SL === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
 }
 function update(dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
@@ -415,7 +417,7 @@ function update(dt) {
 
   G.phaseT += d;
   switch (G.state) {
-    case 'intro': if (G.phaseT > 1.4) { G.state = 'player'; if (!G.tipShown && TIPS[STAGE] && STAGE !== ZN && !tipSeen(STAGE)) { G.tipShown = true; G.state = 'tip'; G.tipT = 0; } } break;
+    case 'intro': if (G.phaseT > 1.4) { G.state = 'player'; if (!G.tipShown && TIPS[SL] && STAGE !== ZN && !tipSeen(SL)) { G.tipShown = true; G.state = 'tip'; G.tipT = 0; } } break;
     case 'tip': G.tipT = (G.tipT || 0) + dt; break;
     case 'drag':
       if (G.swapped) { G.timer -= dt; if (G.timer <= 0) endDrag(); }
@@ -427,7 +429,7 @@ function update(dt) {
     case 'clear':
       if (G.phaseT > 1.0) {
         if (LAST()) { finish(true); }
-        else if (STAGE === 1) { G.wave++; G.state = 'intro'; G.phaseT = 0; spawnWave(); say('剩下的，用你的手。'); G.bannerText = '商場街 還有 2.7 km'; G.bannerT = 1.6; }   // 1-1 不抽卡，直接教轉珠
+        else if (SL === 1) { G.wave++; G.state = 'intro'; G.phaseT = 0; spawnWave(); if (STAGE === 1) { G.bannerText = '商場街 還有 2.7 km'; G.bannerT = 1.6; } else { G.bannerText = '商場街 還有 2.0 km'; G.bannerT = 1.6; } }   // 1-1、1-2 不抽卡
         else if (CHASE) { G.wave = (G.wave + 1) % WAVES.length; G.state = 'intro'; G.phaseT = 0; spawnWave(); G.turns++; if (G.turns >= CHASE) finish(true); }
         else { openCards(); }
       }
@@ -635,7 +637,8 @@ function stepEnemy() {
     G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 20, s: '-' + fmt(dmg), t: 0, life: 0.9, color: '#ff5a5a', tier: 1 });
     for (let i = 0; i < 12; i++) G.parts_.push({ x: RV.x + 40 + rnd() * (RV.w - 80), y: RV.y + rnd() * 30, vx: (rnd() - 0.5) * 300, vy: -100 - rnd() * 260, t: 0, life: 0.6, color: rnd() < 0.5 ? '#ffb347' : '#ff4a3d', size: 3 + rnd() * 4, rot: 0, vr: 0 });
     SFX.hit();
-    if (G.armor <= G.armorMax * 0.3 && !G.ai.lowSaid) { G.ai.lowSaid = true; say(AI_LINES.low[0]); }
+    if (STAGE === 1 && !G.hurtSaid) { G.hurtSaid = true; G.bannerText = '這個……算工傷嗎？'; G.bannerT = 1.6; setTimeout(() => say('這裡沒有勞保。'), 1300); }   // 1-1 第一次被打
+    else if (G.armor <= G.armorMax * 0.3 && !G.ai.lowSaid) { G.ai.lowSaid = true; say(AI_LINES.low[0]); }
     else if (rnd() < 0.35 && G.armor < G.armorMax * 0.6) say(pick(AI_LINES.hurt)); else if (rnd() < 0.2) say(pick(['擦傷而已。繼續。', '這點傷，車子還撐得住。']));
   }
 }
@@ -729,18 +732,20 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   const d = Math.floor((Date.now() - S0.firstDay) / 86400000) + 1;
   if (win && STAGE > before) {
     S0.cleared = S0.cleared || {}; S0.cleared.zero = STAGE;
-    if (STAGE === 1) S0.diary.push({ day: d, text: '肚子餓到不行，出發去商場街找吃的。路上第一次打殭屍。三輪車沒散架，我也沒散架。' });
-    if (STAGE === 2) S0.diary.push({ day: d, text: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。' });
-    if (STAGE === 3) S0.diary.push({ day: d, text: '被一大群殭屍追了一路。鐵鏽撲上去替車子擋了一下。我好像開始習慣這裡了——這才可怕。' });
-    if (STAGE === 4) S0.diary.push({ day: d, text: '有個女生拿槍指著零。我說「它是我的手機」。說完我自己也愣了一下。' });
-    if (STAGE === ZN) S0.diary.push({ day: d, text: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' });
+    const DI = { 1: '肚子餓到不行，出發去商場街找吃的。在翻倒的貨車裡找到一個過期 400 天的飯糰。我沒吃。還沒。',
+      2: '往商場街的路上，零說我騎車會哼歌，很難聽。我不記得我有哼歌。',
+      3: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。',
+      4: '被一大群殭屍追了一路。鐵鏽撲上去替車子擋了一下。我好像開始習慣這裡了——這才可怕。',
+      5: '有個女生拿槍指著零。我擋在前面，說它是我的……我也不知道該怎麼說。',
+      6: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' };
+    if (DI[STAGE]) S0.diary.push({ day: d, text: DI[STAGE] });
   }
   let item = null; if (win && window.ZW_GEAR) item = ZW_GEAR.drop(S0, STAGE);   // 第一次過關掉裝備
   S0.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
   return { r, stars, item };
 }
-const STAR_COMBO = STAGE === 1 ? 3 : STAGE === 2 ? 4 : 6;   // 第三顆星要幾連擊
+const STAR_COMBO = SL === 1 ? 3 : SL === 2 ? 4 : 6;   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
 function goStage(n) {   // 結算直接打下一關／再試一次：燃料規則跟首頁一樣（每 6 分鐘回 1；新手前 3 天免費；頭目 20）
   let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
@@ -769,7 +774,7 @@ function otRecord() {
   try { localStorage.setItem('zw-ot-best', JSON.stringify(b)); } catch (e) {}
   try { window.tmgTrack && window.tmgTrack('zw_ot_end', { waves: w }); } catch (e) {}
 }
-const PRE = { 1: 'c1s1', 2: 'c1s2', 3: 'c1s4', 4: 'c1s5', 5: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s3', 4: 'c1s6' };
+const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 5: 'c1s6' };
 function storySeen(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.story && s.story[k]); } catch (e) { return false; } }
 function storyMark(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return; s.story = s.story || {}; s.story[k] = 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} }
 function heroName() { return (SV && SV.hero) || '我'; }
@@ -836,7 +841,7 @@ const BG = document.createElement('canvas'); BG.width = W; BG.height = FIELD_H +
 })();
 
 // 每關不同的戰場：1-2 巷弄、1-4 白天的公路；1-3 追逐有速度線；頭目關偏紅
-const FIELD_ALT = { 2: ['../img/story/bg_alley.webp', 0.50], 4: ['../img/story/bg_road.webp', 0.52] }[STAGE];
+const FIELD_ALT = { 2: ['../img/story/bg_alley.webp', 0.50], 4: ['../img/story/bg_road.webp', 0.52] }[SL];
 if (FIELD_ALT) { const im = new Image(); im.onload = () => { IMG.field = im; }; im.src = FIELD_ALT[0]; }
 function drawField() {
   if (IMG.field) {   // 直式背景圖：裁一條橫的當戰場
@@ -1268,7 +1273,7 @@ function drawUI() {
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
   ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
   ctx.fillStyle = '#a9b6c2'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' && (tutDone || G.moves > 2 || (STAGE === 1 && !G.empUsed)) ? (STAGE === 1 && !G.empUsed ? '先點右邊的零，放出大招' : '按住零件拖動，連成 3 個以上就合成') : '', x0, FIELD_H + 88);
+  ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' && (tutDone || G.moves > 2) ? '按住零件拖動，連成 3 個以上就合成' : '', x0, FIELD_H + 88);
   // 零件盤底
   const pg = ctx.createLinearGradient(0, BY - 6, 0, H); pg.addColorStop(0, '#15191e'); pg.addColorStop(1, '#07090b');
   ctx.fillStyle = pg; ctx.fillRect(0, BY - 6, W, H - BY + 6);
@@ -1324,7 +1329,6 @@ function drawTutorial() {
   const k = G.moves;   // 第幾次操作（不管有沒有照教學、有沒有清掉一波，都會往下走）
   if (tutDone || k > 2) return;
   if (G.state !== 'player') return;
-  if (STAGE === 1 && !G.empUsed) return;   // 1-1：先放零的大招，再教轉珠
   const step = TUT[k];
   const key = k + ':' + G.board.map(row => row.map(p => p.t).join('')).join('');   // 盤面變了就重找示範路徑
   if (G.tutKey !== key) { G.tutKey = key; G.tutPath = findDemoPath(); }
@@ -1422,7 +1426,7 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const QW = { 1: ['第一戰。你沒有尖叫，進步了。', '……運氣成分很高。'], 2: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 3: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 4: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 5: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
+    const QW = { 1: ['飯糰找到了。雖然是過期的。', '第一戰。你沒有尖叫，進步了。'], 2: ['路清了。商場街越來越近。', '……運氣成分很高。'], 3: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 4: ['甩掉了。心跳還很快吧？', '入口到了。你的方向盤技術……勉強。'], 5: ['她看到了。你沒丟我的臉。', '小禾沒開槍。算是好評。'], 6: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
     const q = !win ? (STAGE === ZN ? '鏽塊別放著。小禾一滿就點她，改掉有鏽的那排。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
@@ -1485,7 +1489,7 @@ const TIPS = {
 };
 function tipSeen(n) { try { return localStorage.getItem('zw-tip-' + n) === '1'; } catch (e) { return false; } }
 function drawTip() {
-  const T = TIPS[STAGE]; if (!T) return; const k = Math.min(1, (G.tipT || 0) * 4), pu = 0.5 + 0.5 * Math.sin(G.t * 6);
+  const T = TIPS[SL]; if (!T) return; const k = Math.min(1, (G.tipT || 0) * 4), pu = 0.5 + 0.5 * Math.sin(G.t * 6);
   ctx.save(); ctx.globalAlpha = k;
   ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.arc(T.x, T.y, T.r, 0, Math.PI * 2, true); ctx.fill();   // 挖一個洞照亮要點的地方
   ctx.strokeStyle = `rgba(255,214,120,${0.6 + 0.4 * pu})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(T.x, T.y, T.r + 4 * pu, 0, 7); ctx.stroke();
@@ -1510,7 +1514,7 @@ function drawC1() {
     ctx.beginPath(); ctx.arc(cx, cy, 35, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * G.he / 100); ctx.stroke(); ctx.shadowBlur = 0;
     ctx.font = '800 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = full ? '#ffd29a' : '#9aa6b2'; ctx.fillText(full ? '點我改裝' : '小禾', cx, b.y + b.h + 8);
   }
-  if (STAGE === 2 && G.state !== 'result' && ICON.dog) {   // 1-2：被追的狗縮在主角後面發抖（還是紅眼）
+  if (SL === 2 && G.state !== 'result' && ICON.dog) {   // 1-2：被追的狗縮在主角後面發抖（還是紅眼）
     const sx = 16 + Math.sin(G.t * 30) * 1.5, sy = 448; ctx.save(); ctx.beginPath(); ctx.arc(sx + 18, sy, 18, 0, 7); ctx.fillStyle = '#2a2018'; ctx.fill(); ctx.clip(); ctx.drawImage(ICON.dog, sx, sy - 18, 36, 36);
     ctx.fillStyle = `rgba(255,40,40,${0.25 + 0.2 * Math.sin(G.t * 6)})`; ctx.fillRect(sx, sy - 18, 36, 36); ctx.restore();
     ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText('發抖中', sx + 18, sy + 28);
@@ -1609,7 +1613,7 @@ cv.addEventListener('pointerdown', ev => {
   if (G.state === 'result') { if ((STAGE || OT) && inRect(p, btn2Rect)) { location.href = '../'; return; }
     if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
-  if (G.state === 'tip') { if ((G.tipT || 0) > 0.4) { G.state = 'player'; try { localStorage.setItem('zw-tip-' + STAGE, '1'); } catch (e) {} } return; }
+  if (G.state === 'tip') { if ((G.tipT || 0) > 0.4) { G.state = 'player'; try { localStorage.setItem('zw-tip-' + SL, '1'); } catch (e) {} } return; }
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
   if (G.state === 'heRow') { const cell = boardCellAt(p.x, p.y); if (cell.inside) { if (!G.board[cell.r].some(q => q && (q.t === 3 || q.t === RUST))) { G.heLine = '這排沒有灰零件。選亮的那幾排。'; G.heLineT = 1.8; return; } G.heRowSel = cell.r; G.state = 'hePick'; SFX.card(); } else G.state = 'player'; return; }
   if (G.state === 'hePick') { const r = pickRects.find(r => inRect(p, r)); if (r) heConvert(r.t); else { G.state = 'player'; G.heRowSel = null; } return; }

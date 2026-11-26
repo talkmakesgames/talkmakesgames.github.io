@@ -102,7 +102,7 @@
 
   // ═══ 2. 加班模式入口 ═══
   const otBtn = btn('otBtn', 286, '🌙', '加班模式');
-  if (cleared() < 3) otBtn.style.display = 'none';
+  if (cleared() < 4) otBtn.style.display = 'none';
   otBtn.onclick = () => {
     let best = null; try { best = JSON.parse(localStorage.getItem('zw-ot-best')); } catch (e) {}
     const d0 = new Date(), today = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
@@ -117,16 +117,66 @@
   // ═══ 3. 設定：回報問題、隱私權政策 ═══
   const setBtn = document.createElement('button'); setBtn.id = 'setBtn'; setBtn.textContent = '⚙'; setBtn.setAttribute('aria-label', '設定'); home.appendChild(setBtn);
   setBtn.onclick = () => {
-    open(`<h3>設定</h3>${window.zwA2hsManual ? '<button class="m" id="a2">📲 加到主畫面</button>' : ''}<button class="m" id="rp">🐞 回報問題</button><button class="m" id="pv">🔒 隱私權政策</button><button class="m" id="cx">關閉</button>
+    open(`<h3>設定</h3>${window.zwA2hsManual ? '<button class="m" id="a2">📲 加到主畫面</button>' : ''}${TEST ? '<button class="m" id="tt">🧪 測試工具</button>' : ''}<button class="m" id="rp">🐞 回報問題</button><button class="m" id="pv">🔒 隱私權政策</button><button class="m" id="cx">關閉</button>
       <div class="sub" style="margin-top:12px">廢域方舟（開發中測試版）｜動嘴做遊戲</div>`);
     $('cx').onclick = close; $('pv').onclick = () => { location.href = 'privacy.html'; };
     $('rp').onclick = report;
     if ($('a2')) $('a2').onclick = () => { close(); window.zwA2hsManual(); };
+    if ($('tt')) $('tt').onclick = testTools;
   };
+  // ═══ 4. 測試工具（只有測試網址和本機有）：備份、還原、清除、跳到某個進度、補資源 ═══
+  function testTools() {
+    const slots = [1, 2, 3].map(n => { let d = null; try { d = JSON.parse(localStorage.getItem('zw-test-slot-' + n)); } catch (e) {} return d; });
+    open(`<h3>🧪 測試工具</h3><div class="sub">只有測試版有。存在這支手機裡，不會動到正式版。</div>
+      <div style="text-align:left;font-weight:900;color:#3ff0ff;margin-top:6px">備份／還原</div>
+      ${slots.map((d, i) => `<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><div style="flex:1;text-align:left;font-size:13px;color:${d ? '#e8f6f8' : '#5d6b75'}">第 ${i + 1} 格：${d ? d.info : '（空）'}</div>
+        <button class="chip" data-bk="${i + 1}">備份</button>${d ? `<button class="chip" data-rs="${i + 1}">還原</button>` : ''}</div>`).join('')}
+      <div style="text-align:left;font-weight:900;color:#3ff0ff;margin-top:16px">一鍵跳到進度</div>
+      <div class="chips">${JUMPS.map((j, i) => `<button class="chip" data-jp="${i}">${j[0]}</button>`).join('')}</div>
+      <button class="m" id="tr">💰 補資源（金幣、廢鐵、電路板、燃料）</button>
+      <button class="m" id="tc" style="border-color:#ff6a78;color:#ffb3bb">🗑 清除進度（從開場重新開始）</button>
+      <button class="m" id="cx">關閉</button>`);
+    $('cx').onclick = close;
+    $('xbx').querySelectorAll('[data-bk]').forEach(b => b.onclick = () => {
+      const S = getS(); if (!S) return; window.__zwSave && window.__zwSave();
+      const d = { save: JSON.parse(localStorage.getItem(SKEY) || 'null'), flags: flagsGet(), info: infoOf(S) };
+      try { localStorage.setItem('zw-test-slot-' + b.dataset.bk, JSON.stringify(d)); } catch (e) {}
+      window.toast && toast('已備份到第 ' + b.dataset.bk + ' 格'); testTools();
+    });
+    $('xbx').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => sure(`還原第 ${b.dataset.rs} 格？目前的進度會被蓋掉。`, () => {
+      const d = JSON.parse(localStorage.getItem('zw-test-slot-' + b.dataset.rs)); flagsClear(); flagsSet(d.flags); localStorage.setItem(SKEY, JSON.stringify(d.save)); location.reload();
+    }));
+    $('xbx').querySelectorAll('[data-jp]').forEach(b => b.onclick = () => sure(`跳到「${JUMPS[+b.dataset.jp][0]}」？目前的進度會被蓋掉（可以先備份）。`, () => jump(JUMPS[+b.dataset.jp][1])));
+    $('tr').onclick = () => { const S = getS(); if (!S) return; Object.assign(S.res, { coin: S.res.coin + 5000, scrap: S.res.scrap + 3000, chip: S.res.chip + 500, core: (S.res.core || 0) + 10 }); S.res.fuel = Math.max(S.res.fuel, 100 + ((S.fac.tank || 1) - 1) * 20); window.__zwSave && window.__zwSave(); window.toast && toast('資源補好了'); close(); };
+    $('tc').onclick = () => sure('清除全部進度？會從開場影片重新開始，教學和劇情也會重來。', () => { flagsClear(); localStorage.removeItem(SKEY); location.href = location.pathname; });
+  }
+  const TEST = /zero-test/.test(location.pathname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const SKEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';
+  const FLAG = k => k === 'zw-tut' || k === 'zw-ot-best' || /^zw-tip-/.test(k);
+  function flagsGet() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (FLAG(k)) o[k] = localStorage.getItem(k); } return o; }
+  function flagsClear() { Object.keys(flagsGet()).forEach(k => localStorage.removeItem(k)); }
+  function flagsSet(o) { for (const k in (o || {})) localStorage.setItem(k, o[k]); }
+  function infoOf(S) { const c = (S.cleared && S.cleared.zero) || 0, d = new Date(); return `第一章 ${c}/6｜${S.hero || '?'} Lv.${(S.team && S.team.hero) || 1}｜第 ${S.tier} 階 +${S.sub || 0}｜${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+  function sure(q, fn) { open(`<h3>確定嗎？</h3><div class="sub" style="font-size:15px;color:#e8f6f8">${q}</div><button class="m main" id="ok">確定</button><button class="m" id="no">取消</button>`); $('ok').onclick = fn; $('no').onclick = testTools; }
+  const JUMPS = [['剛取完名字', 0], ['1-1 打完（看資源介紹）', 1, true], ['1-3 前（救狗）', 2], ['1-4 前（追逐）', 3], ['1-5 前（小禾）', 4], ['頭目前', 5], ['第一章破關', 6]];
+  const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 5: 'c1s6' };
+  function jump(n) {
+    const old = getS() || {}, S = (typeof newSave === 'function') ? newSave() : JSON.parse(JSON.stringify(old));
+    S.intro = 'done'; S.hero = old.hero || '阿哲'; S.ai = old.ai || '零'; S.cleared = { zero: n }; S.story = {}; S.stars = {}; S.flags = { diary: 1 };
+    for (let i = 1; i <= n; i++) { if (PRE[i]) S.story[PRE[i]] = 1; if (POST[i]) S.story[POST[i]] = 1; S.stars['zero-' + i] = 3; }
+    if (n >= 2) S.story.c1base1 = 1;   // 「1-1 打完」那一格故意不標記，回基地會播資源介紹
+    if (n >= 3) S.flags.m_team = 1; if (n >= 4) S.flags.m_facility = 1;
+    if (n >= 6) { S.story.c1s8 = 1; S.story.c1s9 = 1; S.res.blueprint = 1; S.res.core = 3; }
+    if (n >= 2) { S.sub = Math.min(5, n - 1); }
+    S.res.coin += 400 * n; S.res.scrap += 300 * n; S.res.chip += 40 * n;
+    delete S.gear; delete S.team;   // 載入時會照進度補發裝備
+    flagsClear(); localStorage.setItem('zw-tut', 'done');
+    localStorage.setItem(SKEY, JSON.stringify(S)); location.href = location.pathname;
+  }
   function report() {
     const S = getS();
     const info = [`版本：測試版 2026-11-26`, `裝置：${navigator.userAgent}`, `螢幕：${screen.width}x${screen.height} @${devicePixelRatio}`,
-      `進度：第一章 ${(S && S.cleared && S.cleared.zero) || 0}/5，載具第 ${(S && S.tier) || 1} 階`, `時間：${new Date().toLocaleString()}`].join('\n');
+      `進度：第一章 ${(S && S.cleared && S.cleared.zero) || 0}/6，載具第 ${(S && S.tier) || 1} 階`, `時間：${new Date().toLocaleString()}`].join('\n');
     open(`<h3>回報問題</h3><div class="sub">遇到 bug 或卡住？把下面的資訊複製起來，<br>連同「發生什麼事」一起在頻道留言或私訊告訴我們。<br>（裡面沒有你的名字、帳號或位置）</div>
       <textarea id="ri" readonly>${info}</textarea>
       <button class="m main" id="cp">複製資訊</button><button class="m" id="ch">前往動嘴做遊戲頻道首頁</button><button class="m" id="cx">關閉</button>`);

@@ -10,6 +10,7 @@
   #sty.over{background:rgba(0,0,0,.35)}
   #sty .full{position:absolute;inset:-30px;background:#05070b center/cover no-repeat;filter:blur(16px) brightness(.45);transition:background-image .6s}
   #sty.over .full{display:none}
+  #sty.over .top{top:120px}#sty.over .ttl{top:150px}
   #sty .box{position:relative;flex:0 0 auto;width:540px;height:960px;overflow:hidden;transform-origin:50% 50%}
   #sty .sbg{position:absolute;inset:0;background:#05070b center/cover no-repeat;transition:opacity .6s;transform:scale(1.04);animation:stykb 14s ease-out forwards}
   @keyframes stykb{to{transform:scale(1.12)}}
@@ -123,6 +124,7 @@
         o.onDone && o.onDone(); }
       function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms); }
       function show(L) {
+        try { o.onLine && o.onLine(L); } catch (e) {}   // 給基地用：講到哪個資源就亮哪一格
         if (L.cg || L.bg) setBg(L.cg || L.bg);
         if (L.sfx) tone(L.sfx);
         if (L.shake) { box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); }
