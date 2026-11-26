@@ -235,10 +235,10 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11261931"></script>
-<script src="story/intro.js?v=11261931"></script>
-<script src="story/story.js?v=11261931"></script>
-<script src="gear.js?v=11261931"></script>
+<script src="story/ch1.js?v=11261933"></script>
+<script src="story/intro.js?v=11261933"></script>
+<script src="story/story.js?v=11261933"></script>
+<script src="gear.js?v=11261933"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -611,16 +611,18 @@ function renderDiary() {
   const B = $('diaryBody');
   if (diaryTab === 'log') B.innerHTML = S.diary.slice().reverse().map(e => `<div class="entry"><b>第 ${e.day} 天</b>　${e.text}</div>`).join('') || '（還沒有日記）';
   else if (diaryTab === 'video') {
-    const V = [['opening', '加班到穿越（開場）'], ['explainA', '這是什麼世界'], ['explainB', '從三輪車開始']];
-    if (S.story && S.story.c1s8) V.push(['c1_drama', '第一章章末：被丟掉的東西']);
-    B.innerHTML = V.map(([k, n]) => `<div class="vrow" data-v="${k}"><span>▶</span>${n}</div>`).join('') + '<div style="font-size:14px;color:#7a6440">' + (S.story && S.story.c1s8 ? '下一章破解後，會再解鎖新影片' : '打倒第一章頭目，會解鎖一支新影片') + '</div>';
-    B.querySelectorAll('.vrow').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
-    // 劇情回顧：看過的第一章劇情可以重播
-    const SC = (window.STORY_C1 && window.STORY_C1.scenes) || {}, seen = Object.keys(SC).filter(k => S.story && S.story[k]);
-    if (seen.length && window.Story) {
-      B.insertAdjacentHTML('beforeend', '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章　劇情回顧</div>' + seen.map(k => `<div class="vrow" data-s="${k}"><span>▶</span>${SC[k].title}</div>`).join(''));
-      B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
-    }
+    // 照劇情時間排成一條：開場三支影片 → 第一章各段劇情（看過的）→ 章末影片插在「拒絕」和「營火」中間
+    const SC = (window.STORY_C1 && window.STORY_C1.scenes) || {}, seen = k => S.story && S.story[k];
+    const ORDER = ['c1s1', 'c1s1b', 'c1base1', 'c1s1c', 'c1s1d', 'c1s2', 'c1s3', 'c1s4', 'c1s5', 'c1s6', 'c1s7', 'c1s8', '@c1_drama', 'c1s9'];
+    Object.keys(SC).forEach(k => { if (!ORDER.includes(k)) ORDER.push(k); });   // 之後新增的段落接在最後
+    const row = (attr, n) => `<div class="vrow" ${attr}><span>▶</span>${n}</div>`;
+    let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening"', '加班到穿越（開場）') + row('data-v="explainA"', '這是什麼世界') + row('data-v="explainB"', '從三輪車開始');
+    const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k));
+    if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title)).join('');
+    h += '<div style="font-size:14px;color:#7a6440;margin-top:8px">' + (seen('c1s8') ? '下一章破解後，會再解鎖新的劇情' : '繼續往前走，劇情會一段一段解鎖') + '</div>';
+    B.innerHTML = h;
+    B.querySelectorAll('.vrow[data-v]').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
+    if (window.Story) B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
   } else {
     const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 6 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
@@ -675,8 +677,8 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
-<script src="extras.js?v=11261931"></script>
-<script src="team.js?v=11261931"></script>
+<script src="extras.js?v=11261933"></script>
+<script src="team.js?v=11261933"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
