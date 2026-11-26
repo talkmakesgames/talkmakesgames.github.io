@@ -171,7 +171,7 @@
     S.res.coin += 400 * n; S.res.scrap += 300 * n; S.res.chip += 40 * n;
     delete S.gear; delete S.team;   // 載入時會照進度補發裝備
     flagsClear(); localStorage.setItem('zw-tut', 'done');
-    localStorage.setItem(SKEY, JSON.stringify(S)); location.href = location.pathname;
+    localStorage.setItem(SKEY, JSON.stringify(S)); location.href = location.pathname + (n === 1 ? '?from=s1' : '');
   }
   function report() {
     const S = getS();

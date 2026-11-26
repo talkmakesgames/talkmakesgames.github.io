@@ -23,9 +23,9 @@ canvas{display:block;margin:0 auto;touch-action:none}
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../story/ch1.js?v=11260854"></script>
-<script src="../story/story.js?v=11260854"></script>
-<script src="../gear.js?v=11260854"></script>
+<script src="../story/ch1.js?v=11261249"></script>
+<script src="../story/story.js?v=11261249"></script>
+<script src="../gear.js?v=11261249"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -1443,7 +1443,9 @@ function drawResult() {
   });
   if (!STAGE && G.picked && G.picked.length) { ctx.textAlign = 'center'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('改裝：' + G.picked.join('、'), W / 2, 690); }
   btnRect = { x: W / 2 - 120, y: 730, w: 240, h: 64 }; btn2Rect = null;
-  const nextN = STAGE ? (win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE) : 0;   // 過關→下一關；打輸→再試一次；頭目打贏→只能回基地
+  const toBase = STAGE === 1 && win;   // 1-1 打完：不給下一關，先回基地看資源介紹
+  const nextN = STAGE && !toBase ? (win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE) : 0;   // 過關→下一關；打輸→再試一次；頭目打贏→只能回基地
+  if (toBase) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd23f'; ctx.textAlign = 'center'; ctx.fillText('撿了不少東西。先回基地整理一下。', W / 2, 716); }
   if ((STAGE && nextN) || OT) btn2Rect = { x: W / 2 - 90, y: 806, w: 180, h: 44 };
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 20; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 32); ctx.fill(); ctx.shadowBlur = 0;
   ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? (nextN ? (win ? `下一關（${nextN === ZN ? '頭目' : '1-' + nextN}）` : '再試一次') : '回基地') : TRIAL_FLOW ? '繼續' : OT ? '再加班一次' : '再玩一次', W / 2, btnRect.y + 33);
@@ -1611,7 +1613,7 @@ cv.addEventListener('pointerdown', ev => {
   if (inRect(p, MUSIC_BTN)) { toggleMusic(); return; }
   if (G.state === 'title') { if (inRect(p, btnRect)) startGame(); return; }
   if (G.state === 'result') { if ((STAGE || OT) && inRect(p, btn2Rect)) { location.href = '../'; return; }
-    if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
+    if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (STAGE === 1 && G.result.win) location.href = '../?from=s1'; else if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
   if (G.state === 'tip') { if ((G.tipT || 0) > 0.4) { G.state = 'player'; try { localStorage.setItem('zw-tip-' + SL, '1'); } catch (e) {} } return; }
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
