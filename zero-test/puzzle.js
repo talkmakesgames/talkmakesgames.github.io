@@ -23,6 +23,7 @@
   #pz .pzflash { position:absolute; inset:0; background:#3ff0ff; opacity:0; pointer-events:none; z-index:4; transition:opacity .5s; }
   `;
   let el = null;
+  const TEST = /zero-test/.test(location.pathname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);   // 2026-11-27 跳過按鈕：只有測試版有，正式版沒有
   function beep(f, d, v) { try { const a = beep.c = beep.c || new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; g.gain.value = v || .06; g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + d); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d); } catch (e) {} }
   function open(o) {
     close();
@@ -32,7 +33,7 @@
     el = document.createElement('div'); el.id = 'pz';
     el.innerHTML = `<div class="pzt">${o.title || '合成'}</div><div class="pzs">把零件放對位置，合成才會成功（${N}×${N}）</div>
       <div class="pzb"><div class="pzo"></div><div class="pzflash"></div></div><div class="pzwin">合成成功！</div>
-      <div class="pzbar"><button class="y" data-a="hint">💡 提示</button><button data-a="peek">👁 看原圖</button>${o.noCancel ? '' : '<button data-a="quit">離開</button>'}</div>
+      <div class="pzbar"><button class="y" data-a="hint">💡 提示</button><button data-a="peek">👁 看原圖</button>${o.noCancel ? '' : '<button data-a="quit">離開</button>'}${TEST ? '<button data-a="skip" style="border-color:#ff9a9a;color:#ffb3bb">⏭ 跳過</button>' : ''}</div>
       <div class="pzm">步數：<b>0</b></div>`;
     host.appendChild(el);
     const board = el.querySelector('.pzb'), over = el.querySelector('.pzo'), mv = el.querySelector('.pzm b');
@@ -98,6 +99,7 @@
         const r = Math.floor(empty / N) + DIR[d][0], c = empty % N + DIR[d][1];
         place(); cells[pos[r * N + c]].classList.add('hint');
       } else if (a.dataset.a === 'peek') { over.classList.add('on'); setTimeout(() => over.classList.remove('on'), 1500); }
+      else if (a.dataset.a === 'skip' && TEST) { pos = [...Array(N * N).keys()]; empty = E; place(); win(); }
       else if (a.dataset.a === 'quit') { const cb = o.onCancel; close(); if (cb) cb(); }
     };
   }
