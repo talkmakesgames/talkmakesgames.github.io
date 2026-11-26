@@ -61,6 +61,7 @@ window.STORY_C1={
 "w": "zero",
 "t": "三輪車。時速大概跟你的工作效率差不多。",
 "e": "n",
+"cg": "story/c1_bike_trike.webp",
 "v": "voice/c1/c1bike2_1.mp3"
 },
 {
