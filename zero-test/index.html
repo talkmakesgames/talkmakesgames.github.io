@@ -251,12 +251,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11270308"></script>
-<script src="story/ch1.js?v=11270308"></script>
-<script src="story/intro.js?v=11270308"></script>
-<script src="story/story.js?v=11270308"></script>
-<script src="gear.js?v=11270308"></script>
-<script src="wide.js?v=11270308"></script>
+<script src="i18n.js?v=11270311"></script>
+<script src="story/ch1.js?v=11270311"></script>
+<script src="story/intro.js?v=11270311"></script>
+<script src="story/story.js?v=11270311"></script>
+<script src="gear.js?v=11270311"></script>
+<script src="wide.js?v=11270311"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -869,9 +869,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11270308"></script>
-<script src="team.js?v=11270308"></script>
-<script src="puzzle.js?v=11270308"></script>
+<script src="extras.js?v=11270311"></script>
+<script src="team.js?v=11270311"></script>
+<script src="puzzle.js?v=11270311"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
