@@ -10,7 +10,7 @@
 <title>零號廢域｜試玩原型</title>
 <style>
 html,body{margin:0;height:100%;background:#05070b;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-canvas{display:block;margin:0 auto;touch-action:none}
+canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1}
 </style>
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
@@ -23,9 +23,10 @@ canvas{display:block;margin:0 auto;touch-action:none}
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../story/ch1.js?v=11262240"></script>
-<script src="../story/story.js?v=11262240"></script>
-<script src="../gear.js?v=11262240"></script>
+<script src="../story/ch1.js?v=11262304"></script>
+<script src="../story/story.js?v=11262304"></script>
+<script src="../gear.js?v=11262304"></script>
+<script src="../wide.js?v=11262304"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -1590,7 +1591,7 @@ function render() {
       ctx.fillStyle = '#ffd0d4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, W / 2, 38); ctx.restore(); }
   }
   ctx.restore();
-  drawUI(); drawHero(); drawC1(); drawFX(); drawTutorial(); drawCombo(); if (G.state === 'tip') drawTip();
+  drawUI(); drawHover(); drawHero(); drawC1(); drawFX(); drawTutorial(); drawCombo(); if (G.state === 'tip') drawTip();
   if (G.bannerT > 0) {
     const t = G.bannerT, a = Math.min(1, t * 3, (1.6 - t) * 5);
     ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 150, W, 70);
@@ -1649,6 +1650,61 @@ if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[
 } else if (STAGE && PRE[STAGE] && window.Story && !storySeen(PRE[STAGE])) {
   G.state = 'story';
   Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); } });
+}
+
+// ── 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊空白換成模糊背景＋左右資訊欄；直式手機不受影響 ──
+if (window.ZW_WIDE) {
+  ZW_WIDE.init({ bg: (FIELD_ALT && FIELD_ALT[0]) || '../img/home_bg.webp', stageW: () => W * SCALE });
+  const fmtN = n => Math.round(n || 0).toLocaleString('en-US');
+  const bar = (v, c) => `<div class="bar"><i style="width:${Math.max(0, Math.min(100, v * 100)).toFixed(1)}%;background:${c}"></i></div>`;
+  const LABEL = OT ? '加班模式' : STAGE ? (STAGE === ZN ? '第一章　頭目戰' : `第一章　1-${STAGE}`) : '試玩（247 天後）';
+  const VEH = TIER === 6 ? '青晶房車' : VEH_NAMES[TIER - 1];
+  const wideTick = () => {
+    if (!ZW_WIDE.on || !G) return;
+    const inBattle = !['title', 'story'].includes(G.state);
+    let l = `<h4>我方</h4><div class="big">${VEH}${SUB ? ' +' + SUB : ''}</div><div class="dim">駕駛：${heroName()}　AI：零</div>`;
+    if (inBattle) {
+      const a = G.armor / G.armorMax;
+      l += `<hr><div class="row"><span>裝甲</span><span>${fmtN(G.armor)} / ${fmtN(G.armorMax)}</span></div>${bar(a, a > 0.3 ? '#3ff0ff' : '#ff4a4a')}`;
+      l += `<div class="row"><span>零的 EMP</span><span>${G.energy >= 100 ? '⚡ 點零發動' : Math.floor(G.energy) + '%'}</span></div>${bar(G.energy / 100, '#b46bff')}`;
+      l += `<div class="row"><span>連擊</span><span>目前 ${G.combo || 0}　最高 ${G.maxCombo || 0}</span></div>`;
+      if (STAGE && !OT) l += `<div class="dim">第三顆星：${STAR_COMBO} 連擊以上</div>`;
+      if (DOG_ON || HE_ON) l += '<hr><h4>隊友</h4>';
+      if (DOG_ON) l += `<div class="row"><span>🐕 鐵鏽</span><span class="dim">${G.dogUsed ? '已經出手' : G.dogArmed ? '待命中' : '可以擋一次小攻擊'}</span></div>`;
+      if (HE_ON) l += `<div class="row"><span>🔧 小禾 改裝</span><span>${Math.floor(G.he)}%</span></div>${bar(G.he / 100, '#ffd23f')}`;
+    }
+    let r = `<h4>戰況</h4><div class="big">${LABEL}</div>`;
+    if (inBattle) {
+      r += `<div class="dim">${CHASE ? `撐過 ${CHASE} 回合就到入口（已撐 ${Math.min(G.turns || 0, CHASE)} 回合）` : OT ? `第 ${G.wave + 1} 波` : `第 ${Math.min(G.wave + 1, WAVES.length)} / ${WAVES.length} 波`}</div><hr><h4>敵人</h4>`;
+      const es = G.enemies.filter(e => e.hp > 0);
+      r += es.length ? es.map(e => `<div class="en row"><span>${e.K.name}</span><span class="dim">${e.cd} 回合後攻擊</span></div>${bar(e.hp / e.maxHp, '#ff4a4a')}`).join('') : '<div class="dim">這一波清空了</div>';
+      r += `<hr><div class="row"><span>總傷害</span><span>${fmtN(G.totalDmg)}</span></div><div class="row"><span>最高一擊</span><span>${fmtN(G.maxHit)}</span></div><div class="row"><span>回合</span><span>${G.turns || 0}</span></div>`;
+    }
+    r += `<div class="tip">🖱 滑鼠按住零件拖曳，放開就合成。<br>畫面會跟著視窗大小自動調整。</div>`;
+    ZW_WIDE.set('L', l); ZW_WIDE.set('R', r);
+  };
+  setInterval(wideTick, 250); wideTick();
+}
+// ── 滑鼠：移到零件／按鈕上會變亮、游標變手 ──
+cv.addEventListener('pointermove', ev => {
+  if (ev.pointerType !== 'mouse') return;
+  if (G.state === 'drag') { cv.style.cursor = 'grabbing'; return; }
+  const p = toXY(ev); let cur = 'default'; G.hover = null;
+  const btns = [MUSIC_BTN].concat(['title', 'result'].includes(G.state) ? [btnRect, btn2Rect] : [], G.state === 'cards' ? cardRects : [], G.state === 'hePick' ? pickRects : []);
+  if (btns.some(r => inRect(p, r))) cur = 'pointer';
+  else if (G.state === 'player') {
+    const c = boardCellAt(p.x, p.y);
+    if (c.inside) { G.hover = c; cur = 'grab'; }
+    else if ((G.ai.drawX && G.energy >= 100 && Math.hypot(p.x - G.ai.drawX, p.y - G.ai.drawY) < 48) || (HE_ON && Math.hypot(p.x - (HE_BTN.x + HE_BTN.w / 2), p.y - (HE_BTN.y + HE_BTN.h / 2)) < 42) || (DOG_ON && !G.dogUsed && Math.hypot(p.x - 34, p.y - 178) < 26)) cur = 'pointer';
+  } else if (['heRow', 'orb', 'tip'].includes(G.state)) cur = 'pointer';
+  cv.style.cursor = cur;
+});
+cv.addEventListener('pointerleave', () => { G.hover = null; });
+function drawHover() {
+  const h = G.hover; if (!h || G.state !== 'player') return;
+  const p = cellPos(h.c, h.r);
+  ctx.save(); ctx.strokeStyle = 'rgba(63,240,255,0.9)'; ctx.lineWidth = 3; ctx.shadowColor = CYAN; ctx.shadowBlur = 14; ctx.fillStyle = 'rgba(200,255,255,0.10)';
+  roundRect(p.x - CELL / 2 + 4, p.y - CELL / 2 + 4, CELL - 8, CELL - 8, 14); ctx.fill(); ctx.stroke(); ctx.restore();
 }
 
 // ═══════════════ 模擬試玩用介面（不影響遊戲） ═══════════════

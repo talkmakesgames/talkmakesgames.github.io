@@ -11,7 +11,7 @@
   :root { --cyan:#3ff0ff; --red:#ff2d3c; --ink:#e8f6f8; --dim:#8fa0ae; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
   html,body { margin:0; height:100%; background:#05070b; overflow:hidden; font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; color:var(--ink); }
-  #stage { position:absolute; left:50%; top:50%; width:540px; height:960px; transform-origin:50% 50%; overflow:hidden; background:#0a0c10; }
+  #stage { position:absolute; left:50%; top:50%; width:540px; height:960px; transform-origin:50% 50%; overflow:hidden; background:#0a0c10; z-index:1; }
   .scr { position:absolute; inset:0; display:none; }
   .scr.on { display:block; }
   .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -135,6 +135,8 @@
   #cxDetail img { width:220px; height:180px; object-fit:contain; display:block; margin:0 auto; }
   #cxDetail h3 { margin:6px 0; font:900 24px sans-serif; color:var(--cyan); text-align:center; }
   #cxDetail p { margin:6px 0; font:700 15px sans-serif; line-height:1.6; color:#d8f6fa; }
+  /* 滑鼠移上去變亮（只在有滑鼠的裝置；手機沒有這個狀態）2026-11-26 */
+  @media (hover:hover) { #stage button:hover, #stage .card:hover { filter:brightness(1.18); cursor:pointer; } }
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -235,10 +237,11 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11262240"></script>
-<script src="story/intro.js?v=11262240"></script>
-<script src="story/story.js?v=11262240"></script>
-<script src="gear.js?v=11262240"></script>
+<script src="story/ch1.js?v=11262304"></script>
+<script src="story/intro.js?v=11262304"></script>
+<script src="story/story.js?v=11262304"></script>
+<script src="gear.js?v=11262304"></script>
+<script src="wide.js?v=11262304"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -676,9 +679,30 @@ $('acctBtn').onclick = () => {
 // ═══ 開始 ═══
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
+
+// ═══ 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊放模糊背景＋左右資訊欄；直式手機不受影響 ═══
+if (window.ZW_WIDE) {
+  ZW_WIDE.init({ bg: 'img/home_bg.webp', stageW: () => 540 * Math.min(innerWidth / 540, innerHeight / 960) });
+  const RES_N = [['coin', '金幣'], ['scrap', '廢鐵'], ['chip', '電路板'], ['fuel', '燃料'], ['core', '青晶核心']], CH1 = 6;
+  const wideTick = () => {
+    if (!ZW_WIDE.on || !S) return;
+    const ready = S.intro === 'done';
+    let l = '<img src="img/logo.webp" alt="" style="width:100%;display:block;margin:-4px 0 8px">';
+    if (ready) {
+      const cl = Math.min((S.cleared && S.cleared.zero) || 0, CH1);
+      l += `<h4>倖存者</h4><div class="big">${S.hero || '我'}</div><div class="dim">載具：${VEH[(S.tier || 1) - 1]}${S.sub ? ' +' + S.sub : ''}</div>`;
+      l += `<hr><h4>第一章　零號廢域</h4><div class="row"><span>進度</span><span>${cl} / ${CH1} 關</span></div><div class="bar"><i style="width:${cl / CH1 * 100}%;background:#3ff0ff"></i></div>`;
+    } else l += '<div class="dim">穿越到末日廢土的社畜，和 AI「零」一起把三輪貨車改成方舟。</div>';
+    let r = '';
+    if (ready && S.res) r += '<h4>倉庫</h4>' + RES_N.map(([k, n]) => `<div class="row"><span><img class="ic" src="img/r_${k}.webp" alt="">${n}</span><span>${k === 'fuel' ? S.res.fuel + ' / ' + FUEL_MAX() : fmt(S.res[k] || 0)}</span></div>`).join('');
+    r += '<div class="tip">🖱 電腦版用滑鼠點選操作。<br>手機直拿是手機版面；電腦或橫拿平板會自動換成這個版面。</div>';
+    ZW_WIDE.set('L', l); ZW_WIDE.set('R', r);
+  };
+  setInterval(wideTick, 1000); wideTick();
+}
 </script>
-<script src="extras.js?v=11262240"></script>
-<script src="team.js?v=11262240"></script>
+<script src="extras.js?v=11262304"></script>
+<script src="team.js?v=11262304"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
