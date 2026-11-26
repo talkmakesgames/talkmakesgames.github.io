@@ -32,9 +32,9 @@
   #sty .top button{background:rgba(0,0,0,.55);color:#dfe8ee;border:1px solid rgba(255,255,255,.25);border-radius:18px;font-size:16px;padding:7px 14px}
   #sty .top button.on{background:#3ff0ff;color:#031016}
   #sty .ttl{position:absolute;top:70px;left:0;right:0;text-align:center;color:#fff;font-size:20px;letter-spacing:6px;opacity:.75;text-shadow:0 2px 8px #000}
-  #sty .ph{position:absolute;top:120px;left:50%;transform:translateX(-50%) translateY(-30px);width:420px;box-sizing:border-box;padding:16px 20px;border-radius:18px;background:rgba(40,44,52,.95);color:#fff;font-size:22px;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;transition:.35s}
+  #sty .ph{position:absolute;top:120px;left:50%;transform:translateX(-50%) translateY(-30px);width:420px;box-sizing:border-box;padding:16px 20px;border-radius:6px;border:2px solid #3ff0ff;background:repeating-linear-gradient(0deg,rgba(63,240,255,.07) 0 2px,transparent 2px 5px),rgba(2,26,32,.9);color:#dffcff;font-size:22px;box-shadow:0 0 22px rgba(63,240,255,.55),inset 0 0 18px rgba(63,240,255,.25);text-shadow:0 0 6px rgba(63,240,255,.7);opacity:0;transition:.35s}
   #sty .ph.on{opacity:1;transform:translateX(-50%)}
-  #sty .ph small{display:block;color:#9aa6b2;font-size:15px;margin-bottom:4px}
+  #sty .ph small{display:block;color:#3ff0ff;font-size:15px;margin-bottom:4px;letter-spacing:2px}
   #sty .end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.0);color:#fff;opacity:0;transition:opacity 1.2s,background 1.2s;pointer-events:none}
   #sty .end.on{opacity:1;background:rgba(0,0,0,.82)}
   #sty .end b{font-size:40px;letter-spacing:8px}#sty .end small{display:block}#sty .end i{margin-top:14px;color:#3ff0ff;font-style:normal;letter-spacing:4px}
@@ -153,7 +153,7 @@
         [ptL, ptR].forEach(p => p.classList.remove('on'));
         if (side && src) { const p = side === 'L' ? ptL : ptR; p.style.visibility = ''; if (p.dataset.src !== src) { p.src = base + src; p.dataset.src = src; } p.className = 'pt ' + side + ' ' + who + ' on'; }
         // 手機通知
-        if (L.phone) { ph.innerHTML = `<small>${who === 'sys' ? '通知' : ''}</small>`; ph.appendChild(document.createTextNode(full)); ph.classList.add('on'); tb.style.visibility = 'hidden'; } else { ph.classList.remove('on'); tb.style.visibility = ''; }
+        if (L.phone) { ph.innerHTML = `<small>◈ 零・收到訊息</small>`; ph.appendChild(document.createTextNode(full)); ph.classList.add('on'); tb.style.visibility = 'hidden'; } else { ph.classList.remove('on'); tb.style.visibility = ''; }
         if (L.end) { endEl.innerHTML = '<b>第一章</b><i>一切從零開始　完</i><small style="margin-top:34px;color:#9aa6b2;font-size:18px;letter-spacing:3px">下一章　冰港</small><small style="margin-top:8px;color:#5d6b75;font-size:14px">「這裡是冰港……還有人活著嗎？」</small>'; endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
         // 打字效果
         clearInterval(typing); let k = 0; tx.textContent = ''; nx.style.visibility = 'hidden';
