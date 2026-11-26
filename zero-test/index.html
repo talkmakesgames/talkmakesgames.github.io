@@ -114,14 +114,14 @@
   #cxDetail h3 { margin:6px 0; font:900 24px sans-serif; color:var(--cyan); text-align:center; }
   #cxDetail p { margin:6px 0; font:700 15px sans-serif; line-height:1.6; color:#d8f6fa; }
 </style>
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="動嘴做遊戲">
+<meta name="apple-mobile-web-app-title" content="廢域方舟">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#1a1d2e">
+<meta name="theme-color" content="#05070b">
 </head>
 <body>
 <div id="stage">
@@ -156,6 +156,7 @@
     <div id="vehName"></div>
     <button class="btn" id="goBtn">出發<small id="goCost">燃料 -10</small></button>
     <div id="menu">
+      <div class="mbtn" data-go="team" style="position:relative"><img src="img/face0.webp" alt="" style="border-radius:50%">隊伍<span id="teamDot" style="display:none;position:absolute;top:8px;right:10px;width:12px;height:12px;border-radius:50%;background:#ff4a5a"></span></div>
       <div class="mbtn" data-go="garage"><img src="img/v1.webp" alt="">車庫</div>
       <div class="mbtn" data-go="facility"><img src="img/f_recycle.webp" alt="">設施</div>
       <div class="mbtn" data-go="diary"><img src="img/diary_cover.webp" alt="">日記</div>
@@ -184,6 +185,7 @@
     <div style="position:absolute;top:74px;left:20px;right:20px;font:700 14px sans-serif;color:#9ff8ff;text-align:center">零：「照著做，至少可以活到下禮拜。」</div>
     <div class="grid" id="questGrid" style="grid-template-columns:1fr;top:104px"></div></div>
   <!-- 車庫 -->
+  <div class="scr" id="scr-team"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">隊伍</div><button class="close" data-back>✕</button><div class="grid" id="teamGrid" style="grid-template-columns:1fr"></div></div>
   <div class="scr" id="scr-garage"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">車庫</div><button class="close" data-back>✕</button><div class="grid" id="garageGrid" style="grid-template-columns:1fr 1fr"></div></div>
   <!-- 設施 -->
   <div class="scr" id="scr-facility"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">基地設施</div><button class="close" data-back>✕</button><div class="grid" id="facGrid" style="grid-template-columns:1fr 1fr"></div></div>
@@ -213,6 +215,7 @@
 <script src="story/ch1.js"></script>
 <script src="story/intro.js"></script>
 <script src="story/story.js"></script>
+<script src="gear.js"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -237,6 +240,7 @@ function newSave() {
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
 if (!S || S.v !== 1) S = newSave();
+ZW_GEAR.ensure(S);   // 隊伍等級＋裝備（舊存檔自動補上）
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (window.Cloud && Cloud.user && S.intro === 'done') { clearTimeout(save.t); save.t = setTimeout(() => Cloud.push(S).catch(() => {}), 3000); } }
 // ═══ 選擇視窗 ═══
 function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]]
@@ -370,7 +374,8 @@ function goHome(first) {
   tickResources(); show('home'); renderTop(); renderAcct(); renderQuestDot();
   if (!first) idleReport();
   S.lastSeen = NOW(); save();
-  setTimeout(() => zeroSay(first ? '走吧。先去撿廢鐵。不知道做什麼就看左上角的「任務」。' : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
+  const NEXT = ['你的肚子在叫。去商場街找吃的——點「出發」。', '商場街還有 2.4 公里。巷子裡那個聲音……去看看？', '鐵鏽一直往前面聞。跟著牠走。', '地下入口到了。裡面好像有人。', '前面的廣場……小禾說那裡有大傢伙。'][(S.cleared && S.cleared.zero) || 0];   // 回基地時零說下一步（劇情接得上）
+  setTimeout(() => zeroSay(first ? NEXT || '走吧。不知道做什麼就看左上角的「任務」。' : NEXT && Math.random() < 0.7 ? NEXT : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
 $('vehicle').onclick = () => openScreen('garage');
@@ -381,7 +386,7 @@ setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(
 
 window.ZW_A2HS_OK = () => !!(S && S.intro === 'done' && $('scr-home').classList.contains('on'));   // 「加到主畫面」橫幅只在基地首頁出現
 function openScreen(k) {
-  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
+  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'team') renderTeam(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
   show(k);
 }
 
@@ -442,7 +447,7 @@ function openZone(i) {
     const boss = j === 4, open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
     const st = (S.stars || {})['zero-' + (j + 1)] || 0;
-    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
+    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#9ff8ff;font-size:11px;height:13px">${open ? ['肚子餓', '巷子裡的叫聲', '被追', '地下入口', '清除單位'][j] : ''}</div><div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
   }).join('');
   $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
     const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
@@ -576,6 +581,7 @@ if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
 <script src="extras.js"></script>
+<script src="team.js"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
@@ -685,6 +691,16 @@ if (FIREBASE_CONFIG) {
       showHelp('<h3>加到主畫面只要 2 步 📲</h3><ol><li>點右上角的 <span class="ic">⋮</span></li><li>點「<b>加到主畫面</b>」或「<b>安裝應用程式</b>」</li></ol>',
         { t: '↗', pos: 'top:10px;right:18px' });
     }
+  };
+  // 設定裡的「手動加到主畫面」按鈕（不管提示條有沒有被關掉都能用）
+  window.zwA2hsManual = function () {
+    track('a2hs_manual', { kind: kind, standalone: standalone });
+    if (standalone) {
+      showHelp('<h3>你現在是從主畫面的捷徑打開的</h3><ol><li>用手機的瀏覽器（Chrome 或 Safari）打開<br><b>talkmakesgames.github.io/zero-test/</b></li><li>在那裡再按一次「📲 加到主畫面」</li></ol><p style="font-size:14px;opacity:.7;margin:12px 0 0">如果主畫面已經有「廢域方舟」，就不用再加了</p>');
+      return;
+    }
+    if (!kind) kind = 'android';
+    bar.querySelector('.go').onclick();
   };
   maybeShow();
 })();

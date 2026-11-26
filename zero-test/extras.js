@@ -117,10 +117,11 @@
   // ═══ 3. 設定：回報問題、隱私權政策 ═══
   const setBtn = document.createElement('button'); setBtn.id = 'setBtn'; setBtn.textContent = '⚙'; setBtn.setAttribute('aria-label', '設定'); home.appendChild(setBtn);
   setBtn.onclick = () => {
-    open(`<h3>設定</h3><button class="m" id="rp">🐞 回報問題</button><button class="m" id="pv">🔒 隱私權政策</button><button class="m" id="cx">關閉</button>
+    open(`<h3>設定</h3>${window.zwA2hsManual ? '<button class="m" id="a2">📲 加到主畫面</button>' : ''}<button class="m" id="rp">🐞 回報問題</button><button class="m" id="pv">🔒 隱私權政策</button><button class="m" id="cx">關閉</button>
       <div class="sub" style="margin-top:12px">廢域方舟（開發中測試版）｜動嘴做遊戲</div>`);
     $('cx').onclick = close; $('pv').onclick = () => { location.href = 'privacy.html'; };
     $('rp').onclick = report;
+    if ($('a2')) $('a2').onclick = () => { close(); window.zwA2hsManual(); };
   };
   function report() {
     const S = getS();

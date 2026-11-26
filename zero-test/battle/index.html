@@ -12,19 +12,20 @@
 html,body{margin:0;height:100%;background:#05070b;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 canvas{display:block;margin:0 auto;touch-action:none}
 </style>
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="動嘴做遊戲">
+<meta name="apple-mobile-web-app-title" content="廢域方舟">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#1a1d2e">
+<meta name="theme-color" content="#05070b">
 </head>
 <body>
 <canvas id="c"></canvas>
 <script src="../story/ch1.js"></script>
 <script src="../story/story.js"></script>
+<script src="../gear.js"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -64,6 +65,7 @@ let SV = null;
 if (STAGE) { try { SV = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {} if (!SV) location.href = '../'; }
 const OT = !STAGE && /[?&]ot=1/.test(location.search);   // 加班模式：每天同一個盤面、無限波次、能力統一
 const OT_DAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()), OT_SEED = +OT_DAY.replace(/-/g, '') % 100000;
+const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, dogScrap: 20, he: 1 };   // 隊伍等級＋裝備的加成
 const TIER = OT ? 3 : SV ? Math.min(SV.tier || 1, 3) : 6, SUB = SV ? (SV.sub || 0) : 0;
 const VEH_NAMES = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
 const SLOTS = ({ 1: [0], 2: [0, 1], 3: [0, 1, 2] })[TIER] || [0, 1, 2];   // 這台車裝了哪些武器（0 閃電、1 火焰、2 機槍）；沒裝的顏色只有主角的弱攻擊
@@ -121,8 +123,8 @@ const KINDS = {
 // 試玩版（247 天後、第 6 階青晶房車）：主角傷害 ×POW；第一波血量打折，讓新手先覺得自己很強
 // 從遊戲流程進來（?trial=1）：結算按鈕變「繼續」，回到遊戲（解說影片 A）
 const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
-const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1))) : 120;
-const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB)) : 14000;
+const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) * GE.atk) : 120;
+const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
 const STAGE_HP = [0, 0.62, 1.0, 0.85, 0.95, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.45, 0.75, 1.05, 0.9, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = 5;   // 第一章（零號廢域）：4 關＋第 5 關頭目
@@ -357,7 +359,8 @@ function say(s) { G.ai.line = s; G.ai.lineT = 2.8; G.heLineT = 0; }
 // ── 主流程 ──
 function startGame() {
   newGame(OT ? OT_SEED : undefined); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start)); playBGM('battle');
-  if (STAGE === 1) { G.energy = 100; G.ai.fullSaid = true; say('能量是滿的。點我。'); }
+  if (STAGE && GE.start) G.energy = GE.start;
+  if (STAGE === 1) { G.energy = 100; G.ai.fullSaid = true; say('能量是滿的。點我。'); G.bannerText = '目標：騎到商場街（3 km）'; G.bannerT = 2.2; }
   if (CHASE) { G.bannerText = `撐 ${CHASE} 回合！轉珠只有 5 秒`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
   if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次小禾一滿就用。'), 2000);
   if (STAGE === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
@@ -424,7 +427,7 @@ function update(dt) {
     case 'clear':
       if (G.phaseT > 1.0) {
         if (LAST()) { finish(true); }
-        else if (STAGE === 1) { G.wave++; G.state = 'intro'; G.phaseT = 0; spawnWave(); say('剩下的，用你的手。'); }   // 1-1 不抽卡，直接教轉珠
+        else if (STAGE === 1) { G.wave++; G.state = 'intro'; G.phaseT = 0; spawnWave(); say('剩下的，用你的手。'); G.bannerText = '商場街 還有 2.7 km'; G.bannerT = 1.6; }   // 1-1 不抽卡，直接教轉珠
         else if (CHASE) { G.wave = (G.wave + 1) % WAVES.length; G.state = 'intro'; G.phaseT = 0; spawnWave(); G.turns++; if (G.turns >= CHASE) finish(true); }
         else { openCards(); }
       }
@@ -495,7 +498,7 @@ function popGroup(g) {
     G.board[r][c] = null; G.parts++;
     if (RUST_ON && g.t === 3) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = c + dx, y = r + dy; const q = G.board[y] && G.board[y][x]; if (q && q.t === RUST) { breakRust(x, y); if (HE_ON) G.he = Math.min(100, G.he + 6); } }
   }
-  if (HE_ON && g.t === 3) { const was = G.he; G.he = Math.min(100, G.he + 9 * g.cells.length); if (was < 100 && G.he >= 100) sayV('c1_he_ready'); }
+  if (HE_ON && g.t === 3) { const was = G.he; G.he = Math.min(100, G.he + 9 * GE.he * g.cells.length); if (was < 100 && G.he >= 100) sayV('c1_he_ready'); }
   if (plusAt) {
     const [c, r] = plusAt; const cell = makeCell(g.t, c, r); cell.plus = true; cell.s = 1.6; G.board[r][c] = cell;
     G.fx.push({ type: 'forge', x: cellPos(c, r).x, y: cellPos(c, r).y, t: 0, dur: 0.6, color: T.color });
@@ -525,7 +528,7 @@ function gravity() {
 function heroHand() { return IMG.hc0 ? { x: HERO.x + 52, y: HERO.y - 112 } : IMG.ha0 ? { x: HERO.x + 36, y: HERO.y - 122 } : IMG.hero0 ? { x: HERO.x + 52, y: HERO.y - 108 } : { x: HERO.x + 34, y: HERO.y - 52 }; }
 function mult() { return 1 + 0.25 * (G.combo - 1); }
 // 暴擊率：基本 10%，每 1 連擊 +2%（最高 60%）；暴擊傷害 ×2
-function critRate() { return Math.min(0.6, 0.10 + 0.02 * G.combo); }
+function critRate() { return Math.min(0.6, 0.10 + GE.crit + 0.02 * G.combo); }
 function hitFX(e, kind) {   // 每種武器自己的命中效果
   const x = e.x, y = e.y - 40;
   if (kind === 'light' || kind === 'emp') for (let i = 0; i < 10; i++) { const a = rnd() * Math.PI * 2, sp = 150 + rnd() * 260; G.parts_.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.25 + rnd() * 0.2, color: rnd() < 0.5 ? '#e8ffff' : CYAN, size: 2 + rnd() * 2, rot: a, vr: 0, g: 0, spark: true }); }
@@ -595,7 +598,7 @@ function stepAttack() {
     if (G.mods.steel) { const f = frontEnemy(); if (f) dealDamage(f, 4 * POW * g.n * m, '#cfd6dd', 'mg'); }
     SFX.heal();
   } else {   // 能量：AI 充能
-    G.energy = Math.min(100, G.energy + 5 * g.n * (g.plus ? 2 : 1) * G.mods.energy);
+    G.energy = Math.min(100, G.energy + 5 * g.n * (g.plus ? 2 : 1) * G.mods.energy * GE.energy);
     G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: G.ai.x, y1: G.ai.y, t: 0, dur: 0.2, color: '#b46bff' });
     SFX.energy();
   }
@@ -683,7 +686,7 @@ function stepEMP() {
     G.empFired = true; G.empT = 0.8; G.flash = 0.9; G.shake = 22; SFX.emp();
     for (const e of alive()) {
       for (let k = 0; k < 3; k++) G.fx.push({ type: 'light', x0: EMP_POS.x, y0: EMP_POS.y, x1: e.x, y1: e.y - 40, t: -k * 0.08, dur: 0.35 });
-      dealDamage(e, (70 + 25 * G.wave) * POW, '#d9f6ff', 'emp'); if (!e.dead) e.stun = true;
+      dealDamage(e, (70 + 25 * G.wave) * POW * GE.emp, '#d9f6ff', 'emp'); if (!e.dead) e.stun = true;
     }
     for (let i = 0; i < 40; i++) { const a = rnd() * Math.PI * 2, sp = 200 + rnd() * 500; G.parts_.push({ x: EMP_POS.x, y: EMP_POS.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.6, color: rnd() < 0.5 ? CYAN : '#e8ffff', size: 3 + rnd() * 4, rot: 0, vr: 0, g: 0 }); }
   }
@@ -709,12 +712,13 @@ function chooseCard(i) {
 function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手機存檔
   let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
   if (!S0) return null;
+  if (window.ZW_GEAR) ZW_GEAR.ensure(S0);   // 先補好裝備欄，才不會把這次要掉的裝備當成舊的
   const k = win ? 1 : 0.3, pt = G.ptype, nk = Object.values(G.kills).reduce((a, b) => a + b, 0);
   const r = { coin: Math.round((80 + 20 * STAGE) * k), scrap: Math.round((pt[3] * 4 + 30 + 6 * STAGE) * k), chip: Math.round((pt[0] + nk * 2) * k), fuel: Math.round(pt[1] / 6 * k), core: 0, blueprint: 0 };
   const before = (S0.cleared && S0.cleared.zero) || 0;
   if (win) { if (rnd() < 0.25) r.core += 1; if (STAGE === ZN) { r.core += 3; if (before < ZN) r.blueprint = 1; } }
   if (!win) r.fuel += STAGE === ZN ? 10 : 5;
-  if (DOG_ON) r.scrap += 20;   // 鐵鏽多撿的一份   // 打輸退一半燃料
+  if (DOG_ON) r.scrap += GE.dogScrap;   // 鐵鏽多撿的一份   // 打輸退一半燃料
   const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= STAR_COMBO ? 1 : 0) : 0;
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
   for (const key in r) { if (key === 'scrap' || key === 'chip') S0.res[key] = Math.min(cap, (S0.res[key] || 0) + r[key]); else if (key === 'fuel') { const f0 = S0.res.fuel; S0.res.fuel = Math.min(100 + ((S0.fac.tank || 1) - 1) * 20, S0.res.fuel + r.fuel); r.fuel = Math.max(0, S0.res.fuel - f0); /* 油箱滿了就不顯示 +N */ } else S0.res[key] = (S0.res[key] || 0) + r[key]; }
@@ -725,15 +729,16 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   const d = Math.floor((Date.now() - S0.firstDay) / 86400000) + 1;
   if (win && STAGE > before) {
     S0.cleared = S0.cleared || {}; S0.cleared.zero = STAGE;
-    if (STAGE === 1) S0.diary.push({ day: d, text: '第一次出門打殭屍。三輪車沒散架，我也沒散架。' });
+    if (STAGE === 1) S0.diary.push({ day: d, text: '肚子餓到不行，出發去商場街找吃的。路上第一次打殭屍。三輪車沒散架，我也沒散架。' });
     if (STAGE === 2) S0.diary.push({ day: d, text: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。' });
     if (STAGE === 3) S0.diary.push({ day: d, text: '被一大群殭屍追了一路。鐵鏽撲上去替車子擋了一下。我好像開始習慣這裡了——這才可怕。' });
     if (STAGE === 4) S0.diary.push({ day: d, text: '有個女生拿槍指著零。我說「它是我的手機」。說完我自己也愣了一下。' });
     if (STAGE === ZN) S0.diary.push({ day: d, text: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' });
   }
+  let item = null; if (win && window.ZW_GEAR) item = ZW_GEAR.drop(S0, STAGE);   // 第一次過關掉裝備
   S0.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
-  return { r, stars };
+  return { r, stars, item };
 }
 const STAR_COMBO = STAGE === 1 ? 3 : STAGE === 2 ? 4 : 6;   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
@@ -764,7 +769,7 @@ function otRecord() {
   try { localStorage.setItem('zw-ot-best', JSON.stringify(b)); } catch (e) {}
   try { window.tmgTrack && window.tmgTrack('zw_ot_end', { waves: w }); } catch (e) {}
 }
-const PRE = { 1: 'c1s1', 2: 'c1s2', 3: 'c1s4', 4: 'c1s5', 5: 'c1s7' }, POST = { 2: 'c1s3', 4: 'c1s6' };
+const PRE = { 1: 'c1s1', 2: 'c1s2', 3: 'c1s4', 4: 'c1s5', 5: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s3', 4: 'c1s6' };
 function storySeen(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.story && s.story[k]); } catch (e) { return false; } }
 function storyMark(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return; s.story = s.story || {}; s.story[k] = 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} }
 function heroName() { return (SV && SV.hero) || '我'; }
@@ -1424,7 +1429,7 @@ function drawResult() {
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
     ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
-    const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : ''].filter(Boolean).join('　');
+    const extra = [R.fuel ? `燃料 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
   }
   rows.forEach(([k, v], i) => {
@@ -1675,6 +1680,21 @@ window.__dev = {
   dog() { if (DOG_ON && !G.dogUsed) G.dogArmed = true; },
   he(i) { if (G.he >= 100 && G.state === 'player') { G.state = 'hePick'; heConvert(heColors()[i || 0]); } },
 };
+// 測試用：直接過關（只在測試網址和本機出現，正式版沒有）
+if (/zero-test/.test(location.pathname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  const sk = document.createElement('button');
+  sk.textContent = '⏭ 跳過（測試）';
+  sk.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));z-index:50;padding:8px 14px;border-radius:18px;border:1px solid #ffd28a;background:rgba(8,14,20,0.85);color:#ffd28a;font:800 14px "Microsoft JhengHei",sans-serif';
+  sk.addEventListener('click', ev => {
+    ev.stopPropagation();
+    if (['result', 'story', 'orb', 'cards'].includes(G.state) || G.result) return;
+    if (G.drag) endDrag();
+    G.maxCombo = Math.max(G.maxCombo, STAR_COMBO); G.armor = Math.max(G.armor, G.armorMax * 0.5);   // 跳過直接給三顆星
+    finish(true);
+  });
+  document.body.appendChild(sk);
+  setInterval(() => { sk.style.display = (G.state === 'result' || G.state === 'story' || G.state === 'orb' || G.result) ? 'none' : 'block'; }, 300);
+}
 </script>
 </body>
 </html>
