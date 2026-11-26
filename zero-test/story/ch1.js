@@ -421,7 +421,8 @@ window.STORY_C1={
 },
 {
 "w": "narr",
-"t": "路邊歪掉的招牌：「加油站 500m」。"
+"t": "路邊歪掉的招牌：「加油站 500m」。",
+"cg": "story/bg_gas.webp"
 },
 {
 "w": "zero",
@@ -445,7 +446,7 @@ window.STORY_C1={
 },
 "c1s1d": {
 "title": "幫浦",
-"bg": "story/bg_road.webp",
+"bg": "story/bg_gas.webp",
 "bgm": "calm",
 "lines": [
 {
@@ -601,7 +602,7 @@ window.STORY_C1={
 },
 "c1s4": {
 "title": "看見倖存者",
-"bg": "story/bg_horde.webp",
+"bg": "story/bg_survivors.webp",
 "bgm": "tense",
 "lines": [
 {
@@ -673,7 +674,7 @@ window.STORY_C1={
 },
 "c1s4b": {
 "title": "老周",
-"bg": "story/bg_horde.webp",
+"bg": "story/bg_road.webp",
 "bgm": "calm",
 "lines": [
 {
@@ -776,7 +777,7 @@ window.STORY_C1={
 },
 "c1s6": {
 "title": "商場街營地",
-"bg": "story/bg_workbench.webp",
+"bg": "story/bg_camp.webp",
 "bgm": "calm",
 "lines": [
 {
