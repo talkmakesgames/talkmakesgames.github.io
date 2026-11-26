@@ -251,12 +251,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11270318"></script>
-<script src="story/ch1.js?v=11270318"></script>
-<script src="story/intro.js?v=11270318"></script>
-<script src="story/story.js?v=11270318"></script>
-<script src="gear.js?v=11270318"></script>
-<script src="wide.js?v=11270318"></script>
+<script src="i18n.js?v=11270356"></script>
+<script src="story/ch1.js?v=11270356"></script>
+<script src="story/intro.js?v=11270356"></script>
+<script src="story/story.js?v=11270356"></script>
+<script src="gear.js?v=11270356"></script>
+<script src="wide.js?v=11270356"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -549,8 +549,9 @@ const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標
   ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { coin: 100 }],
   ['q3', '改裝三輪車', '到「載具」把三輪車改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
   ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { core: 1 }],
-  ['q5', '甩掉屍群', '打過第一章 1-4（追逐）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 300, fuel: 20 }],
+  ['q5', '救下倖存者', '打過第一章 1-4（掩護倖存者）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 300, fuel: 20 }],
   ['q6', '第一次合成', '到「設備」用拼圖合成任一台機器人', () => [Math.min(devSum(), 1), 1], { coin: 300 }],
+  ['q6b', '裝上引擎', '在「設備」合成石油收集器（找到加油站後開放）', () => [S.dev.oil ? 1 : 0, 1], { fuel: 30, chip: 10 }],
   ['q7', '收集情報', '在零的資料庫解鎖 3 種敵人（打倒才算）', () => [Math.min(Object.keys(S.codex.kills).length, 3), 3], { chip: 30 }],
   ['q9', '拿星星', '在第一章累積 10 顆星', () => [Math.min(starSum(), 10), 10], { coin: 500, scrap: 300 }],
   ['q10', '換台車', '把載具升到第 2 階「改裝邊車機車」', () => [Math.min(S.tier - 1, 1), 1], { core: 2, chip: 40 }],
@@ -869,9 +870,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11270318"></script>
-<script src="team.js?v=11270318"></script>
-<script src="puzzle.js?v=11270318"></script>
+<script src="extras.js?v=11270356"></script>
+<script src="team.js?v=11270356"></script>
+<script src="puzzle.js?v=11270356"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
