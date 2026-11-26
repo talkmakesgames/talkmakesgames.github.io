@@ -50,6 +50,13 @@
   #sty .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(63,240,255,.85),rgba(63,240,255,0) 60%);opacity:0;pointer-events:none;transition:opacity .5s;z-index:3}
   #sty .chs{position:absolute;left:30px;right:30px;bottom:240px;display:none;flex-direction:column;gap:12px;z-index:4}
   #sty .chs.on{display:flex}
+  #sty .tapg{position:absolute;left:40px;right:40px;top:36%;display:none;flex-direction:column;align-items:center;gap:14px;z-index:4;color:#fff;text-shadow:0 2px 10px #000}
+  #sty .tapg.on{display:flex}
+  #sty .tapg b{font:900 40px sans-serif;letter-spacing:4px;color:#ffd23f}
+  #sty .tapg .bar{width:100%;height:26px;border-radius:13px;background:rgba(0,0,0,.6);border:2px solid #ffd23f;overflow:hidden}
+  #sty .tapg .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23f,#ff8a3d);transition:width .08s}
+  #sty .tapg small{font:800 18px sans-serif;color:#ffe9b0}
+  #sty .tapg .tm{width:100%;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}#sty .tapg .tm i{display:block;height:100%;background:#ff5a5a}
   #sty .chs button{height:60px;border-radius:14px;border:2px solid #3ff0ff;background:rgba(4,14,20,.92);color:#e8ffff;font:800 21px sans-serif}
   #sty video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
   `;
@@ -76,7 +83,7 @@
         const s = actx.createBufferSource(); s.buffer = b; const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = kind === 'buzz' ? 220 : 1800;
         s.connect(f); f.connect(g); g.gain.setValueAtTime(0.12, t); g.gain.linearRampToValueAtTime(0, t + len); s.start(t);
       } else if (kind === 'join') { [523, 659, 784, 1046].forEach((fq, i) => { const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.value = fq; o.connect(g); o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.25); }); g.gain.value = 0.09; }
-      else if (kind === 'click' || kind === 'hit') { const o = actx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(kind === 'hit' ? 160 : 900, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.08); o.connect(g); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12); o.start(t); o.stop(t + 0.13); }
+      else if (kind === 'click' || kind === 'hit' || kind === 'tap') { const o = actx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(kind === 'hit' ? 160 : kind === 'tap' ? 420 + Math.random() * 120 : 900, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.08); o.connect(g); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12); o.start(t); o.stop(t + 0.13); }
     } catch (e) {}
   }
   const Story = {
@@ -106,7 +113,8 @@
       const top = el('div', 'top'), bAuto = el('button', Story.auto ? 'on' : '', top), bSkip = el('button', '', top);
       bAuto.textContent = '自動'; bSkip.textContent = '跳過 ▶▶';
       const endEl = el('div', 'end');
-      const glow = el('div', 'glow'), hold = el('div', 'hold'), chs = el('div', 'chs');
+      const glow = el('div', 'glow'), hold = el('div', 'hold'), chs = el('div', 'chs'), tapg = el('div', 'tapg');
+      tapg.innerHTML = '<b>連點！踩踏板！</b><div class="bar"><i></i></div><div class="tm"><i></i></div><small></small>';
       hold.innerHTML = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="6"/><circle class="pg" cx="50" cy="50" r="44" fill="none" stroke="#3ff0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><span>按住</span><small>把手放上去</small>';
       const lines = sc.lines.slice(); let waitAct = false, holdT = null, holdStart = 0;
       let i = -1, typing = null, full = '', audio = null, autoT = null, done = false, waitOrb = false;
@@ -133,7 +141,7 @@
         const who = L.w;
         if (NAMES.hasOwnProperty(who)) { nm.style.display = ''; nm.className = 'nm ' + who; nm.textContent = who === 'hero' ? name : NAMES[who]; } else nm.style.display = 'none';
         // 頭像：說話的人亮、另一邊收起
-        const side = SIDE[who], src = PORTRAIT[who] && PORTRAIT[who](L.e);
+        const pw = L.pw || who, side = SIDE[pw], src = PORTRAIT[pw] && PORTRAIT[pw](L.pw ? L.pe : L.e);   // pw：旁白時也可以讓某個角色的圖出現
         [ptL, ptR].forEach(p => p.classList.remove('on'));
         if (side && src) { const p = side === 'L' ? ptL : ptR; p.style.visibility = ''; if (p.dataset.src !== src) { p.src = base + src; p.dataset.src = src; } p.className = 'pt ' + side + ' ' + who + ' on'; }
         // 手機通知
@@ -157,6 +165,18 @@
             if (k >= 1) { clearInterval(holdT); holdT = null; hold.classList.remove('on'); tone('join'); glow.style.opacity = 1; setTimeout(() => { glow.style.opacity = 0; }, 700); waitAct = false; setTimeout(next, 500); } };
           root.onpointerdown = () => { if (!waitAct || holdT) return; holdStart = performance.now(); holdT = setInterval(tick, 30); };
           root.onpointerup = root.onpointercancel = () => { if (holdT) { clearInterval(holdT); holdT = null; pg.style.strokeDashoffset = 276.5; glow.style.opacity = 0; } };
+        }
+        if (L.tap) {   // 連點小遊戲：限時內點滿 N 下才會往下（失敗就重來，不會卡關）
+          waitAct = true; tapg.classList.add('on'); const bar = tapg.querySelector('.bar i'), tm = tapg.querySelector('.tm i'), msg = tapg.querySelector('small');
+          const N = L.tap, LIM = (L.tapT || 6) * 1000; let n = 0, t0 = 0, tt = null, fail = false;
+          const reset = () => { n = 0; t0 = 0; fail = false; bar.style.width = '0'; tm.style.width = '100%'; msg.textContent = `點 ${N} 下甩開它！`; };
+          reset();
+          const tickT = () => { if (!t0) return; const k = 1 - (performance.now() - t0) / LIM; tm.style.width = Math.max(0, k * 100) + '%';
+            if (k <= 0 && n < N) { clearInterval(tt); tt = null; fail = true; msg.textContent = '被追上了！再踩一次！'; tone('hit'); box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); setTimeout(reset, 1100); } };
+          root.onpointerdown = () => { if (!waitAct || fail || n >= N) return; if (!t0) { t0 = performance.now(); tt = setInterval(tickT, 50); }
+            n++; bar.style.width = Math.min(100, n / N * 100) + '%'; msg.textContent = `${n} / ${N}`; tone('tap');
+            box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk');
+            if (n >= N) { clearInterval(tt); tt = null; msg.textContent = '甩掉了！'; tone('join'); setTimeout(() => { tapg.classList.remove('on'); if (root) root.onpointerdown = null; waitAct = false; next(); }, 600); } };
         }
         if (L.choice) {   // 選擇：選完插入對應的台詞
           waitAct = true; chs.innerHTML = ''; chs.classList.add('on');

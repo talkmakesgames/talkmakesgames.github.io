@@ -23,9 +23,9 @@ canvas{display:block;margin:0 auto;touch-action:none}
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../story/ch1.js?v=11261249"></script>
-<script src="../story/story.js?v=11261249"></script>
-<script src="../gear.js?v=11261249"></script>
+<script src="../story/ch1.js?v=11261308"></script>
+<script src="../story/story.js?v=11261308"></script>
+<script src="../gear.js?v=11261308"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -841,7 +841,7 @@ const BG = document.createElement('canvas'); BG.width = W; BG.height = FIELD_H +
 })();
 
 // 每關不同的戰場：1-2 巷弄、1-4 白天的公路；1-3 追逐有速度線；頭目關偏紅
-const FIELD_ALT = { 2: ['../img/story/bg_alley.webp', 0.50], 4: ['../img/story/bg_road.webp', 0.52] }[SL];
+const FIELD_ALT = STAGE === 1 ? ['../img/story/c1_truck.webp', 0.50] : { 2: ['../img/story/bg_alley.webp', 0.50], 4: ['../img/story/bg_road.webp', 0.52] }[SL];   // 1-1：翻倒的便利商店貨車旁
 if (FIELD_ALT) { const im = new Image(); im.onload = () => { IMG.field = im; }; im.src = FIELD_ALT[0]; }
 function drawField() {
   if (IMG.field) {   // 直式背景圖：裁一條橫的當戰場

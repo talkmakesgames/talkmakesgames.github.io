@@ -157,7 +157,8 @@
     <button class="btn" id="goBtn">出發<small id="goCost">燃料 -10</small></button>
     <div id="menu">
       <div class="mbtn" data-go="team" style="position:relative"><img src="img/face0.webp" alt="" style="border-radius:50%">隊伍<span id="teamDot" style="display:none;position:absolute;top:8px;right:10px;width:12px;height:12px;border-radius:50%;background:#ff4a5a"></span></div>
-      <div class="mbtn" data-go="garage"><img src="img/v1.webp" alt="">車庫</div>
+      <div class="mbtn" data-go="garage"><img src="img/v1.webp" alt="">載具</div>
+      <div class="mbtn" data-go="store"><img src="img/f_store.webp" alt="">倉庫</div>
       <div class="mbtn" data-go="facility"><img src="img/f_recycle.webp" alt="">設施</div>
       <div class="mbtn" data-go="diary"><img src="img/diary_cover.webp" alt="">日記</div>
       <div class="mbtn" data-go="codex"><img src="img/zero.webp" alt="">資料庫</div>
@@ -186,7 +187,8 @@
     <div class="grid" id="questGrid" style="grid-template-columns:1fr;top:104px"></div></div>
   <!-- 車庫 -->
   <div class="scr" id="scr-team"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">隊伍</div><button class="close" data-back>✕</button><div class="grid" id="teamGrid" style="grid-template-columns:1fr"></div></div>
-  <div class="scr" id="scr-garage"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">車庫</div><button class="close" data-back>✕</button><div class="grid" id="garageGrid" style="grid-template-columns:1fr 1fr"></div></div>
+  <div class="scr" id="scr-store"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">倉庫</div><button class="close" data-back>✕</button><div class="grid" id="storeGrid" style="grid-template-columns:1fr"></div></div>
+  <div class="scr" id="scr-garage"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">載具</div><button class="close" data-back>✕</button><div class="grid" id="garageGrid" style="grid-template-columns:1fr 1fr"></div></div>
   <!-- 設施 -->
   <div class="scr" id="scr-facility"><img class="bg" src="img/home_bg.webp" alt="" style="filter:brightness(.35)"><div class="title">基地設施</div><button class="close" data-back>✕</button><div class="grid" id="facGrid" style="grid-template-columns:1fr 1fr"></div></div>
   <!-- 日記 -->
@@ -212,10 +214,10 @@
   <div id="toast"></div>
 </div>
 
-<script src="story/ch1.js?v=11261249"></script>
-<script src="story/intro.js?v=11261249"></script>
-<script src="story/story.js?v=11261249"></script>
-<script src="gear.js?v=11261249"></script>
+<script src="story/ch1.js?v=11261308"></script>
+<script src="story/intro.js?v=11261308"></script>
+<script src="story/story.js?v=11261308"></script>
+<script src="gear.js?v=11261308"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -384,7 +386,7 @@ function baseStory() {
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     setTimeout(() => Story.play('c1base1', { name: S.hero, base: '', onLine: L => hlRes(L.hl), onDone: () => {
       hlRes(null); S.story = S.story || {}; S.story.c1base1 = 1; S.flags = S.flags || {}; if ((S.sub || 0) === 0 && S.tier === 1) S.flags.firstUp = 1; save(); renderMenu();
-      toast('🔓 車庫、日記、資料庫開放了', 2400); setTimeout(() => openScreen('garage'), 900);
+      toast('🔓 倉庫、載具、日記、資料庫開放了', 2400); setTimeout(() => openScreen('store'), 900);
     } }), 500);
     return true;
   }
@@ -403,7 +405,7 @@ function goHome(first) {
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
 $('vehicle').onclick = () => openScreen('garage');
 $('goBtn').onclick = () => openScreen('map');
-const MENU_NEED = { garage: [1, '打過 1-1 開放'], diary: [1, '打過 1-1 開放'], codex: [1, '打過 1-1 開放'], team: [3, '在 1-3 遇到夥伴後開放'], facility: [4, '打過 1-4 開放'] };   // 基地按鈕一步一步開放
+const MENU_NEED = { garage: [1, '打過 1-1 開放'], store: [1, '打過 1-1 開放'], diary: [1, '打過 1-1 開放'], codex: [1, '打過 1-1 開放'], team: [3, '在 1-3 遇到夥伴後開放'], facility: [4, '打過 1-4 開放'] };   // 基地按鈕一步一步開放
 const menuOpen = k => !MENU_NEED[k] || ((S.cleared && S.cleared.zero) || 0) >= MENU_NEED[k][0];
 function renderMenu() { document.querySelectorAll('.mbtn').forEach(b => { const ok = menuOpen(b.dataset.go); b.style.opacity = ok ? '' : '.35'; b.style.filter = ok ? '' : 'grayscale(1)'; }); }
 document.querySelectorAll('.mbtn').forEach(b => b.onclick = () => { if (!menuOpen(b.dataset.go)) { toast('🔒 ' + MENU_NEED[b.dataset.go][1]); return; } openScreen(b.dataset.go); });
@@ -412,7 +414,7 @@ setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(
 
 window.ZW_A2HS_OK = () => !!(S && S.intro === 'done' && $('scr-home').classList.contains('on'));   // 「加到主畫面」橫幅只在基地首頁出現
 function openScreen(k) {
-  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'team') renderTeam(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
+  if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'store') renderStore(); if (k === 'team') renderTeam(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
   show(k);
 }
 
@@ -422,7 +424,7 @@ const starSum = () => Object.values(S.stars || {}).reduce((a, b) => a + b, 0);
 const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標]）, 獎勵]
   ['q1', '第一次出門', '打過零號廢域第 1 關', () => [Math.min(S.cleared.zero || 0, 1), 1], { coin: 200, scrap: 100 }],
   ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { coin: 100 }],
-  ['q3', '改裝三輪車', '到車庫把載具改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
+  ['q3', '改裝三輪車', '到「載具」把三輪車改裝到 +1', () => [Math.min(S.sub + (S.tier - 1) * 5, 1), 1], { scrap: 150, chip: 10 }],
   ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { core: 1 }],
   ['q5', '甩掉屍群', '打過第一章 1-4（追逐）', () => [Math.min(S.cleared.zero || 0, 4), 4], { coin: 300, fuel: 20 }],
   ['q6', '蓋點東西', '升級任一個基地設施', () => [Math.min(facSum() - 6, 1), 1], { coin: 300 }],
@@ -477,7 +479,7 @@ function openZone(i) {
   }).join('');
   $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
     const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
-    if (j === 5 && S.tier === 1 && (S.sub || 0) === 0 && !n.dataset.ok) { ask('零的建議', '前面那台機甲很硬。<br>建議先去車庫改裝一下車子，再出發。', [['先去車庫', () => openScreen('garage'), true], ['不管了，直接出發', () => { n.dataset.ok = 1; n.onclick(); }]]); return; }
+    if (j === 5 && S.tier === 1 && (S.sub || 0) === 0 && !n.dataset.ok) { ask('零的建議', '前面那台機甲很硬。<br>建議先去「載具」改裝一下車子，再出發。', [['先去改裝載具', () => openScreen('garage'), true], ['不管了，直接出發', () => { n.dataset.ok = 1; n.onclick(); }]]); return; }
     const cost = j === 5 ? 20 : 10, free = (NOW() - S.firstDay) < 3 * 86400000;   // 新手前 3 天出發不花燃料
     tickResources();
     if (!free && S.res.fuel < cost) { toast('油箱見底。你可以等，也可以去撿。（每 6 分鐘回 1）', 2600); return; }
@@ -515,10 +517,27 @@ function renderGarage() {
     pay(tc); S.tier++; S.sub = 0; addDiary(`把車升級成「${VEH[S.tier - 1]}」了。零說：「終於不像垃圾車了。勉強像回收車。」`); save(); toast(`升階完成：${VEH[S.tier - 1]}！`, 2400); renderGarage();
   };
 }
+// ═══ 倉庫：撿回來的東西（數量／上限／用途）、還沒穿的裝備、擴建 ═══
+const STORE_RES = [['coin', '金幣', '舊硬幣。什麼都能買，除了尊嚴'], ['scrap', '廢鐵', '改裝載具'], ['chip', '電路板', '讓零和夥伴變強'], ['fuel', '燃料', '每次出發都要用'], ['core', '青晶核心', '稀有。高級升級要用'], ['blueprint', '藍圖', '載具升階要用']];
+function resCap(k) { return k === 'scrap' || k === 'chip' ? 2000 * (S.fac.store || 1) : k === 'fuel' ? 100 + ((S.fac.tank || 1) - 1) * 20 : 0; }
+function renderStore() {
+  const rows = STORE_RES.map(([k, n, d]) => { const v = S.res[k] || 0, cap = resCap(k), hidden = (k === 'core' || k === 'blueprint') && !v;
+    return `<div class="card" style="display:flex;gap:12px;align-items:center;text-align:left;padding:10px 12px${hidden ? ';opacity:.45' : ''}"><img src="img/r_${k}.webp" alt="" style="width:46px;height:46px;flex:none${hidden ? ';filter:brightness(0)' : ''}">
+      <div style="flex:1"><div style="font:900 16px sans-serif">${hidden ? '？？？' : n} <span style="color:#9ff8ff">${hidden ? '' : fmt(v) + (cap ? ' / ' + fmt(cap) : '')}</span></div><div class="sub" style="font-size:12px">${hidden ? '還沒拿到' : d}</div>
+      ${cap && k !== 'fuel' ? `<div style="height:5px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden"><div style="height:100%;width:${Math.min(100, v / cap * 100)}%;background:${v >= cap ? '#ff6a78' : '#3ff0ff'}"></div></div>` : ''}</div></div>`; }).join('');
+  const l = S.fac.store || 1, c = facCost(l), mx = l >= 10;
+  const exp = `<div class="card" style="text-align:left;padding:10px 12px"><div style="font:900 16px sans-serif;color:#ffd23f">擴建倉庫 Lv.${l}</div><div class="sub" style="font-size:12px">廢鐵、電路板最多 ${fmt(2000 * l)}${mx ? '（已經最大）' : `　→ 下一級 ${fmt(2000 * (l + 1))}`}</div>
+    ${mx ? '' : `<button class="btn" id="stUp" style="position:relative;margin-top:8px;height:40px;width:100%;font-size:15px;${afford(c) ? '' : 'opacity:.4'}">擴建（${costText(c)}）</button>`}</div>`;
+  const G = window.ZW_GEAR, spare = G ? S.gear.own.filter(id => !Object.values(S.gear.eq).includes(id)) : [];
+  const gear = G ? `<div class="card" style="text-align:left;padding:10px 12px"><div style="font:900 16px sans-serif;color:#9ff8ff">裝備（沒穿的）</div>${spare.length ? spare.map(id => `<div class="sub" style="font-size:13px;color:#e8f6f8;margin-top:4px">・${G.ITEMS[id].n}　<span style="color:#9ff8ff">${G.ITEMS[id].txt}</span></div>`).join('') + '<div class="sub" style="font-size:12px;margin-top:6px">到「隊伍」可以換上。</div>' : '<div class="sub" style="font-size:12px">目前沒有。打過新的關卡會掉裝備。</div>'}</div>` : '';
+  const go = S.flags && S.flags.firstUp === 1 ? `<button class="btn" id="stGo" style="position:relative;height:48px;width:100%;font-size:18px">廢鐵夠了，去改裝載具 →</button>` : '';
+  $('storeGrid').innerHTML = go + rows + exp + gear;
+  if ($('stUp')) $('stUp').onclick = () => { if (!afford(c)) { toast('資源不夠：' + costText(c)); return; } pay(c); S.fac.store++; save(); renderTop(); toast('倉庫擴建完成'); renderStore(); };
+  if ($('stGo')) $('stGo').onclick = () => openScreen('garage');
+}
 // ═══ 設施 ═══
 const FAC = [
   ['tank', '油箱', '燃料上限', l => `上限 ${100 + (l - 1) * 20}`],
-  ['store', '倉庫', '資源上限', l => `每種最多 ${fmt(2000 * l)}`],
   ['recycle', '回收站', '掛機產出', l => `產出 ×${(1 + 0.25 * (l - 1)).toFixed(2)}`],
   ['battery', '電池', '掛機最長時間', l => `最多 ${8 + (l - 1)} 小時`],
   ['workshop', '工坊', '武器升級', l => `武器最高 Lv.${l * 5}`],
@@ -606,8 +625,8 @@ $('acctBtn').onclick = () => {
 if (S.intro !== 'done') runIntro(); else goHome();
 window.__zwS = () => S; window.__zwSave = () => { save(); try { renderTop(); } catch (e) {} };   // 給 extras.js 用
 </script>
-<script src="extras.js?v=11261249"></script>
-<script src="team.js?v=11261249"></script>
+<script src="extras.js?v=11261308"></script>
+<script src="team.js?v=11261308"></script>
 <script type="module">
 const FIREBASE_CONFIG = {   // Firebase 網頁設定（公開資訊，本來就放在網頁裡；資料靠 Firestore 安全規則保護）
   apiKey: "AIzaSyBOrba0wYsPUa366cQhirN3_IQcOgPpYFI",
