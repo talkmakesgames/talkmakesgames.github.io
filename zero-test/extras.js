@@ -133,7 +133,7 @@
         <button class="chip" data-bk="${i + 1}">備份</button>${d ? `<button class="chip" data-rs="${i + 1}">還原</button>` : ''}</div>`).join('')}
       <div style="text-align:left;font-weight:900;color:#3ff0ff;margin-top:16px">一鍵跳到進度</div>
       <div class="chips">${JUMPS.map((j, i) => `<button class="chip" data-jp="${i}">${j[0]}</button>`).join('')}</div>
-      <button class="m" id="tr">💰 補資源（金幣、廢鐵、電路板、燃料）</button>
+      <button class="m" id="tr">💰 補資源（金幣、廢鐵、電路板、汽油）</button>
       <button class="m" id="tc" style="border-color:#ff6a78;color:#ffb3bb">🗑 清除進度（從開場重新開始）</button>
       <button class="m" id="cx">關閉</button>`);
     $('cx').onclick = close;
