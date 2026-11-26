@@ -7,7 +7,8 @@ window.STORY_C1={
 "lines": [
 {
 "w": "narr",
-"t": "路邊倒著一台腳踏車。鏈條斷了，後輪歪成一個八字。"
+"t": "路邊倒著一台腳踏車。鏈條斷了，後輪歪成一個八字。",
+"cg": "story/c1_bike_broken.webp"
 },
 {
 "w": "zero",
@@ -53,6 +54,7 @@ window.STORY_C1={
 {
 "w": "narr",
 "t": "青光一閃。腳踏車多了一個車斗、一個後輪。",
+"cg": "story/c1_bike_synth.webp",
 "sfx": "join"
 },
 {

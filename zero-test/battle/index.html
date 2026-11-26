@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11270141"></script>
-<script src="../story/ch1.js?v=11270141"></script>
-<script src="../story/story.js?v=11270141"></script>
-<script src="../gear.js?v=11270141"></script>
-<script src="../wide.js?v=11270141"></script>
+<script src="../i18n.js?v=11270221"></script>
+<script src="../story/ch1.js?v=11270221"></script>
+<script src="../story/story.js?v=11270221"></script>
+<script src="../gear.js?v=11270221"></script>
+<script src="../wide.js?v=11270221"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -67,7 +67,7 @@ let SV = null;
 if (STAGE) { try { SV = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {} if (!SV) location.href = '../'; }
 const OT = !STAGE && /[?&]ot=1/.test(location.search);   // 加班模式：每天同一個盤面、無限波次、能力統一
 const OT_DAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()), OT_SEED = +OT_DAY.replace(/-/g, '') % 100000;
-const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, dogScrap: 20, he: 1 };   // 隊伍等級＋裝備的加成
+const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1 };   // 隊伍等級＋裝備的加成
 const TIER = OT ? 3 : SV ? Math.min(SV.tier || 1, 3) : 6, SUB = SV ? (SV.sub || 0) : 0;
 const VEH_NAMES = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
 const SLOTS = ({ 1: [0], 2: [0, 1], 3: [0, 1, 2] })[TIER] || [0, 1, 2];   // 這台車裝了哪些武器（0 閃電、1 火焰、2 機槍）；沒裝的顏色只有主角的弱攻擊
@@ -542,7 +542,7 @@ function hitFX(e, kind) {   // 每種武器自己的命中效果
 function dealDamage(e, dmg, color, kind) {
   if (!e || e.dead) return 0;
   const crit = kind && kind !== 'burn' && kind !== 'emp' && rnd() < critRate();
-  if (crit) dmg *= 2;
+  if (crit) dmg *= 1 + (GE.critDmg || 1);   // 2026-11-27 暴擊傷害：預設 +100%（兩倍），主角和零升級會再加
   dmg = Math.round(dmg); e.hp -= dmg; e.hit = 1; G.totalDmg += dmg; if (dmg > G.maxHit) G.maxHit = dmg;
   const tier = dmg >= 10000 ? 2 : crit ? 1 : 0;
   G.texts.push({ x: e.x + (rnd() - 0.5) * 30, y: e.y - 60, s: dmg, t: 0, life: tier ? 1.15 : 0.9, color: tier === 2 ? '#ff7a2a' : crit ? '#ffe14d' : (color || '#fff'), tier, crit });

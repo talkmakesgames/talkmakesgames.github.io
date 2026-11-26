@@ -101,7 +101,20 @@
   .gain span { display:flex; align-items:center; gap:4px; } .gain img { width:34px; }
   /* 地圖 */
   #mapZones div { position:absolute; border-radius:16px; cursor:pointer; }
-  #stageList { top:420px; padding:16px; display:none; }
+  #stageList { top:300px; bottom:16px; padding:14px; display:none; overflow-y:auto; }
+  .node.sel img { filter:drop-shadow(0 0 10px #ffd23f); } .node.sel { color:#ffd23f; }
+  #stDetail { margin-top:10px; border-top:1px solid rgba(63,240,255,.3); padding-top:10px; text-align:left; color:var(--ink); font:700 14px sans-serif; }
+  #stDetail h4 { margin:0; font:900 20px sans-serif; color:#fff; } #stDetail h4 small { color:#ffd23f; font-size:16px; margin-left:8px; }
+  #stDetail .hint { color:#9ff8ff; margin:4px 0 8px; line-height:1.5; }
+  #stDetail .lab { color:var(--dim); font:800 12px sans-serif; margin:8px 0 4px; letter-spacing:1px; }
+  #stDetail .ens { display:flex; gap:8px; } #stDetail .ens div { width:58px; text-align:center; font:700 11px sans-serif; color:#c8fbff; }
+  #stDetail .ens img { width:52px; height:52px; object-fit:contain; display:block; margin:0 auto; background:rgba(4,12,16,.6); border-radius:10px; }
+  #stDetail .drops span { display:inline-block; background:rgba(4,30,36,.9); border:1px solid rgba(63,240,255,.4); border-radius:8px; padding:3px 8px; margin:0 4px 4px 0; font:800 13px sans-serif; }
+  #stDetail .drops span.first { border-color:#ffd23f; color:#ffd23f; } #stDetail .drops span.got { opacity:.45; text-decoration:line-through; }
+  #stDetail .cost { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  #stDetail .cost b { font:900 15px sans-serif; } #stDetail .warn { color:#ff9a9a; }
+  #stGo { width:100%; margin-top:10px; height:54px; border:0; border-radius:14px; background:var(--cyan); color:#00262c; font:900 22px sans-serif; box-shadow:0 0 18px rgba(63,240,255,.5); }
+  #stGo.dim { opacity:.4; }
   #stageList h3 { margin:0 0 4px; font:900 22px sans-serif; color:var(--cyan); }
   #stageList p { margin:0 0 10px; font:700 13px sans-serif; color:var(--dim); }
   #nodes { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
@@ -202,7 +215,7 @@
     <div class="title">選擇廢域</div>
     <button class="close" data-back>✕</button>
     <div id="mapZones"></div>
-    <div class="panel" id="stageList"><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div></div>
+    <div class="panel" id="stageList"><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div><div id="stDetail"></div></div>
   </div>
 
   <!-- 新手任務 -->
@@ -238,12 +251,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11270141"></script>
-<script src="story/ch1.js?v=11270141"></script>
-<script src="story/intro.js?v=11270141"></script>
-<script src="story/story.js?v=11270141"></script>
-<script src="gear.js?v=11270141"></script>
-<script src="wide.js?v=11270141"></script>
+<script src="i18n.js?v=11270221"></script>
+<script src="story/ch1.js?v=11270221"></script>
+<script src="story/intro.js?v=11270221"></script>
+<script src="story/story.js?v=11270221"></script>
+<script src="gear.js?v=11270221"></script>
+<script src="wide.js?v=11270221"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -460,7 +473,8 @@ function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity 
 function goHome(first) {
   const devR = runDevices(); pedalPower(); show('home'); renderTop(); renderAcct(); renderQuestDot(); renderMenu(); setTimeout(renderVehArrow, 50);
   if (baseStory()) return;
-  setTimeout(foodGuide, 400);
+  setTimeout(foodGuide, 400); setTimeout(goGuide, 700);
+  if (((S.cleared && S.cleared.zero) || 0) >= 5 && S.tier === 1 && (S.sub || 0) === 0 && !(S.flags && S.flags.firstUp)) { S.flags = S.flags || {}; S.flags.firstUp = 1; }   // 打頭目前：帶去改裝載具
   S.flags = S.flags || {}; for (const k of ['team', 'facility']) if (S.intro === 'done' && menuOpen(k) && !S.flags['m_' + k]) { S.flags['m_' + k] = 1; setTimeout(() => toast('🔓 ' + (k === 'team' ? '隊伍' : '設備') + '開放了', 2400), 900); }
   if (!first) idleReport(devR);
   S.lastSeen = NOW(); save();
@@ -488,22 +502,41 @@ function foodGuide() {   // 第一次合成機器人：只能點「設備」→ 
   if (S.dev.food || !(S.story && S.story.c1base1) || !$('scr-home').classList.contains('on') || document.getElementById('sty')) return;
   guideOn(document.querySelector('.mbtn[data-go=facility]'), '點「設備」合成晚餐', () => { openScreen('facility'); setTimeout(() => { const bt = document.querySelector('[data-dev=food]'); if (bt) guideOn(bt, '合成食物機器人', () => bt.onclick()); }, 150); });
 }
+function goGuide() {   // 第一次出門（還沒打過 1-1）：帶玩家點「出發」
+  if (((S.cleared && S.cleared.zero) || 0) > 0 || !(S.flags && S.flags.trike) || !$('scr-home').classList.contains('on') || document.getElementById('sty') || document.getElementById('pz') || guideEl) return;
+  guideOn($('goBtn'), '肚子餓了。點「出發」去找吃的', () => { openScreen('map'); setTimeout(() => { if ($('stGo')) guideOn($('stGo'), '按「出發」開始第一戰', () => $('stGo').onclick()); }, 250); });
+}
+function scrapGuide() {   // 食物機器人做好之後：帶去合成廢鐵採集機器人
+  const bt = document.querySelector('[data-dev=scrap]');
+  if (!bt || S.dev.scrap || fragHave('scrap') < fragNeed(1, 'scrap') || !afford(devCost(1))) return;
+  guideOn(bt, '再合成一台：廢鐵採集機器人', () => bt.onclick());
+}
 function firstUpGuide() { return S.flags && S.flags.firstUp === 1 && menuOpen('garage') && afford(subCost()); }   // 錢不夠就不鎖畫面，免得卡住
-function renderVehArrow() {   // 第一次改裝：箭頭指著基地中間的車，其他地方都不能點
+function renderVehArrow() {   // 第一次改裝（打頭目前）：箭頭指著中間的車，其他地方都不能點
   if (!firstUpGuide() || !$('scr-home').classList.contains('on') || document.getElementById('sty')) { if (guideEl && guideEl._t === $('vehicle')) guideOff(); return; }
-  guideOn($('vehicle'), '點車子改裝', () => { $('vehicle').onclick(); setTimeout(garageGuide, 120); });
+  guideOn($('vehicle'), '頭目很硬。先點車子改裝', () => { $('vehicle').onclick(); setTimeout(garageGuide, 120); });
 }
 function garageGuide() { if (firstUpGuide() && $('upSub')) guideOn($('upSub'), '點這裡改裝', () => $('upSub').onclick()); }
 $('goBtn').onclick = () => openScreen('map');
 const MENU_NEED = { garage: [1, '打過 1-1 開放'], store: [1, '打過 1-1 開放'], diary: [1, '打過 1-1 開放'], codex: [1, '打過 1-1 開放'], team: [3, '在 1-3 遇到夥伴後開放'], facility: [0, ''] };   // 設備一開始就能進（食物機器人）   // 基地按鈕一步一步開放
 const menuOpen = k => !MENU_NEED[k] || ((S.cleared && S.cleared.zero) || 0) >= MENU_NEED[k][0];
-function renderMenu() { document.querySelectorAll('.mbtn').forEach(b => { const ok = menuOpen(b.dataset.go); b.style.opacity = ok ? '' : '.35'; b.style.filter = ok ? '' : 'grayscale(1)'; }); }
+function devNew() {   // 有沒有「已開放、還沒合成、材料和碎片都夠」的機器人
+  try { return DEV.some(([k, , , , , need]) => need() && !S.dev[k] && fragHave(k) >= fragNeed(1, k) && afford(k === 'food' ? {} : devCost(1))); } catch (e) { return false; }
+}
+function menuDots() {
+  const set = (go, on) => { const b = document.querySelector(`.mbtn[data-go=${go}]`); if (!b) return; b.style.position = 'relative'; let d = b.querySelector('.mdot');
+    if (!d) { d = document.createElement('span'); d.className = 'mdot'; d.style.cssText = 'position:absolute;top:8px;right:10px;width:13px;height:13px;border-radius:50%;background:#ff4a5a;box-shadow:0 0 6px #ff4a5a;display:none'; b.appendChild(d); }
+    d.style.display = on ? 'block' : 'none'; };
+  set('facility', devNew()); set('store', !!(S.story && S.story.c1s6) && !(S.flags && S.flags.tradeSeen));
+}
+function renderMenu() { setTimeout(menuDots, 0); document.querySelectorAll('.mbtn').forEach(b => { const ok = menuOpen(b.dataset.go); b.style.opacity = ok ? '' : '.35'; b.style.filter = ok ? '' : 'grayscale(1)'; }); }
 document.querySelectorAll('.mbtn').forEach(b => b.onclick = () => { if (!menuOpen(b.dataset.go)) { toast('🔒 ' + MENU_NEED[b.dataset.go][1]); return; } openScreen(b.dataset.go); });
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => goHome());
 setInterval(() => { if ($('scr-home').classList.contains('on')) { tickResources(); renderTop(); } }, 30000);
 
 window.ZW_A2HS_OK = () => !!(S && S.intro === 'done' && $('scr-home').classList.contains('on'));   // 「加到主畫面」橫幅只在基地首頁出現
 function openScreen(k) {
+  if (k === 'store' && S.story && S.story.c1s6 && !(S.flags && S.flags.tradeSeen)) { S.flags = S.flags || {}; S.flags.tradeSeen = 1; save(); }
   if (k === 'quest') renderQuests(); if (k === 'map') renderMap(); if (k === 'garage') renderGarage(); if (k === 'store') renderStore(); if (k === 'team') renderTeam(); if (k === 'facility') renderFac(); if (k === 'diary') openDiaryScreen(); if (k === 'codex') renderCodex();
   show(k);
 }
@@ -555,26 +588,57 @@ function renderMap() {
   $('stageList').style.display = 'none';
   $('mapZones').innerHTML = ZONES.map((z, i) => `<div data-z="${i}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px"></div>`).join('');
   $('mapZones').querySelectorAll('div').forEach(d => d.onclick = () => openZone(+d.dataset.z));
+  openZone(0);   // 2026-11-27 直接打開零號廢域的關卡（少點一次）
 }
 function openZone(i) {
   const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub;
   if (i > 0) { $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 15px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
   const cl = S.cleared.zero || 0;
+  if (stSel == null || stSel > cl) stSel = Math.min(cl, 5);
   $('nodes').innerHTML = Array.from({ length: 6 }, (_, j) => {
     const boss = j === 5, open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
     const st = (S.stars || {})['zero-' + (j + 1)] || 0;
-    return `<div class="node" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#9ff8ff;font-size:11px;height:13px">${open ? ['肚子餓', '上路', '巷子裡的叫聲', '被追', '地下入口', '清除單位'][j] : ''}</div><div style="color:#ffd23f;font-size:11px;height:13px">${st ? '★'.repeat(st) : ''}</div></div>`;
+    return `<div class="node${j === stSel ? ' sel' : ''}" data-s="${j}"><img src="img/${ic}.webp" alt="">${boss ? '頭目' : '1-' + (j + 1)}<div style="color:#ffd23f;font-size:11px;height:13px">${done ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`;
   }).join('');
-  $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => {
-    const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; }
-    if (j === 5 && S.tier === 1 && (S.sub || 0) === 0 && !n.dataset.ok) { ask('零的建議', '前面那台機甲很硬。<br>建議先去「載具」改裝一下車子，再出發。', [['先去改裝載具', () => openScreen('garage'), true], ['不管了，直接出發', () => { n.dataset.ok = 1; n.onclick(); }]]); return; }
-    const cost = j === 5 ? 20 : 10, free = !S.dev.oil;   // 還沒裝石油收集器＝還在踩腳踏車，不花汽油
+  $('nodes').querySelectorAll('.node').forEach(n => n.onclick = () => { const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; } stSel = j; openZone(0); });
+  renderStageDetail();
+}
+// 2026-11-27 選關：點關卡只是選擇，下面看詳細，按「出發」才開打
+let stSel = null;
+const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情獎勵, 備註]
+  ['肚子餓', '天快黑了。去翻倒的便利商店貨車找吃的。', ['zombie', 'dasher'], 'scrap', '🧩廢鐵採集機器人碎片 ×9', ''],
+  ['加油站', '往商場街的路上有一座加油站。也許還有油。', ['zombie', 'dasher'], 'oil', '🧩石油收集器碎片 ×9', ''],
+  ['巷子裡的聲音', '巷子裡傳來金屬爪子刮地的聲音。有東西在逃。', ['zombie', 'dasher', 'heavy'], 'scrap', '鐵鏽加入', ''],
+  ['看見倖存者', '高架橋下有人被殭屍追著。掩護他們撐到商場街入口。', ['zombie', 'dasher', 'heavy'], 'power', '🧩電能機器人碎片 ×9', '追逐關：撐過 6 回合就贏'],
+  ['營地門口', '殭屍跟到商場街門口了。守住營地大門。', ['zombie', 'dasher', 'heavy'], 'scrap', '交易所開放', ''],
+  ['清除單位', '廣場上的大傢伙會來掃營地。打倒它。', ['zombie', 'dasher', 'mech'], 'oil', '載具藍圖、青晶核心 ×3', '頭目會把零件鏽掉：在旁邊合成灰零件可以敲碎'],
+];
+const FRAG_N = { scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' };
+function renderStageDetail() {
+  const j = stSel, [t, hint, ens, fk, first, note] = STAGES[j], boss = j === 5, cl = S.cleared.zero || 0, done = j < cl;
+  const st = (S.stars || {})['zero-' + (j + 1)] || 0, kills = S.codex.kills || {}, seen = S.codex.seen || {};
+  const gearId = window.ZW_GEAR && Object.keys(ZW_GEAR.ITEMS).find(k => ZW_GEAR.ITEMS[k].from === j + 1), gear = gearId && ZW_GEAR.ITEMS[gearId];
+  const cost = boss ? 20 : 10, free = !S.dev.oil, enough = free || S.res.fuel >= cost;
+  const recOk = !boss || S.tier > 1 || (S.sub || 0) >= 1;
+  const enHtml = ens.map(k => { const c = CODEX.find(x => x[0] === k), known = kills[k] || seen[k];
+    return `<div><img src="img/${c ? c[1] : 'e_zombie'}.webp" alt="" style="${known ? '' : 'filter:brightness(0);opacity:.6'}">${known && c ? c[2] : '？？？'}</div>`; }).join('');
+  const firstItems = [first].concat(gear ? ['裝備：' + gear.n] : []);
+  $('stDetail').innerHTML = `<h4>${boss ? '頭目' : '1-' + (j + 1)}　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
+    <div class="hint">${hint}</div>${note ? `<div class="hint" style="color:#ffd23f">⚠ ${note}</div>` : ''}
+    <div class="lab">會遇到</div><div class="ens">${enHtml}</div>
+    <div class="lab">可能掉落</div><div class="drops"><span>金幣</span><span>廢鐵</span><span>電路板</span><span>🧩${FRAG_N[fk]}碎片 ×2～4</span></div>
+    <div class="lab">第一次過關</div><div class="drops">${firstItems.map(x => `<span class="first${done ? ' got' : ''}">${x}</span>`).join('')}${done ? '<span style="border:0;background:none;color:var(--dim)">已領取</span>' : ''}</div>
+    <div class="cost"><b>${free ? '🚲 踩腳踏車，不花汽油' : `⛽ 汽油 -${cost}`}</b><span class="${enough ? '' : 'warn'}">${free ? '' : `剩 ${S.res.fuel}`}</span></div>
+    ${boss ? `<div class="${recOk ? '' : 'warn'}" style="margin-top:6px">${recOk ? '✔' : '✖'} 建議：載具改裝到 +1 以上${recOk ? '' : '（到「載具」改裝）'}</div>` : ''}
+    <button id="stGo" class="${enough ? '' : 'dim'}">出發</button>`;
+  $('stGo').onclick = () => {
+    if (!enough) { toast('汽油不夠。石油收集器會慢慢收集，也可以到營地交易所換。', 2600); return; }
+    if (!recOk && !$('stGo').dataset.ok) { $('stGo').dataset.ok = 1; toast('載具還沒改裝，頭目會很硬。真的要去的話再按一次「出發」。', 2800); return; }
     tickResources();
-    if (!free && S.res.fuel < cost) { toast('油箱見底。石油收集器會慢慢收集，也可以去撿。', 2600); return; }
     if (!free) S.res.fuel -= cost; S.lastSeen = NOW(); save();
     location.href = 'battle/?stage=' + (j + 1);
-  });
+  };
 }
 
 // ═══ 車庫：9 階載具 ═══
@@ -704,7 +768,7 @@ function renderFac() {
       runDevices(); pay(c); S.frag = S.frag || {}; S.frag[k] = fragHave(k) - fragNeed(nl, k); S.dev[k] = nl; save(); renderTop(); renderFac();
       toast(l ? `${row[1]} 升到 Lv.${nl}！` : `${row[1]} 合成成功！`, 2400);
       if (!l) addDiary(`用手合成了「${row[1]}」。零說零件放錯一塊就會爆炸，我沒問它是不是在開玩笑。`);
-      if (k === 'food' && !l && window.Story && window.STORY_C1) { S.story.c1food = 1; save(); setTimeout(() => Story.play('c1food', { name: S.hero, base: '', onDone: renderFac }), 400); }
+      if (k === 'food' && !l && window.Story && window.STORY_C1) { S.story.c1food = 1; save(); setTimeout(() => Story.play('c1food', { name: S.hero, base: '', onDone: () => { renderFac(); setTimeout(scrapGuide, 300); } }), 400); }
     } });
   });
 }
@@ -805,9 +869,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11270141"></script>
-<script src="team.js?v=11270141"></script>
-<script src="puzzle.js?v=11270141"></script>
+<script src="extras.js?v=11270221"></script>
+<script src="team.js?v=11270221"></script>
+<script src="puzzle.js?v=11270221"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });

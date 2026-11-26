@@ -13,7 +13,7 @@
   };
   const DROP = {}; for (const k in ITEMS) if (ITEMS[k].from) DROP[ITEMS[k].from] = k;   // 第一次打過這一關掉的裝備
   const CHARS = [
-    { id: 'hero', img: 'img/face0.webp', role: '轉珠的手', eff: l => `武器傷害 +${6 * (l - 1)}%｜車子耐久 +${5 * (l - 1)}%`, cost: l => ({ coin: 80 * l, scrap: 50 * l }), need: 0 },
+    { id: 'hero', img: 'img/face0.webp', role: '合成的手', eff: l => `武器傷害 +${6 * (l - 1)}%｜車子耐久 +${5 * (l - 1)}%`, cost: l => ({ coin: 80 * l, scrap: 50 * l }), need: 0 },
     { id: 'zero', img: 'img/story/p_zero_n.webp', role: '大招：電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ coin: 120 * l, chip: 15 * l }), need: 0 },
     { id: 'dog', name: '鐵鏽', img: 'img/story/i_dog.webp', role: '護車＋撿零件', eff: l => `每關多撿廢鐵 +${20 + 10 * (l - 1)}`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 3 },
     { id: 'he', name: '小禾', img: 'img/story/p_he_smile.webp', role: '改裝：灰零件變色', eff: l => `充能速度 +${12 * (l - 1)}%`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 99 },   // 2026-11-26 小禾搬到第二章
@@ -29,8 +29,8 @@
   }
   function maxLv(S, id) { return id === 'zero' ? Math.min(MAXLV, 2 * ((S.fac && S.fac.dock) || 1)) : MAXLV; }   // 零的上限看「零的充電座」
   function eff(S) {   // 戰鬥用的加成
-    S = ensure(S); const t = S.team, e = { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, dogScrap: 20, he: 1 };
-    e.atk += 0.06 * (t.hero - 1); e.hp += 0.05 * (t.hero - 1);
+    S = ensure(S); const t = S.team, e = { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1 };   // critDmg：暴擊多出的傷害（1＝+100%，也就是兩倍）
+    e.atk += 0.06 * (t.hero - 1); e.hp += 0.05 * (t.hero - 1); e.crit += 0.01 * (t.hero - 1); e.critDmg += 0.05 * (t.hero - 1) + 0.03 * (t.zero - 1);   // 2026-11-27 暴擊率、暴擊傷害
     e.emp += 0.15 * (t.zero - 1); e.energy += 0.05 * (t.zero - 1);
     e.dogScrap += 10 * (t.dog - 1); e.he += 0.12 * (t.he - 1);
     for (const s in S.gear.eq) { const it = ITEMS[S.gear.eq[s]]; if (!it) continue; const f = it.eff;
