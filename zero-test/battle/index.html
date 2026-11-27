@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11271248"></script>
-<script src="../story/ch1.js?v=11271248"></script>
-<script src="../story/story.js?v=11271248"></script>
-<script src="../gear.js?v=11271248"></script>
-<script src="../wide.js?v=11271248"></script>
+<script src="../i18n.js?v=11271254"></script>
+<script src="../story/ch1.js?v=11271254"></script>
+<script src="../story/story.js?v=11271254"></script>
+<script src="../gear.js?v=11271254"></script>
+<script src="../wide.js?v=11271254"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -778,19 +778,20 @@ function otRecord() {
   try { window.tmgTrack && window.tmgTrack('zw_ot_end', { waves: w }); } catch (e) {}
 }
 const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 4: 'c1s4b', 5: 'c1s6' };   // 2026-11-26 第一章 v2
+const STORY_EVERY = /zero-test/.test(location.pathname);   // 2026-11-27 測試版：每次打都播劇情（正式版只播第一次）
 function storySeen(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.story && s.story[k]); } catch (e) { return false; } }
 function storyMark(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return; s.story = s.story || {}; s.story[k] = 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} }
 function heroName() { return (SV && SV.hero) || '我'; }
 function postStory() {
   const back = () => { G.state = 'result'; G.phaseT = 0; };
-  if (STAGE === ZN && !storySeen('c1s9')) {   // 頭目倒下：拒絕報告 → 章末短劇 → 營火
+  if (STAGE === ZN && (STORY_EVERY || !storySeen('c1s9'))) {   // 頭目倒下：拒絕報告 → 章末短劇 → 營火
     G.state = 'story';
     setTimeout(() => Story.play('c1s8', { name: heroName(), base: '../',
       onOrb: cb => { G.orb = { c: 2, r: 2, t: 0, cb }; G.state = 'orb'; const q = cellPos(2, 2); G.board[2][2] = null; },
       onDone: () => { storyMark('c1s8'); Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s9'); back(); } })); } }), 1400);
     return;
   }
-  const k = POST[STAGE]; if (!k || storySeen(k)) return;
+  const k = POST[STAGE]; if (!k || (!STORY_EVERY && storySeen(k))) return;
   G.state = 'story';
   setTimeout(() => Story.play(k, { name: heroName(), base: '../', onDone: () => { storyMark(k); back(); } }), 1200);
 }
@@ -1648,10 +1649,11 @@ if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[
 } else if (STAGE === ZN && window.Story && CLEARED >= ZN && !storySeen('c1s9')) {   // 頭目後的結局沒看完 → 補播短劇＋營火
   G.state = 'story';
   Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s8'); storyMark('c1s9'); G.state = 'title'; } }));
-} else if (STAGE && PRE[STAGE] && window.Story && !storySeen(PRE[STAGE])) {
+} else if (STAGE && PRE[STAGE] && window.Story && (STORY_EVERY || !storySeen(PRE[STAGE]))) {
+  const firstTime = !storySeen(PRE[STAGE]);
   G.state = 'story';
   Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); },
-    onTap: win => { if (!win) return; try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); s.res = s.res || {}; s.res.scrap = (s.res.scrap || 0) + 10; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} } });   // 甩掉店員殭屍：多撿 10 個廢鐵
+    onTap: win => { if (!win || !firstTime) return; try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); s.res = s.res || {}; s.res.scrap = (s.res.scrap || 0) + 10; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} } });   // 甩掉店員殭屍：多撿 10 個廢鐵
 }
 
 // ── 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊空白換成模糊背景＋左右資訊欄；直式手機不受影響（文字用 tr()，見 i18n.js）──
