@@ -24,6 +24,9 @@
   `;
   let el = null;
   const TEST = /zero-test/.test(location.pathname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);   // 2026-11-27 跳過按鈕：只有測試版有，正式版沒有
+  // 2026-11-28 跳過模式：'free'＝免費跳過（測試版）、'ad'＝看廣告才能跳過（正式版預留，廣告之後再接 window.ZW_AD.show(cb)）
+  const SKIP_MODE = window.ZW_SKIP_MODE || (TEST ? 'free' : 'ad');
+  const FAST = { 3: 45, 4: 120, 5: 240, 6: 420 };   // 快速完成：幾秒內拼完有額外獎勵
   function beep(f, d, v) { try { const a = beep.c = beep.c || new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; g.gain.value = v || .06; g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + d); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d); } catch (e) {} }
   function open(o) {
     close();
@@ -33,13 +36,13 @@
     el = document.createElement('div'); el.id = 'pz';
     el.innerHTML = `<div class="pzt">${o.title || '合成'}</div><div class="pzs">把零件放對位置，合成才會成功（${N}×${N}）</div>
       <div class="pzb"><div class="pzo"></div><div class="pzflash"></div></div><div class="pzwin">合成成功！</div>
-      <div class="pzbar"><button class="y" data-a="hint">💡 提示</button><button data-a="peek">👁 看原圖</button>${o.noCancel ? '' : '<button data-a="quit">離開</button>'}${TEST ? '<button data-a="skip" style="border-color:#ff9a9a;color:#ffb3bb">⏭ 跳過</button>' : ''}</div>
+      <div class="pzbar"><button class="y" data-a="hint">💡 提示</button><button data-a="peek">👁 看原圖</button>${o.noCancel ? '' : '<button data-a="quit">離開</button>'}${SKIP_MODE === 'free' ? '<button data-a="skip" style="border-color:#ff9a9a;color:#ffb3bb">⏭ 跳過</button>' : window.ZW_AD ? '<button data-a="skip" style="border-color:#ff9a9a;color:#ffb3bb">📺 看廣告跳過</button>' : ''}</div>
       <div class="pzm">步數：<b>0</b></div>`;
     host.appendChild(el);
     const board = el.querySelector('.pzb'), over = el.querySelector('.pzo'), mv = el.querySelector('.pzm b');
     over.style.backgroundImage = `url(${o.img})`;
     // pos[格子] = 哪一塊（N*N-1 = 空格）；空格在右下角
-    const E = N * N - 1; let pos = [...Array(N * N).keys()], empty = E, moves = 0, done = false;
+    const E = N * N - 1; let pos = [...Array(N * N).keys()], empty = E, moves = 0, done = false, skipped = false; const t0 = performance.now();
     const stack = [];   // 打亂＋玩家走過的「空格移動方向」，提示＝把最後一步反過來
     const DIR = [[-1, 0], [1, 0], [0, -1], [0, 1]], INV = [1, 0, 3, 2];
     const cells = [];
@@ -88,8 +91,10 @@
       const lastc = document.createElement('div'); lastc.className = 'pzc ok'; lastc.style.cssText = `width:${W}px;height:${W}px;background-image:url(${o.img});background-size:${B}px ${B}px;background-position:${-(N - 1) * W}px ${-(N - 1) * W}px;transform:translate(${(N - 1) * W}px,${(N - 1) * W}px);opacity:0;transition:opacity .3s`;
       board.appendChild(lastc); requestAnimationFrame(() => lastc.style.opacity = 1);
       [660, 880, 1100].forEach((f, k) => setTimeout(() => beep(f, .25, .08), k * 110));
+      const secs = Math.round((performance.now() - t0) / 1000), fast = !skipped && secs <= (FAST[N] || 60);
+      const wt = el.querySelector('.pzwin'); wt.innerHTML = '合成成功！' + (skipped ? '' : `<div style="font:800 20px sans-serif;margin-top:8px;color:${fast ? '#ffd23f' : '#9ff8ff'}">完成時間 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}${fast ? '｜快速完成！返還 30% 材料' : ''}</div>`);
       const fl = el.querySelector('.pzflash'); setTimeout(() => { fl.style.opacity = .7; setTimeout(() => fl.style.opacity = 0, 180); el.querySelector('.pzwin').classList.add('on'); }, 350);
-      setTimeout(() => { const cb = o.onDone; close(); if (cb) cb({ moves }); }, 1900);
+      setTimeout(() => { const cb = o.onDone; close(); if (cb) cb({ moves, secs, fast, skipped }); }, fast ? 2600 : 1900);
     }
     el.querySelector('.pzbar').onclick = e => {
       const a = e.target.closest('button'); if (!a || done) return;
@@ -99,7 +104,8 @@
         const r = Math.floor(empty / N) + DIR[d][0], c = empty % N + DIR[d][1];
         place(); cells[pos[r * N + c]].classList.add('hint');
       } else if (a.dataset.a === 'peek') { over.classList.add('on'); setTimeout(() => over.classList.remove('on'), 1500); }
-      else if (a.dataset.a === 'skip' && TEST) { pos = [...Array(N * N).keys()]; empty = E; place(); win(); }
+      else if (a.dataset.a === 'skip') { const doSkip = () => { skipped = true; pos = [...Array(N * N).keys()]; empty = E; place(); win(); };
+        if (SKIP_MODE === 'free') doSkip(); else if (window.ZW_AD && ZW_AD.show) ZW_AD.show(doSkip); }
       else if (a.dataset.a === 'quit') { const cb = o.onCancel; close(); if (cb) cb(); }
     };
   }

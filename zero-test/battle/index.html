@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11280302"></script>
-<script src="../story/ch1.js?v=11280302"></script>
-<script src="../story/story.js?v=11280302"></script>
-<script src="../gear.js?v=11280302"></script>
-<script src="../wide.js?v=11280302"></script>
+<script src="../i18n.js?v=11280316"></script>
+<script src="../story/ch1.js?v=11280316"></script>
+<script src="../story/story.js?v=11280316"></script>
+<script src="../gear.js?v=11280316"></script>
+<script src="../wide.js?v=11280316"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -528,7 +528,7 @@ function popGroup(g) {
   const pose = plusAt ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 2 : 1;
   G.hero.pose = pose; G.hero.poseT = 0.45; G.hero.glow = Math.min(1.6, 0.5 + G.combo * 0.1);
   if (!G.hero.cast) { G.hero.cast = 'in'; G.hero.castT = 0; G.hero.castFrame = 0; }
-  if (G.combo === 10) { G.slow = 0.6; G.flash = 0.6; }
+  if (G.combo === 10) { G.slow = 0.6; G.flash = 0.6; VIB(120); }
   G.shake = Math.max(G.shake, 3 + Math.min(G.combo, 10));
   SFX.pop(G.combo); if (plusAt) SFX.charge();
 }
@@ -555,7 +555,10 @@ function hitFX(e, kind) {   // 每種武器自己的命中效果
   else if (kind === 'fire' || kind === 'burn') for (let i = 0; i < 12; i++) G.parts_.push({ x: x + (rnd() - 0.5) * 50, y: y + 20 - rnd() * 40, vx: (rnd() - 0.5) * 60, vy: -60 - rnd() * 120, t: 0, life: 0.5 + rnd() * 0.4, color: rnd() < 0.5 ? '#ffb347' : '#ff5a2a', size: 5 + rnd() * 6, rot: 0, vr: 0, g: -120, ember: true });
   else if (kind === 'mg') for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (rnd() - 0.5) * 2.4, sp = 160 + rnd() * 280; G.parts_.push({ x: x + (rnd() - 0.5) * 24, y: y + (rnd() - 0.5) * 24, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.4 + rnd() * 0.3, color: rnd() < 0.5 ? '#ffe066' : '#8b939c', size: 3 + rnd() * 4, rot: rnd() * 6, vr: (rnd() - 0.5) * 20, shard: true }); }
 }
+const VIB = ms => { try { if (localStorage.getItem('zw-vib') !== '0' && navigator.vibrate) navigator.vibrate(ms); } catch (er) {} };   // 2026-11-28 手機震動（設定可關；不支援的裝置自動略過）
+let vibT = 0;
 function dealDamage(e, dmg, color, kind) {
+  if (performance.now() - vibT > 90) { vibT = performance.now(); VIB(12); }
   if (!e || e.dead) return 0;
   const crit = kind && kind !== 'burn' && kind !== 'emp' && rnd() < critRate();
   if (crit) dmg *= 1 + (GE.critDmg || 1);   // 2026-11-27 暴擊傷害：預設 +100%（兩倍），主角和零升級會再加
@@ -566,10 +569,11 @@ function dealDamage(e, dmg, color, kind) {
   G.hitstop = Math.max(G.hitstop, crit ? 0.07 : kind === 'burn' ? 0 : 0.025);
   if (crit) { G.shake = Math.max(G.shake, 9); if (G.t - G.critSfxT > 0.12) { G.critSfxT = G.t; SFX.crit(); } }
   if (e.hp <= 0) killEnemy(e);
-  else if (e.k === 'boss' && !e.enraged && e.hp < e.maxHp / 2) { e.enraged = true; e.cdMax = 2; e.cd = Math.min(e.cd, 2); G.bannerText = '⚠ 巨型機甲 暴走'; G.bannerT = 1.4; G.shake = 14; SFX.boss(); }
+  else if (e.k === 'boss' && !e.enraged && e.hp < e.maxHp / 2) { e.enraged = true; e.cdMax = 2; e.cd = Math.min(e.cd, 2); G.bannerText = '⚠ ' + KINDS.boss.name + ' 暴走'; G.bannerT = 1.4; G.shake = 14; SFX.boss(); }
   return dmg;
 }
 function killEnemy(e) {
+  if (e.k === 'boss') { VIB([90, 40, 220]); G.slow = Math.max(G.slow || 0, 0.3); }
   e.dead = true; e.dieT = 0; e.hp = 0; G.kills[e.k] = (G.kills[e.k] || 0) + 1; SFX.boom(); G.hitstop = Math.max(G.hitstop, e.k === 'boss' ? 0.25 : 0.06); G.shake = Math.max(G.shake, e.k === 'boss' ? 26 : 10);
   // 淨化：零件碎片
   for (let i = 0; i < (e.k === 'boss' ? 60 : 22); i++) {
@@ -689,6 +693,7 @@ function heConvert(t) {   // 小禾改裝：玩家點的那一排（沒點就挑
   G.heLine = k ? pick(['改好了。別浪費。', '這排給你。', '……還行吧。']) : '這排沒什麼好改的。'; G.heLineT = 2.4; G.ai.lineT = 0;
 }
 function useEMP() {
+  VIB([60, 30, 200]); G.slow = Math.max(G.slow || 0, 0.3);
   if (G.energy < 100 || G.state !== 'player') return;
   G.energy = 0; G.ai.fullSaid = false; G.empUsed = true; G.state = 'emp'; G.phaseT = 0; G.empFired = false; say(AI_LINES.emp[0]);
   tone(200, 900, 0.7, 'sawtooth', 0.08);   // 蓄力聲

@@ -169,7 +169,7 @@
   #vidOv .vo-pop b { display:inline-block; margin-top:12px; padding:6px 22px; border-radius:8px; background:#55f0ff; color:#00262c; }
   #vidOv .vo-pop b.pr { background:#fff; transform:scale(.92); }
   @keyframes voIn { from { opacity:0; transform:translateY(8px); } }
-  #arkMini { position:absolute; right:10px; top:118px; width:96px; height:58px; z-index:6; cursor:pointer; }
+  #arkMini { position:absolute; right:58px; top:112px; width:96px; height:58px; z-index:6; cursor:pointer; }
   #arkMini .ad, #arkMini .al { position:absolute; inset:0 0 14px 0; background:url(img/v9.webp) center/contain no-repeat; }
   #arkMini .ad { filter: brightness(0) drop-shadow(0 0 1px #3ff0ff); opacity:.55; }
   #arkMini .al { filter: brightness(0) invert(1) sepia(1) hue-rotate(140deg) saturate(6) drop-shadow(0 0 6px #3ff0ff); }
@@ -217,6 +217,7 @@
     <div id="who"></div>
     <img id="homeLogo" src="img/logo.webp" alt="">
     <button id="acctBtn">☁ 登入備份</button>
+    <button id="vibBtn" style="position:absolute;right:10px;top:184px;z-index:6;padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);color:#dfe8ee;font:700 12px sans-serif">📳 震動：開</button>
     <button id="questBtn"><b>📋</b>任務<span class="dot" id="questDot"></span></button>
     <img id="zeroHome" src="img/zero.webp" alt="零">
     <div id="bubble"></div>
@@ -281,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11280302"></script>
-<script src="story/ch1.js?v=11280302"></script>
-<script src="story/intro.js?v=11280302"></script>
-<script src="story/story.js?v=11280302"></script>
-<script src="gear.js?v=11280302"></script>
-<script src="wide.js?v=11280302"></script>
+<script src="i18n.js?v=11280316"></script>
+<script src="story/ch1.js?v=11280316"></script>
+<script src="story/intro.js?v=11280316"></script>
+<script src="story/story.js?v=11280316"></script>
+<script src="gear.js?v=11280316"></script>
+<script src="wide.js?v=11280316"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -439,6 +440,9 @@ $('nameOk').onclick = () => {
   }
 };
 $('loginOld').onclick = () => cloudLogin(true);
+const vibOn = () => { try { return localStorage.getItem('zw-vib') !== '0'; } catch (e) { return true; } };   // 2026-11-28 震動開關
+function vibShow() { const b = $('vibBtn'); if (b) b.textContent = '📳 震動：' + (vibOn() ? '開' : '關'); }
+if ($('vibBtn')) { vibShow(); $('vibBtn').onclick = () => { try { localStorage.setItem('zw-vib', vibOn() ? '0' : '1'); } catch (e) {} vibShow(); if (vibOn() && navigator.vibrate) navigator.vibrate(60); toast('震動' + (vibOn() ? '開啟' : '關閉')); }; }
 
 // ═══ 首頁 ═══
 const VEH = ['廢鐵三輪車', '使命必達小貨車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
@@ -877,9 +881,11 @@ function renderFac() {
     if (S.tier < devTier(nl)) { toast(`載具要先升到 Lv.${devTier(nl)}`, 2200); return; }
     if (fragHave(k) < fragNeed(nl, k)) { toast(`🧩 碎片不夠（${fragHave(k)} / ${fragNeed(nl, k)}）。去關卡裡收集。`, 2600); return; }
     if (!afford(c)) { toast('材料不夠：' + costText(c), 2400); return; }
-    Puzzle.open({ img: /dev_/.test(row[3]) ? row[3].replace('.webp', '_pz.webp') : row[3], size: PZ_SIZE[nl], title: (l ? '升級：' : '合成：') + row[1] + (l ? ` Lv.${nl}` : ''), onDone: () => {
+    Puzzle.open({ img: /dev_/.test(row[3]) ? row[3].replace('.webp', '_pz.webp') : row[3], size: PZ_SIZE[nl], title: (l ? '升級：' : '合成：') + row[1] + (l ? ` Lv.${nl}` : ''), onDone: r => {
       if (!afford(c)) { toast('材料不夠了', 2000); return; }
-      runDevices(); pay(c); S.frag = S.frag || {}; S.frag[k] = fragHave(k) - fragNeed(nl, k); S.dev[k] = nl; save(); renderTop(); renderFac();
+      runDevices(); pay(c);
+      if (r && r.fast) { const back = {}; for (const kk in c) if (c[kk] > 0) back[kk] = Math.floor(c[kk] * 0.3); for (const kk in back) S.res[kk] = (S.res[kk] || 0) + back[kk]; if (Object.values(back).some(v => v > 0)) setTimeout(() => toast('⚡ 快速完成！返還 ' + costText(back), 2600), 2600); }   // 2026-11-28 快速完成獎勵
+      S.frag = S.frag || {}; S.frag[k] = fragHave(k) - fragNeed(nl, k); S.dev[k] = nl; save(); renderTop(); renderFac();
       toast(l ? `${row[1]} 升到 Lv.${nl}！` : `${row[1]} 合成成功！`, 2400);
       if (!l) addDiary(`用手合成了「${row[1]}」。零說零件放錯一塊就會爆炸，我沒問它是不是在開玩笑。`);
       if (k === 'food' && !l && window.Story && window.STORY_C1) { S.story.c1food = 1; seeRes('food'); save(); setTimeout(() => Story.play(STORY_C1.scenes.c0food ? 'c0food' : 'c1food', { name: S.hero, base: '', onDone: () => { renderFac(); setTimeout(scrapGuide, 300); } }), 400); }
@@ -986,9 +992,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11280302"></script>
-<script src="team.js?v=11280302"></script>
-<script src="puzzle.js?v=11280302"></script>
+<script src="extras.js?v=11280316"></script>
+<script src="team.js?v=11280316"></script>
+<script src="puzzle.js?v=11280316"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
