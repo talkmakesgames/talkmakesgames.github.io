@@ -2,9 +2,9 @@
 // 用法：Story.play('c1s1', { name: '主角名字', base: '../', onDone() {} })
 //       Story.video('../video/c1_drama.mp4', onDone)
 (function () {
-  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？', zhou: '老周', zhen: '阿珍', zs: '零（小聲）' };
-  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp', zhou: () => 'img/story/p_zhou.webp', zhen: () => 'img/story/p_zhen.webp' };
-  const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R', zhou: 'R', zhen: 'R' };
+  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？', zhou: '老周', zhen: '阿珍', zs: '零（小聲）', clerk: '殭屍店員', hound: '機械獵犬' };
+  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp', clerk: () => 'img/e_clerk.webp', hound: () => 'img/e_wolf.webp', zhou: () => 'img/story/p_zhou.webp', zhen: () => 'img/story/p_zhen.webp' };
+  const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R', zhou: 'R', zhen: 'R', clerk: 'R', hound: 'R' };
   const css = `
   #sty{position:fixed;inset:0;z-index:50;background:#000;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   #sty.over{background:rgba(0,0,0,.35)}
@@ -23,7 +23,9 @@
   #sty .pt.he{border-color:#ffb35c}#sty .pt.zhou{border-color:#b8c98a}#sty .pt.zhen{border-color:#e9b1cf}#sty .pt.hero{border-color:#e8edf2}
   #sty .tb{position:absolute;left:18px;right:18px;bottom:60px;min-height:150px;box-sizing:border-box;padding:30px 24px 22px;border-radius:14px;background:rgba(8,12,18,.88);border:1.5px solid rgba(63,240,255,.35);color:#eef6fa;font-size:25px;line-height:1.55;letter-spacing:.5px}
   #sty .nm{position:absolute;top:-19px;left:18px;padding:5px 16px;border-radius:8px;background:#3ff0ff;color:#031016;font-weight:800;font-size:20px}
-  #sty .nm.he{background:#ffb35c}#sty .nm.hero{background:#e8edf2}#sty .nm.doc{background:#c9b48a}#sty .nm.radio{background:#8a949e}#sty .nm.gen{background:#ff2d3c;color:#fff}#sty .nm.zhou{background:#b8c98a}#sty .nm.zhen{background:#e9b1cf}#sty .nm.zs{background:rgba(63,240,255,.45);color:#dffcff}
+  #sty .nm.he{background:#ffb35c}#sty .nm.hero{background:#e8edf2}#sty .nm.doc{background:#c9b48a}#sty .nm.radio{background:#8a949e}#sty .nm.gen{background:#ff2d3c;color:#fff}#sty .nm.zhou{background:#b8c98a}#sty .nm.zhen{background:#e9b1cf}#sty .nm.zs{background:rgba(63,240,255,.45);color:#dffcff}#sty .nm.clerk,#sty .nm.hound{background:#ff2d3c;color:#fff}#sty .pt.clerk,#sty .pt.hound{border-color:#ff2d3c;object-fit:contain;background:#1a0b0d}
+  #sty .tb.gl{animation:stygl .18s steps(2) 6;color:#ff8a8a;text-shadow:2px 0 #3ff0ff,-2px 0 #ff2d3c}
+  @keyframes stygl{50%{transform:translate(3px,-2px) skewX(-6deg)}}
   #sty .tb.narr{border-color:rgba(255,255,255,.12);color:#c8d2da;font-style:italic;font-size:23px}
   #sty .tb.sys{border-color:#3ff0ff;background:rgba(3,30,38,.92);color:#bff8ff;font-weight:700;font-size:23px;box-shadow:0 0 24px rgba(63,240,255,.35)}
   #sty .nx{position:absolute;right:20px;bottom:12px;color:#3ff0ff;font-size:18px;animation:styb 1s infinite}
@@ -148,7 +150,8 @@
           pop.querySelector('b').textContent = L.popT || ''; pop.className = 'pop on' + (L.popW ? ' w' : ''); } else { pop.classList.remove('on'); pop.dataset.src = ''; }   // 中間放大的圖（資源／小插圖）
         if (L.shake) { box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); }
         full = L.t.replace(/\{名字\}/g, name);
-        tb.className = 'tb' + (L.w === 'narr' ? ' narr' : L.w === 'sys' ? ' sys' : '');
+        tb.className = 'tb' + (L.w === 'narr' ? ' narr' : L.w === 'sys' ? ' sys' : '') + (L.glitch ? ' gl' : '');
+        if (L.ark) { try { o.onArk && o.onArk(); } catch (e) {} }
         const who = L.w;
         if (NAMES.hasOwnProperty(who)) { nm.style.display = ''; nm.className = 'nm ' + who; nm.textContent = who === 'hero' ? name : NAMES[who]; } else nm.style.display = 'none';
         // 頭像：說話的人亮、另一邊收起
@@ -156,8 +159,8 @@
         [ptL, ptR].forEach(p => p.classList.remove('on'));
         if (side && src) { const p = side === 'L' ? ptL : ptR; p.style.visibility = ''; if (p.dataset.src !== src) { p.src = base + src; p.dataset.src = src; } p.className = 'pt ' + side + ' ' + who + ' on'; }
         // 手機通知
-        if (L.phone) { ph.innerHTML = `<small>◈ 零・收到訊息</small>`; ph.appendChild(document.createTextNode(full)); ph.classList.add('on'); tb.style.visibility = 'hidden'; } else { ph.classList.remove('on'); tb.style.visibility = ''; }
-        if (L.end) { endEl.innerHTML = '<b>第一章</b><i>一切從零開始　完</i><small style="margin-top:34px;color:#9aa6b2;font-size:18px;letter-spacing:3px">下一章　冰港</small><small style="margin-top:8px;color:#5d6b75;font-size:14px">「這裡是冰港……還有人活著嗎？」</small>'; endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
+        if (L.phone) { ph.innerHTML = `<small>${L.phoneT || '◈ 零・收到訊息'}</small>`; ph.appendChild(document.createTextNode(full)); ph.classList.add('on'); tb.style.visibility = 'hidden'; } else { ph.classList.remove('on'); tb.style.visibility = ''; }
+        if (L.end) { endEl.innerHTML = (o.endHtml || '<b>第零章</b><i>一切從零開始　完</i><small style="margin-top:34px;color:#9aa6b2;font-size:18px;letter-spacing:3px">下一章　一號廢域：難民營</small>'); endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
         // 打字效果
         clearInterval(typing); let k = 0; tx.textContent = ''; nx.style.visibility = 'hidden';
         typing = setInterval(() => { k += 2 * Story.sp(); tx.textContent = full.slice(0, k); if (k >= full.length) { clearInterval(typing); typing = null; nx.style.visibility = ''; } }, 28);

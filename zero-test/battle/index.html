@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11271254"></script>
-<script src="../story/ch1.js?v=11271254"></script>
-<script src="../story/story.js?v=11271254"></script>
-<script src="../gear.js?v=11271254"></script>
-<script src="../wide.js?v=11271254"></script>
+<script src="../i18n.js?v=11280246"></script>
+<script src="../story/ch1.js?v=11280246"></script>
+<script src="../story/story.js?v=11280246"></script>
+<script src="../gear.js?v=11280246"></script>
+<script src="../wide.js?v=11280246"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -65,11 +65,13 @@ const STAGE = +((location.search.match(/[?&]stage=(\d+)/) || [])[1] || 0);
 const SAVE_KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save-v1';
 let SV = null;
 if (STAGE) { try { SV = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {} if (!SV) location.href = '../'; }
-const OT = !STAGE && /[?&]ot=1/.test(location.search);   // 加班模式：每天同一個盤面、無限波次、能力統一
+const OT = !STAGE && /[?&]ot=1/.test(location.search);
+const BOSS_IMG = STAGE === 5 ? '../img/e_clerk.webp' : STAGE === 10 ? '../img/e_wolf.webp' : '';   // 2026-11-28 第零章：第 5 關殭屍店員、第 10 關機械獵犬
+const DS = STAGE ? 0.03 : 1;   // 2026-11-28 正式關卡數字縮小約 33 倍（前期傷害幾十到幾百）；試玩維持大數字   // 加班模式：每天同一個盤面、無限波次、能力統一
 const OT_DAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()), OT_SEED = +OT_DAY.replace(/-/g, '') % 100000;
 const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1 };   // 隊伍等級＋裝備的加成
 const TIER = OT ? 3 : SV ? Math.min(SV.tier || 1, 3) : 6, SUB = SV ? (SV.sub || 0) : 0;
-const VEH_NAMES = ['廢鐵三輪貨車', '改裝邊車機車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
+const VEH_NAMES = ['廢鐵三輪車', '使命必達小貨車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
 const SLOTS = ({ 1: [0], 2: [0, 1], 3: [0, 1, 2] })[TIER] || [0, 1, 2];   // 這台車裝了哪些武器（0 閃電、1 火焰、2 機槍）；沒裝的顏色只有主角的弱攻擊
 const TURRET_AT = { 1: [[0.20, 0.07]], 2: [[0.20, 0.06], [0.47, 0.30]], 3: [[0.17, 0.07], [0.30, 0.07], [0.43, 0.07]], 6: [[0.22, 0.09], [0.50, 0.09], [0.76, 0.09]] };
 const RV_W = { 1: 230, 2: 250, 3: 290, 6: 300 };
@@ -86,13 +88,16 @@ for (const [k, src] of Object.entries(ASSETS)) {
     if (k === 'rv') setRV(im);
   };
   if (k === 'rv' && TIER !== 6) continue;   // 正式關卡用存檔裡的載具圖
+  if (k === 'boss' && BOSS_IMG) continue;
   im.src = src;
 }
 function setRV(im) { IMG.rv = im; const w = RV_W[TIER] || 300; RV.w = w; RV.x = 104 + (300 - w) / 2; RV.h = Math.round(w * im.height / im.width); RV.y = 388 - RV.h; }
-if (TIER !== 6) { const im = new Image(); im.onload = () => setRV(im); im.src = '../img/v' + TIER + '.webp'; }
+const BIKE = !!(STAGE && SV && !(SV.flags && SV.flags.trike));   // 還沒合成三輪車＝騎腳踏車
+if (TIER !== 6) { const im = new Image(); im.onload = () => setRV(im); im.src = '../img/v' + (BIKE ? 0 : TIER) + '.webp'; }
+if (BOSS_IMG) { const im = new Image(); im.onload = () => { IMG.boss = im; TINT.boss_w = tintCanvas(im, 'rgba(255,255,255,0.8)'); TINT.boss_c = tintCanvas(im, 'rgba(63,240,255,0.9)'); }; im.src = BOSS_IMG; }
 const SPRITE_ON = Object.keys(ASSETS).length > 0;
 // 動畫幀：敵人 8 格（0-3 待機／走路循環，4-7 攻擊），主角合成 12 格（0-7 伸手到蓄力、8-11 推出光球）
-const EANIM = { zombie: 'za', dasher: 'da', heavy: 'va', boss: 'ba' };
+const EANIM = { zombie: 'za', dasher: 'da', heavy: 'va', boss: BOSS_IMG ? 'nb' : 'ba' };
 const FPS_ANIM = 15;
 function enemyFrame(e) {
   const pre = EANIM[e.k]; if (!IMG[pre + '0']) return null;
@@ -122,28 +127,37 @@ const KINDS = {
   heavy: { name: '重裝型', hp: 26000, cd: 3, atk: 1600, s: 1.15 },
   boss: { name: '巨型機甲', hp: 125000, cd: 3, atk: 2200, s: 1.0 },
 };
+if (STAGE === 5) KINDS.boss = { name: '殭屍店員', hp: 45000, cd: 2, atk: 1100, s: 1.0 };
+if (STAGE === 10) KINDS.boss = { name: '機械獵犬', hp: 95000, cd: 2, atk: 1600, s: 1.0 };
 // 試玩版（247 天後、第 6 階青晶房車）：主角傷害 ×POW；第一波血量打折，讓新手先覺得自己很強
 // 從遊戲流程進來（?trial=1）：結算按鈕變「繼續」，回到遊戲（解說影片 A）
 const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
-const POW = OT ? 112 : STAGE ? Math.round(100 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) * GE.atk) : 120;
-const ARMOR0 = OT ? 7000 : STAGE ? Math.round(5000 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
+const POW = OT ? 112 : STAGE ? (3 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) * GE.atk) : 120;
+const ARMOR0 = OT ? 7000 : STAGE ? Math.round(150 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const SL = STAGE <= 1 ? STAGE : STAGE - 1;   // 2026-11-26 新增 1-1 肚子餓：1-1、1-2 用同一套規則，後面的關卡往後移一關（SL＝原本的關卡規則編號）
-const STAGE_HP = [0, 0.55, 0.62, 1.0, 0.85, 0.95, 1.05][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.4, 0.45, 0.75, 1.05, 0.9, 0.6][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
-const ZN = 6;   // 第一章（零號廢域）：5 關＋第 6 關頭目
-const STAGE_WAVES = {
-  1: [['zombie', 'zombie', 'zombie'], ['zombie', 'dasher']], // 1-1 肚子餓、1-2 上路
-  2: [['zombie', 'dasher', 'zombie'], ['dasher', 'heavy']],  // 1-2 被追的狗：打完淨化
-  3: [['zombie', 'dasher'], ['dasher', 'zombie', 'dasher'], ['zombie', 'heavy', 'dasher'], ['dasher', 'dasher', 'zombie', 'zombie']],   // 1-3 追逐：撐回合
-  4: [['zombie', 'dasher', 'zombie'], ['heavy', 'zombie']],  // 1-4 小禾改裝教學
-  5: [['zombie', 'dasher'], ['boss']],                       // 頭目：巨型機甲（鏽塊）
+const SL = STAGE;   // 2026-11-28 第零章 10 關，規則直接用關卡編號   // 2026-11-26 新增 1-1 肚子餓：1-1、1-2 用同一套規則，後面的關卡往後移一關（SL＝原本的關卡規則編號）
+const STAGE_HP = [0, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.9, 1.0][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.65, 0.5][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const ZN = 10;   // 第零章（零號廢域）：10 關，第 5 關中型頭目、第 10 關大頭目
+const STAGE_WAVES = {   // 2026-11-28 第零章：小關 1 波、第 5 關 2 波、第 10 關 3 波
+  1: [['zombie', 'zombie', 'zombie']],
+  2: [['zombie', 'dasher']],
+  3: [['zombie', 'dasher', 'zombie']],
+  4: [['dasher', 'zombie', 'dasher']],
+  5: [['zombie', 'zombie'], ['boss']],
+  6: [['zombie', 'heavy']],
+  7: [['dasher', 'dasher', 'zombie']],
+  8: [['zombie', 'heavy', 'dasher']],
+  9: [['heavy', 'dasher', 'zombie', 'dasher']],
+  10: [['zombie', 'dasher'], ['heavy', 'dasher'], ['boss']],
 };
-const CHASE = SL === 3 ? 6 : 0;          // 追逐：撐過 6 回合就到地下入口
-const DOG_ON = SL >= 3;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
+const CHASE = 0;          // 追逐：撐過 6 回合就到地下入口
+const DOG_ON = false;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
 const HE_ON = false;                     // 2026-11-26 第一章 v2：小禾搬到第二章（之後第二章再打開）
-const RUST_ON = STAGE === ZN;               // 頭目會把零件鏽掉
+const RUST_ON = false;               // 頭目會把零件鏽掉
 const RUST = 9;                             // 鏽塊的零件種類（不會被合成）
 const C1 = () => window.STORY_C1 || { battle: {}, scenes: {} };
+const CLEARED0 = (SV && SV.cleared && SV.cleared.zero) || 0;
+const EMP_ON = !STAGE || STAGE > 7 || CLEARED0 >= 7;   // 2026-11-28 第 7 關打完才解鎖電磁脈衝
 function sayV(key) {   // 有配音的戰鬥台詞（第一章）
   const L = C1().battle[key]; if (!L) return;
   if (L.w === 'he') { G.heLine = L.t; G.heLineT = 2.8; G.ai.lineT = 0; } else say(L.t);
@@ -168,13 +182,14 @@ const CARDS = [
   { id: 'light', t: '閃電砲強化', d: '閃電砲傷害 +30%' },
   { id: 'burn', t: '燃燒彈', d: '火焰砲附加燃燒\n敵人每回合再受傷' },
   { id: 'time', t: '神經加速', d: '轉珠時間 +1 秒' },
-  { id: 'armor', t: '加厚裝甲', d: '車子裝甲上限 +2,000\n並且補滿' },
+  { id: 'armor', t: '加厚裝甲', d: `車子裝甲上限 +${Math.round(2000 * DS).toLocaleString()}
+並且補滿` },
   { id: 'plus', t: '精密合成', d: '高級零件門檻\n從 5 個降為 4 個' },
   { id: 'energy', t: 'AI 超頻', d: 'AI 充能速度 +50%' },
   { id: 'steel', t: '鋼鐵尖刺', d: '鋼鐵零件也會\n造成少量傷害' },
 ];
 const AI_LINES = {
-  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : ({ 1: ['先清路。商場街在前面。'], 2: ['商場街還有 2.4 公里。清掉擋路的。'], 3: ['那隻狗在發抖。先把追兵打掉。'], 4: ['踩油門。別回頭看。'], 5: ['她在看。別丟我的臉。', '證明給她看：你比 AI 有用。'], 6: ['……那個東西，在等我們。'] })[STAGE] || (STAGE ? ['出發。別把車弄壞，零件很貴。', '敵人接近。建議你動手，而不是發呆。'] : ['第 247 天。你的手速總算能看了。', '敵人接近。青晶房車全武裝，別浪費。']),
+  start: OT ? ['加班開始。我不支付加班費。', '今天的盤面跟所有人一樣。輸了不能怪運氣。'] : ({ 1: ['先打倒前面的，才有廢鐵。'], 2: ['廢鐵越多，機器人越多。'], 3: ['三隻。排好再消。'], 4: ['腳踏車在前面。先清路。'], 5: ['她還在上班。別跟她客氣。'], 6: ['收費亭。這次不用付錢。'], 7: ['狗叫聲越來越近。快一點。'], 8: ['那台小貨車，引擎還是好的。'], 9: ['煙在東邊。清掉擋路的。'], 10: ['牠在聞你的味道。別慌。'] })[STAGE] || ['存活機率 3%。不過你的運氣一向很差。'],
   combo: ['不錯。你的手比你的腦袋有用。', '連擊有效。繼續保持，別得意。', '這種程度……勉強及格。'],
   hurt: ['裝甲受損。我建議你認真一點。', '再被打幾下，我們就一起變廢鐵。'],
   low: ['裝甲剩 30%。我建議你認真一點。'],
@@ -343,9 +358,10 @@ function spawnWave() {
     const K = KINDS[k], boss = k === 'boss';
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
     const y = boss ? (SPRITE_ON ? 228 : 185) : 150 + ((i % 2) ? 60 : 0) + (k === 'heavy' ? -10 : 0) + (k === 'dasher' ? 20 : 0);
-    return { k, K, hp: Math.round(K.hp * (boss ? bsc : sc)), maxHp: Math.round(K.hp * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
+    return { k, K, hp: Math.round(K.hp * DS * (boss ? bsc : sc)), maxHp: Math.round(K.hp * DS * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * DS * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
       x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6, vs: boss ? 1 : [1, 0.92, 1.07, 0.96, 1.03][i % 5] };
   });
+  if (TRIAL_FLOW && G.wave === 1 && !G.t0b && window.Story && C1().scenes.t0b) { G.t0b = 1; setTimeout(() => { if (G.state !== 'player') return; G.energy = 100; useEMP(); setTimeout(() => { if (G.state !== 'player') return; G.state = 'story'; Story.play('t0b', { name: '我', base: '../', onDone: () => { G.state = 'player'; } }); }, 2600); }, 1900); }
   G.bannerText = BOSS_WAVE() ? '⚠ 頭目來襲' : CHASE ? '又追上來了！' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1} 波`; G.bannerT = 1.6;
   if (BOSS_WAVE()) {
     G.shake = 18; SFX.boss(); G.bossTaunt = 3.2; G.ai.lineT = 0; playBGM('boss');
@@ -362,11 +378,10 @@ function say(s) { G.ai.line = s; G.ai.lineT = 2.8; G.heLineT = 0; }
 // ── 主流程 ──
 function startGame() {
   newGame(OT ? OT_SEED : undefined); G.state = 'intro'; G.phaseT = 0; spawnWave(); say(pick(AI_LINES.start)); playBGM('battle');
-  if (STAGE && GE.start) G.energy = GE.start;
-  if (STAGE === 1) { G.bannerText = '目標：騎到商場街（3 km）'; G.bannerT = 2.2; }
-  if (STAGE === 2) { G.bannerText = '商場街 還有 2.4 km'; G.bannerT = 2.2; }
+  if (STAGE && GE.start && EMP_ON) G.energy = GE.start;
+  if (STAGE === 1) { G.bannerText = '目標：往東'; G.bannerT = 2.2; }
+  if (STAGE === 3) setTimeout(() => { const e = G.enemies[0]; if (e && !e.dead) { e.cyanT = 1.2; e.stun = true; } }, 1500);   // 伏筆：殭屍當機、紅眼閃青光（不說破）
   if (CHASE) { G.bannerText = `撐 ${CHASE} 回合！轉珠只有 5 秒`; G.bannerT = 2.2; setTimeout(() => say('鐵鏽能護車一次。快被打的那一回合，點牠。'), 2600); }
-  if (STAGE === ZN && SV && SV.bossFails) setTimeout(() => say('上次輸在鏽塊。這次在旁邊合成灰零件，先敲碎它。'), 2000);
   if (SL === 4) setTimeout(() => { G.heLine = '灰色的零件給我，我來改。'; G.heLineT = 3; G.ai.lineT = 0; }, 1600);
 }
 function update(dt) {
@@ -400,6 +415,7 @@ function update(dt) {
   G.texts = G.texts.filter(t => t.t < t.life);
   G.shake = Math.max(0, G.shake - dt * 40); G.flash = Math.max(0, G.flash - dt * 3);
   G.comboShow = Math.max(0, G.comboShow - dt);
+  for (const e of G.enemies) { if (e.cyanT > 0) e.cyanT -= dt; if (STAGE === 10 && e.k === 'boss' && !e.dead && !G.houndPause && e.hp < e.maxHp / 2) { G.houndPause = 1; e.stun = true; e.cyanT = 0.8; } }   // 獵犬血量一半：停下來看主角一眼
   G.hero.poseT = Math.max(0, G.hero.poseT - d); if (G.hero.poseT <= 0) G.hero.pose = 0;
   // 主角合成動畫：in（0-7 伸手到蓄力）→ hold（連擊中，6-7 蓄力循環）→ out（8-11 推出光球）
   { const h = G.hero;
@@ -530,7 +546,7 @@ function gravity() {
 
 // ── 攻擊 ──
 function heroHand() { return IMG.hc0 ? { x: HERO.x + 52, y: HERO.y - 112 } : IMG.ha0 ? { x: HERO.x + 36, y: HERO.y - 122 } : IMG.hero0 ? { x: HERO.x + 52, y: HERO.y - 108 } : { x: HERO.x + 34, y: HERO.y - 52 }; }
-function mult() { return 1 + 0.25 * (G.combo - 1); }
+function mult() { const c = G.combo - 1; return STAGE ? 1 + 0.278 * c + 0.0556 * c * c : 1 + 0.25 * c; }   // 2026-11-28 正式關卡：1 連擊 1 倍、5 連擊 3 倍、10 連擊 8 倍
 // 暴擊率：基本 10%，每 1 連擊 +2%（最高 60%）；暴擊傷害 ×2
 function critRate() { return Math.min(0.6, 0.10 + GE.crit + 0.02 * G.combo); }
 function hitFX(e, kind) {   // 每種武器自己的命中效果
@@ -596,13 +612,13 @@ function stepAttack() {
     }
   } else if (g.t === 3) {   // 鋼鐵：修補
     const heal = Math.round(3 * POW * g.n * (g.plus ? 2 : 1) * (0.5 + 0.5 * mult()));
-    G.armor = Math.min(G.armorMax, G.armor + heal);
+    G.armor = Math.min(G.armorMax, G.armor + heal); G.healed = (G.healed || 0) + heal;
     G.texts.push({ x: RV.x + RV.w / 2, y: RV.y - 30, s: '+' + fmt(heal), t: 0, life: 0.9, color: '#9fffb0' });
     G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: RV.x + RV.w / 2, y1: RV.y + 20, t: 0, dur: 0.18, color: CYAN });
     if (G.mods.steel) { const f = frontEnemy(); if (f) dealDamage(f, 4 * POW * g.n * m, '#cfd6dd', 'mg'); }
     SFX.heal();
   } else {   // 能量：AI 充能
-    G.energy = Math.min(100, G.energy + 5 * g.n * (g.plus ? 2 : 1) * G.mods.energy * GE.energy);
+    if (EMP_ON) G.energy = Math.min(100, G.energy + 5 * g.n * (g.plus ? 2 : 1) * G.mods.energy * GE.energy);
     G.fx.push({ type: 'bolt', x0: hand.x, y0: hand.y, x1: G.ai.x, y1: G.ai.y, t: 0, dur: 0.2, color: '#b46bff' });
     SFX.energy();
   }
@@ -707,7 +723,7 @@ function chooseCard(i) {
   if (c.id === 'light') G.mods.light += 0.3;
   if (c.id === 'burn') G.mods.burn = true;
   if (c.id === 'time') G.mods.time += 1;
-  if (c.id === 'armor') { G.armorMax += 2000; G.armor = G.armorMax; }
+  if (c.id === 'armor') { G.armorMax += Math.round(2000 * DS); G.armor = G.armorMax; }
   if (c.id === 'plus') G.mods.plus = 4;
   if (c.id === 'energy') G.mods.energy += 0.5;
   if (c.id === 'steel') G.mods.steel = true;
@@ -719,43 +735,42 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   if (!S0) return null;
   if (window.ZW_GEAR) ZW_GEAR.ensure(S0);   // 先補好裝備欄，才不會把這次要掉的裝備當成舊的
   const k = win ? 1 : 0.3, pt = G.ptype, nk = Object.values(G.kills).reduce((a, b) => a + b, 0);
-  const r = { coin: Math.round((80 + 20 * STAGE) * k), scrap: Math.round((pt[3] * 4 + 30 + 6 * STAGE) * k), chip: Math.round((pt[0] + nk * 2) * k), fuel: Math.round(pt[1] / 6 * k), core: 0, blueprint: 0 };
-  const before = (S0.cleared && S0.cleared.zero) || 0;
-  if (win) { if (rnd() < 0.25) r.core += 1; if (STAGE === ZN) { r.core += 3; if (before < ZN) r.blueprint = 1; } }
-  if (!win) r.fuel += STAGE === ZN ? 10 : 5;
+  const before = (S0.cleared && S0.cleared.zero) || 0, hiw = Math.max(before, win ? STAGE : 0);
+  const r = { coin: hiw >= 6 ? Math.round((80 + 20 * STAGE) * k) : 0, scrap: Math.round((pt[3] * 4 + 30 + 6 * STAGE) * k), chip: 0, fuel: (S0.tier || 1) >= 2 ? Math.round((8 + pt[1] / 6) * k) : 0, core: 0, blueprint: 0 };   // 2026-11-28 資源用到才出現
   if (DOG_ON) r.scrap += GE.dogScrap;   // 鐵鏽多撿的一份   // 打輸退一半燃料
   const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= STAR_COMBO ? 1 : 0) : 0;
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
   for (const key in r) { if (key === 'scrap' || key === 'chip') S0.res[key] = Math.min(cap, (S0.res[key] || 0) + r[key]); else if (key === 'fuel') { const f0 = S0.res.fuel; S0.res.fuel = Math.min(100 + Math.max(0, ((S0.dev && S0.dev.oil) || 0) - 1) * 50, S0.res.fuel + r.fuel); r.fuel = Math.max(0, S0.res.fuel - f0); /* 油箱滿了就不顯示 +N */ } else S0.res[key] = (S0.res[key] || 0) + r[key]; }
   S0.codex = S0.codex || { seen: {}, kills: {} };
-  for (const kk in G.kills) { const id = kk === 'boss' ? 'mech' : kk; S0.codex.kills[id] = (S0.codex.kills[id] || 0) + G.kills[kk]; S0.codex.seen[id] = 1; }
+  for (const kk in G.kills) { const id = kk === 'boss' ? (STAGE === 5 ? 'clerk' : STAGE === 10 ? 'hound' : 'mech') : kk; S0.codex.kills[id] = (S0.codex.kills[id] || 0) + G.kills[kk]; S0.codex.seen[id] = 1; }
   S0.stats.maxCombo = Math.max(S0.stats.maxCombo || 0, G.maxCombo); S0.stats.maxHit = Math.max(S0.stats.maxHit || 0, G.maxHit); S0.stats.clears = (S0.stats.clears || 0) + (win ? 1 : 0);
   S0.stars = S0.stars || {}; S0.stars['zero-' + STAGE] = Math.max(S0.stars['zero-' + STAGE] || 0, stars);
   const d = Math.floor((Date.now() - S0.firstDay) / 86400000) + 1;
   if (win && STAGE > before) {
     S0.cleared = S0.cleared || {}; S0.cleared.zero = STAGE;
-    const DI = { 1: '肚子餓到不行。翻倒的貨車裡只剩半包餅乾和一瓶水。零說要合成會做食物的機器人。',
-      2: '找到加油站了。油槽是乾的，但零說可以把幫浦合成到車上。我好像在幫自己加帳單。',
-      3: '撿到一隻生鏽的機械狗。零說牠以前是導盲犬。我叫牠鐵鏽。',
-      4: '救了四個倖存者。帶頭的叫老周。零躲在帆布底下，我說車上載的是廢鐵。',
-      5: '到了商場街的營地。便利商店的東西都在這裡。賣東西的阿珍說，她不收 AI 做的東西。',
-      6: '打倒巨型機甲了！地圖上的零號廢域變成青色。零說：「數據異常。」我當作是稱讚。' };
+    const DI = { 1: '餓到不行。附近只有廢鐵。零說可以合成一台會做吃的東西的機器人。',
+      3: '殭屍身上有電池。拆下來給機器人用。我現在是拆殭屍電池的社畜。',
+      4: '把壞掉的腳踏車拼成三輪車。零說總有一天它會變成方舟。',
+      5: '便利商店的店員還在上班。我救不了她。名牌在我口袋裡。',
+      7: '我說我想躺一下。零說了一句「不要放棄」，又說它是說躺著會被吃掉。',
+      8: '撿到一台有車斗的小貨車。零說方舟進度百分之二。',
+      10: '救回一隻機械狗。項圈上寫著 H-01。我叫牠鐵鏽。' };
     if (DI[STAGE]) S0.diary.push({ day: d, text: DI[STAGE] });
   }
   let item = null; if (win && window.ZW_GEAR) item = ZW_GEAR.drop(S0, STAGE);   // 第一次過關掉裝備
   let frag = null;   // 2026-11-26 拼圖碎片（設備的特殊材料）：不同關卡掉不同的碎片
-  if (win) { const FK = { 1: 'scrap', 2: 'oil', 3: 'scrap', 4: 'power', 5: 'scrap', 6: 'oil' }[STAGE], FIRST = { 1: 'scrap', 2: 'oil', 4: 'power' }[STAGE];
+  if (win) { const FK = 'scrap', FIRST = { 1: 'scrap' }[STAGE];   // 第零章只有廢鐵採集機器人用碎片；第 1 關第一次過關給 9 塊
     if (FK) { const n = STAGE > before && FIRST ? 9 : 2 + Math.floor(rnd() * 3); S0.frag = S0.frag || {}; S0.frag[FK] = (S0.frag[FK] || 0) + n; frag = { k: FK, n }; } }
   S0.lastSeen = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
   return { r, stars, item, frag };
 }
-const STAR_COMBO = SL === 1 ? 3 : SL === 2 ? 4 : 6;   // 第三顆星要幾連擊
+const STAR_COMBO = STAGE <= 2 ? 3 : STAGE <= 5 ? 4 : 5;   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
 function goStage(n) {   // 結算直接打下一關／再試一次：燃料規則跟首頁一樣（每 6 分鐘回 1；新手前 3 天免費；頭目 20）
   let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
   if (!S0) { location.href = '../'; return; }
-  const cost = n === ZN ? 20 : 10, free = !(S0.dev && S0.dev.oil);   // 2026-11-26：燃料由首頁的石油收集器產出；還沒裝＝踩腳踏車，不花汽油
+  const cost = n === ZN ? 20 : 10, free = (S0.tier || 1) < 2;   // 2026-11-28 小貨車（第 8 關）以後才吃汽油   // 2026-11-26：燃料由首頁的石油收集器產出；還沒裝＝踩腳踏車，不花汽油
   if (!free && S0.res.fuel < cost) { fuelMsg = `汽油不夠（剩 ${S0.res.fuel}，需要 ${cost}）。回去等石油收集器收集吧。`; return; }
   if (!free) S0.res.fuel -= cost;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
@@ -777,20 +792,14 @@ function otRecord() {
   try { localStorage.setItem('zw-ot-best', JSON.stringify(b)); } catch (e) {}
   try { window.tmgTrack && window.tmgTrack('zw_ot_end', { waves: w }); } catch (e) {}
 }
-const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 4: 'c1s4b', 5: 'c1s6' };   // 2026-11-26 第一章 v2
+const PRE = { 1: 'c0s1', 2: 'c0s2', 3: 'c0s3', 4: 'c0s4', 5: 'c0s5', 6: 'c0s6', 7: 'c0s7', 8: 'c0s8', 9: 'c0s9', 10: 'c0s10' }, POST = { 5: 'c0s5b', 7: 'c0s7b', 9: 'c0s9b', 10: 'c0s10b' };   // 2026-11-28 第零章（其他關的打完劇情在首頁播，因為要解鎖東西）
+const HOME_AFTER = [1, 2, 3, 4, 6, 8];   // 第一次打完要回首頁解鎖東西的關   // 2026-11-26 第一章 v2
 const STORY_EVERY = /zero-test/.test(location.pathname);   // 2026-11-27 測試版：每次打都播劇情（正式版只播第一次）
 function storySeen(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.story && s.story[k]); } catch (e) { return false; } }
 function storyMark(k) { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!s) return; s.story = s.story || {}; s.story[k] = 1; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} }
 function heroName() { return (SV && SV.hero) || '我'; }
 function postStory() {
   const back = () => { G.state = 'result'; G.phaseT = 0; };
-  if (STAGE === ZN && (STORY_EVERY || !storySeen('c1s9'))) {   // 頭目倒下：拒絕報告 → 章末短劇 → 營火
-    G.state = 'story';
-    setTimeout(() => Story.play('c1s8', { name: heroName(), base: '../',
-      onOrb: cb => { G.orb = { c: 2, r: 2, t: 0, cb }; G.state = 'orb'; const q = cellPos(2, 2); G.board[2][2] = null; },
-      onDone: () => { storyMark('c1s8'); Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s9'); back(); } })); } }), 1400);
-    return;
-  }
   const k = POST[STAGE]; if (!k || (!STORY_EVERY && storySeen(k))) return;
   G.state = 'story';
   setTimeout(() => Story.play(k, { name: heroName(), base: '../', onDone: () => { storyMark(k); back(); } }), 1200);
@@ -1135,13 +1144,14 @@ function drawEnemy(e) {
   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 4, boss ? 80 : 26, boss ? 12 : 6, 0, 0, 7); ctx.fill();
   const fk = enemyFrame(e);
   if (fk || IMG[e.k]) {
-    const im = IMG[fk] || IMG[e.k], SH = { zombie: 112, dasher: 108, heavy: 122, boss: 205 }[e.k], k = SH / im.height, w = im.width * k;
+    const im = IMG[fk] || IMG[e.k], SH = { zombie: 112, dasher: 108, heavy: 122, boss: STAGE === 5 ? 170 : 205 }[e.k], k = SH / im.height, w = im.width * k;
     const tw = TINT[(fk || e.k) + '_w'], tc = TINT[(fk || e.k) + '_c'];
     const squash = e.lunge > 0 ? 1 + 0.12 * Math.sin((1 - e.lunge) * Math.PI) : 1;
     ctx.scale(1 / squash, squash);
     ctx.drawImage(im, -w / 2, -SH, w, SH);
     if (e.hit > 0 && tw) { ctx.globalAlpha = dieA * Math.min(1, e.hit) * 0.75; ctx.drawImage(tw, -w / 2, -SH, w, SH); }
-    if (e.dead && tc) { ctx.globalAlpha = Math.min(1, e.dieT * 5) * dieA; ctx.drawImage(tc, -w / 2, -SH, w, SH); }   // 淨化：整隻閃青光
+    if (e.dead && tc) { ctx.globalAlpha = Math.min(1, e.dieT * 5) * dieA; ctx.drawImage(tc, -w / 2, -SH, w, SH); }
+    if (!e.dead && e.cyanT > 0 && tc) { ctx.globalAlpha = dieA * 0.65 * Math.min(1, e.cyanT * 3); ctx.drawImage(tc, -w / 2, -SH, w, SH); ctx.globalAlpha = dieA; }   // 淨化：整隻閃青光
     if (e.enraged) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.15 * Math.sin(G.t * 10); const rg = ctx.createRadialGradient(0, -SH * 0.5, 10, 0, -SH * 0.5, SH * 0.6); rg.addColorStop(0, 'rgba(255,45,60,0.8)'); rg.addColorStop(1, 'rgba(255,45,60,0)'); ctx.fillStyle = rg; ctx.fillRect(-SH, -SH * 1.1, SH * 2, SH * 1.2); }
     e._top = y - SH * s - 16;
   } else {
@@ -1266,8 +1276,8 @@ function drawUI() {
   ctx.fillStyle = '#05070a'; for (let i = 0; i < 12; i++) { ctx.beginPath(); ctx.arc(12 + i * 47, FIELD_H + 8, 2.2, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(12 + i * 47, BY - 12, 2.2, 0, 7); ctx.fill(); }
   ctx.fillStyle = CYAN; ctx.globalAlpha = 0.5; ctx.fillRect(0, FIELD_H, W, 2); ctx.globalAlpha = 1;
   const x0 = 140;
-  bar(x0, FIELD_H + 16, 250, 18, G.armor / G.armorMax, '#3fd0a0', `${VEH_NAMES[TIER - 1]} 裝甲 ${fmt(Math.ceil(G.armor))}/${fmt(G.armorMax)}`);
-  bar(x0, FIELD_H + 42, 250, 18, G.energy / 100, G.energy >= 100 ? '#ffd23f' : '#a35cff', G.energy >= 100 ? 'AI 能量 滿（點 AI 小頭）' : `AI 能量 ${Math.floor(G.energy)}%`);
+  bar(x0, FIELD_H + 16, 250, 18, G.armor / G.armorMax, '#3fd0a0', `${BIKE ? '破腳踏車' : VEH_NAMES[TIER - 1]} 裝甲 ${fmt(Math.ceil(G.armor))}/${fmt(G.armorMax)}`);
+  bar(x0, FIELD_H + 42, 250, 18, G.energy / 100, G.energy >= 100 ? '#ffd23f' : '#a35cff', !EMP_ON ? '零的能量（還沒恢復）' : G.energy >= 100 ? 'AI 能量 滿（點 AI 小頭）' : `AI 能量 ${Math.floor(G.energy)}%`);
   ctx.fillStyle = '#e6eef5'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText(BOSS_WAVE() ? '頭目戰' : CHASE ? '追逐中' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1}/${WAVES.length} 波`, W - 14, FIELD_H + 14);
   ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#a9b6c2'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
@@ -1413,8 +1423,8 @@ function drawResult() {
   ctx.fillStyle = `rgba(2,6,8,${0.95 * t})`; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = t; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
-  ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? '第一章　完' : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
-  ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜撐過 ${G.wave} 波` + (G.otNew ? '｜新紀錄！' : `｜今天最佳 ${Math.max(G.wave, (G.otPrev && G.otPrev.today) || 0)} 波`) : STAGE ? `第一章 ${STAGE === ZN ? '頭目' : '1-' + STAGE}` + (win ? ' 過關' : CHASE ? `｜撐了 ${G.turns} 回合` : `｜撐到第 ${G.wave + 1} 波`) : (win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`), W / 2, 196);
+  ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? '第零章　完' : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
+  ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜撐過 ${G.wave} 波` + (G.otNew ? '｜新紀錄！' : `｜今天最佳 ${Math.max(G.wave, (G.otPrev && G.otPrev.today) || 0)} 波`) : STAGE ? `第零章 第 ${STAGE} 關` + (win ? ' 過關' : CHASE ? `｜撐了 ${G.turns} 回合` : `｜撐到第 ${G.wave + 1} 波`) : (win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`), W / 2, 196);
   if (!(STAGE && G.reward)) {
     ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
     ctx.font = '900 150px "Arial Black",sans-serif'; ctx.fillStyle = '#fff'; ctx.shadowColor = CYAN; ctx.shadowBlur = 40; ctx.fillText(G.maxCombo, W / 2, 370); ctx.shadowBlur = 0;
@@ -1430,13 +1440,19 @@ function drawResult() {
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
-    const QW = { 1: ['貨車清空了。看看裡面還有什麼吃的。', '第一戰。你沒有尖叫，進步了。'], 2: ['加油站清空了。去看看還有沒有油。', '……運氣成分很高。'], 3: ['那隻狗在看你。別讓牠失望。', '追兵清除。牠安全了。'], 4: ['甩掉了。那幾個人好像也逃出來了。', '你的方向盤技術……勉強。'], 5: ['門守住了。……我繼續躲。', '他們沒發現我。算是好評。'], 6: ['……下一站：冰港。', '收音機裡那個聲音……我們去看看。'] }[STAGE] || ['還行。'];
-    const q = !win ? (STAGE === ZN ? '鏽塊別放著。在旁邊合成灰零件，就能敲碎它。' : '下次記得先動腦。車子比你的面子重要。') : (st === 3 && STAGE !== ZN ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
+    const QW = { 1: ['廢鐵到手。不是拿來吃的。', '第一戰。你沒有尖叫，進步了。'], 2: ['廢鐵越多，機器人越多。', '……運氣成分很高。'], 3: ['殭屍身上有電池。別浪費。', '三隻都倒了。勉強及格。'], 4: ['路清了。腳踏車就在前面。', '你的手速比走路快一點。'], 5: ['她倒下了。……又站起來了。', '店員清除。打烊了。'], 6: ['收費亭清空。這次不用付錢。', '你終於有一次沒付錢就通過了。'], 7: ['狗叫聲停了一下。只是一下。', '……你剛剛那樣算有努力。'], 8: ['小貨車到手。不要撞到我。', '使命必達。你也是。'], 9: ['煙在東邊。快到了。', '你今天沒有拖後腿。數據異常。'], 10: ['牠倒下了。牠在發抖。', '……你做到了。'] }[STAGE] || ['這波清除。'];
+    const LOSE = (() => {   // 2026-11-28 打輸：零先吐槽一句，再依這場的狀況給一句提示
+      if (EMP_ON && G.energy >= 100) return [['EMP 充滿了你都沒按，是在收藏嗎？', '能量滿了就點我。'], ['我等了三回合，你一次都沒叫我。', '能量條變黃，就點我的頭。']];
+      if (G.maxCombo <= 3) return [['一次只消三個？你是在排隊嗎。', '先排好再一起消，連擊傷害會多很多。'], ['連擊這麼少，殭屍都在打呵欠。', '多走幾格，把同色串在一起。']];
+      if (!(G.healed > 0)) return [['鋼鐵零件是修裝甲的，你全部當裝飾？', '灰色的鋼鐵消掉，就能補車。'], ['車子被打爛，你一次都沒修。', '消灰色的鋼鐵零件可以修補裝甲。']];
+      return [['你一直放著倒數最少的那隻不管？', '先打頭上數字最小的那隻。'], ['被打穿了。數字最小的會先動手。', '先處理倒數快歸零的敵人。']];
+    })()[G.turns % 2];
+    const q = !win ? LOSE[0] + LOSE[1] : (st === 3 ? '……數據異常。你今天居然沒有拖後腿。' : QW[(G.turns + st) % QW.length]);
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
     ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
-    rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]];
+    rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]].filter(([n]) => n !== '電路板' || R.chip).filter(([n]) => n !== '金幣' || R.coin);   // 用到才出現
     const extra = [R.fuel ? `汽油 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : '', G.reward.frag ? `🧩${{ scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' }[G.reward.frag.k]}碎片 ×${G.reward.frag.n}` : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
   }
@@ -1452,10 +1468,10 @@ function drawResult() {
   if (toBase) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd23f'; ctx.textAlign = 'center'; ctx.fillText('撿了不少東西。先回車旁整理一下。', W / 2, 716); }
   if ((STAGE && nextN) || OT) btn2Rect = { x: W / 2 - 90, y: 806, w: 180, h: 44 };
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 20; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 32); ctx.fill(); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? (nextN ? (win ? `下一關（${nextN === ZN ? '頭目' : '1-' + nextN}）` : '再試一次') : '回營地') : TRIAL_FLOW ? '繼續' : OT ? '再加班一次' : '再玩一次', W / 2, btnRect.y + 33);
+  ctx.fillStyle = '#00262c'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(STAGE ? (nextN ? (win ? (STAGE > CLEARED && HOME_AFTER.includes(STAGE) ? '回去看看' : `下一關（第 ${nextN} 關）`) : '再試一次') : '回營地') : TRIAL_FLOW ? '繼續' : OT ? '再加班一次' : '再玩一次', W / 2, btnRect.y + 33);
   if (btn2Rect) { ctx.fillStyle = 'rgba(4,14,18,0.9)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(btn2Rect.x, btn2Rect.y, btn2Rect.w, btn2Rect.h, 22); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = CYAN; ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.fillText('回營地', W / 2, btn2Rect.y + 23); }
-  const freeFuel = !(SV && SV.dev && SV.dev.oil);   // 2026-11-27 還沒裝石油收集器＝踩腳踏車，不花汽油
+    ctx.fillStyle = CYAN; ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.fillText(STAGE && !win ? '回去升級' : '回營地', W / 2, btn2Rect.y + 23); }
+  const freeFuel = !SV || (SV.tier || 1) < 2;   // 2026-11-27 還沒裝石油收集器＝踩腳踏車，不花汽油
   if (STAGE && nextN && !freeFuel) { ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === ZN ? '頭目關要花汽油 20' : '要花汽油 10', W / 2, 716); }
   if (fuelMsg) { ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText(fuelMsg, W / 2, 864); }
   ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; if (!fuelMsg) ctx.fillText('廢域方舟｜動嘴做遊戲', W / 2, 880);
@@ -1479,8 +1495,8 @@ function drawTitle() {
   const ty0 = IMG.bg ? -150 : 0;
   ctx.fillStyle = RED; ctx.globalAlpha = 0.6; ctx.fillRect(W / 2 - 170, 352 + ty0, 340, 2); ctx.globalAlpha = 1;
   sigil(W / 2, 380 + ty0, 3, CYAN, 1);
-  ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 14; ctx.fillText(OT ? '加班模式' : STAGE ? `第一章 ${STAGE === ZN ? '頭目' : '1-' + STAGE}` : '247 天後', W / 2, 418 + ty0); ctx.shadowBlur = 0;
-  ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜全部玩家同一盤｜能力統一` : STAGE ? `載具：${VEH_NAMES[TIER - 1]} Lv.${TIER}${SUB ? ' +' + SUB : ''}｜武器 ${SLOTS.length} 座` : '零號廢域｜載具：青晶房車 Lv.6｜試玩', W / 2, 452 + ty0);
+  ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 14; ctx.fillText(OT ? '加班模式' : STAGE ? `第零章 第 ${STAGE} 關` : '247 天後', W / 2, 418 + ty0); ctx.shadowBlur = 0;
+  ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜全部玩家同一盤｜能力統一` : STAGE ? `載具：${BIKE ? '破腳踏車' : VEH_NAMES[TIER - 1]} Lv.${TIER}${SUB ? ' +' + SUB : ''}｜武器 ${SLOTS.length} 座` : '零號廢域｜載具：青晶房車 Lv.6｜試玩', W / 2, 452 + ty0);
   btnRect = { x: W / 2 - 120, y: IMG.bg ? 660 : 560, w: 240, h: 70 };
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 24 * pulse; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 35); ctx.fill(); ctx.shadowBlur = 0;
   ctx.fillStyle = '#00262c'; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillText(STAGE ? '出發' : '開始', W / 2, btnRect.y + 36);
@@ -1616,7 +1632,7 @@ cv.addEventListener('pointerdown', ev => {
   if (inRect(p, MUSIC_BTN)) { toggleMusic(); return; }
   if (G.state === 'title') { if (inRect(p, btnRect)) startGame(); return; }
   if (G.state === 'result') { if ((STAGE || OT) && inRect(p, btn2Rect)) { location.href = '../'; return; }
-    if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (STAGE === 1 && G.result.win) location.href = '../?from=s1'; else if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
+    if (inRect(p, btnRect)) { if (STAGE) { const n = G.result.win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE; if (G.result.win && STAGE > CLEARED && HOME_AFTER.includes(STAGE)) location.href = '../?from=s' + STAGE; else if (n) goStage(n); else location.href = '../'; } else if (TRIAL_FLOW) location.href = '../?from=trial'; else startGame(); } return; }
   if (G.state === 'cards') { cardRects.forEach((r, i) => { if (inRect(p, r)) chooseCard(i); }); return; }
   if (G.state === 'tip') { if ((G.tipT || 0) > 0.4) { G.state = 'player'; try { localStorage.setItem('zw-tip-' + SL, '1'); } catch (e) {} } return; }
   if (G.state === 'orb') { if (G.orb && Math.hypot(p.x - cellPos(G.orb.c, G.orb.r).x, p.y - cellPos(G.orb.c, G.orb.r).y) < 70) tapOrb(); return; }
@@ -1642,13 +1658,11 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 newGame(); requestAnimationFrame(loop);
+if (TRIAL_FLOW && window.Story && C1().scenes.t0a) { G.state = 'story'; Story.play('t0a', { name: '我', base: '../', onDone: () => { audioInit(); startGame(); } }); }   // 2026-11-28 試玩：接開場影片
 const CLEARED = (SV && SV.cleared && SV.cleared.zero) || 0;
 if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[STAGE])) {   // 上次過關後的劇情沒看完 → 補播
   G.state = 'story';
   Story.play(POST[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(POST[STAGE]); G.state = 'title'; } });
-} else if (STAGE === ZN && window.Story && CLEARED >= ZN && !storySeen('c1s9')) {   // 頭目後的結局沒看完 → 補播短劇＋營火
-  G.state = 'story';
-  Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s8'); storyMark('c1s9'); G.state = 'title'; } }));
 } else if (STAGE && PRE[STAGE] && window.Story && (STORY_EVERY || !storySeen(PRE[STAGE]))) {
   const firstTime = !storySeen(PRE[STAGE]);
   G.state = 'story';
@@ -1662,8 +1676,8 @@ if (window.ZW_WIDE) {
   ZW_WIDE.init({ bg: (FIELD_ALT && FIELD_ALT[0]) || '../img/home_bg.webp', stageW: () => W * SCALE });
   const fmtN = n => Math.round(n || 0).toLocaleString('en-US');
   const bar = (v, c) => `<div class="bar"><i style="width:${Math.max(0, Math.min(100, v * 100)).toFixed(1)}%;background:${c}"></i></div>`;
-  const LABEL = OT ? tr('加班模式') : STAGE ? (STAGE === ZN ? tr('第一章　頭目戰') : tr('第一章　1-{n}', { n: STAGE })) : tr('試玩（247 天後）');
-  const VEH = tr(TIER === 6 ? '青晶房車' : VEH_NAMES[TIER - 1]);
+  const LABEL = OT ? tr('加班模式') : STAGE ? tr('第零章　第 {n} 關', { n: STAGE }) : tr('包圍');
+  const VEH = tr(TIER === 6 ? '青晶房車' : BIKE ? '破腳踏車' : VEH_NAMES[TIER - 1]);
   const wideTick = () => {
     if (!ZW_WIDE.on || !G) return;
     const inBattle = !['title', 'story'].includes(G.state);
