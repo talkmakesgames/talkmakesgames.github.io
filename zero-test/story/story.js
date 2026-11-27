@@ -94,6 +94,9 @@
   }
   const Story = {
     auto: (() => { try { return localStorage.getItem('zw-story-auto') === '1'; } catch (e) { return false; } })(),
+    fast: (() => { try { return localStorage.getItem('zw-story-fast') === '1'; } catch (e) { return false; } })(),   // x2 加速播放
+    sp() { return Story.fast ? 2 : 1; },
+    fastBtn(top, onChange) { const b = el('button', Story.fast ? 'on' : '', top); b.textContent = 'x2'; b.onclick = e => { e.stopPropagation(); Story.fast = !Story.fast; b.className = Story.fast ? 'on' : ''; try { localStorage.setItem('zw-story-fast', Story.fast ? '1' : '0'); } catch (er) {} onChange && onChange(); }; return b; },
     play(key, o) {
       o = o || {};
       const data = o.data || window.STORY_C1, sc = data && data.scenes[key];
@@ -116,7 +119,7 @@
       const ttl = el('div', 'ttl'); ttl.textContent = sc.title ? '— ' + sc.title + ' —' : '';
       const ph = el('div', 'ph'); const pop = el('div', 'pop');
       const tb = el('div', 'tb'), nm = el('div', 'nm', tb), tx = el('div', '', tb), nx = el('div', 'nx', tb); nx.textContent = '▼';
-      const top = el('div', 'top'), bAuto = el('button', Story.auto ? 'on' : '', top), bSkip = el('button', '', top);
+      const top = el('div', 'top'), bAuto = el('button', Story.auto ? 'on' : '', top), bFast = Story.fastBtn(top, () => { if (audio) audio.playbackRate = Story.sp(); }), bSkip = el('button', '', top);
       bAuto.textContent = '自動'; bSkip.textContent = '跳過 ▶▶';
       const endEl = el('div', 'end');
       const glow = el('div', 'glow'), hold = el('div', 'hold'), chs = el('div', 'chs'), tapg = el('div', 'tapg');
@@ -136,7 +139,7 @@
       function finish() { if (done) return; done = true; stopAudio(); stopMusic(); clearInterval(typing); unmount();
         const guard = document.createElement('div'); guard.style.cssText = 'position:fixed;inset:0;z-index:49'; document.body.appendChild(guard); setTimeout(() => guard.remove(), 450);   // 點太快不會點穿
         o.onDone && o.onDone(); }
-      function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms); }
+      function scheduleAuto(ms) { clearTimeout(autoT); if (Story.auto && !waitOrb && !waitAct) autoT = setTimeout(next, ms / Story.sp()); }
       function show(L) {
         try { o.onLine && o.onLine(L); } catch (e) {}   // 給基地用：講到哪個資源就亮哪一格
         if (L.cg || L.bg) setBg(L.cg || L.bg);
@@ -157,12 +160,12 @@
         if (L.end) { endEl.innerHTML = '<b>第一章</b><i>一切從零開始　完</i><small style="margin-top:34px;color:#9aa6b2;font-size:18px;letter-spacing:3px">下一章　冰港</small><small style="margin-top:8px;color:#5d6b75;font-size:14px">「這裡是冰港……還有人活著嗎？」</small>'; endEl.classList.add('on'); tb.style.visibility = 'hidden'; ptL.classList.remove('on'); ptR.classList.remove('on'); }
         // 打字效果
         clearInterval(typing); let k = 0; tx.textContent = ''; nx.style.visibility = 'hidden';
-        typing = setInterval(() => { k += 2; tx.textContent = full.slice(0, k); if (k >= full.length) { clearInterval(typing); typing = null; nx.style.visibility = ''; } }, 28);
+        typing = setInterval(() => { k += 2 * Story.sp(); tx.textContent = full.slice(0, k); if (k >= full.length) { clearInterval(typing); typing = null; nx.style.visibility = ''; } }, 28);
         // 配音
         stopAudio();
         const wait = Math.max(1600, full.length * 140);
         if (L.v) {
-          audio = new Audio(base + L.v); audio.volume = 1;
+          audio = new Audio(base + L.v); audio.volume = 1; audio.playbackRate = Story.sp(); audio.preservesPitch = true;
           audio.onended = () => scheduleAuto(650);
           const pr = audio.play(); if (pr && pr.catch) pr.catch(() => scheduleAuto(wait));
         } else scheduleAuto(L.end ? 4200 : L.phone ? 2200 : wait);
@@ -203,7 +206,7 @@
         show(lines[i]);
       }
       root.addEventListener('click', e => { if (music && music.paused) { const pm = music.play(); if (pm && pm.catch) pm.catch(() => {}); }   // 手機要先點一下才能放聲音
-        if (e.target === bAuto || e.target === bSkip) return; next(); });
+        if (e.target === bAuto || e.target === bSkip || e.target === bFast) return; next(); });
       bAuto.onclick = () => { Story.auto = !Story.auto; bAuto.className = Story.auto ? 'on' : ''; try { localStorage.setItem('zw-story-auto', Story.auto ? '1' : '0'); } catch (e) {} if (Story.auto && !typing && !(audio && !audio.paused)) scheduleAuto(400); };
       bSkip.onclick = () => { if (waitOrb) return; // 報告珠那一步不能跳
         if (holdT) { clearInterval(holdT); holdT = null; }
@@ -214,7 +217,8 @@
     video(src, onDone) {
       mount(false);
       const v = el('video'); v.src = src; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
-      const top = el('div', 'top'), bSkip = el('button', '', top); bSkip.textContent = '跳過 ▶▶';
+      const top = el('div', 'top'); Story.fastBtn(top, () => { v.playbackRate = Story.sp(); }); const bSkip = el('button', '', top); bSkip.textContent = '跳過 ▶▶';
+      v.playbackRate = Story.sp(); v.addEventListener('loadedmetadata', () => { v.playbackRate = Story.sp(); });
       let done = false; const end = () => { if (done) return; done = true; v.pause(); unmount(); onDone && onDone(); };
       v.onended = end; v.onerror = end; bSkip.onclick = end;
       const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play().catch(end); });

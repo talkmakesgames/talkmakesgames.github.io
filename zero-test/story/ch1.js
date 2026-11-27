@@ -6,39 +6,57 @@ window.STORY_C1={
 "bgm": "calm",
 "lines": [
 {
-"w": "narr",
-"t": "路邊倒著一台腳踏車。鏈條斷了，後輪歪成一個八字。",
-"cg": "story/c1_bike_broken.webp"
+"w": "hero",
+"t": "……我的能力？",
+"e": "1",
+"v": "voice/c1/c1bike_0.mp3"
 },
 {
 "w": "zero",
-"t": "現在你只有……這台。",
+"t": "合成。把東西接在一起，變成別的東西。",
 "e": "n",
 "v": "voice/c1/c1bike_1.mp3"
 },
 {
 "w": "hero",
+"t": "……那只是遊戲吧。",
+"e": "2",
+"v": "voice/c1/c1bike_2.mp3"
+},
+{
+"w": "zero",
+"t": "試試看就知道。旁邊那台腳踏車。",
+"e": "n",
+"v": "voice/c1/c1bike_3.mp3"
+},
+{
+"w": "narr",
+"t": "路邊倒著一台腳踏車。鏈條斷了，後輪歪成一個八字。",
+"cg": "story/c1_bike_broken.webp"
+},
+{
+"w": "hero",
 "t": "……這是腳踏車。還是壞的。",
 "e": "1",
-"v": "voice/c1/c1bike_2.mp3"
+"v": "voice/c1/c1bike_5.mp3"
 },
 {
 "w": "zero",
 "t": "所以要合成。旁邊那堆廢鐵、那個菜籃、那塊鐵板——你的手可以把它們接在一起。",
 "e": "n",
-"v": "voice/c1/c1bike_3.mp3"
+"v": "voice/c1/c1bike_6.mp3"
 },
 {
 "w": "hero",
 "t": "我連組家具都會多出兩顆螺絲。",
 "e": "2",
-"v": "voice/c1/c1bike_4.mp3"
+"v": "voice/c1/c1bike_7.mp3"
 },
 {
 "w": "zero",
 "t": "合成不是亂黏。零件要放對位置。",
 "e": "n",
-"v": "voice/c1/c1bike_5.mp3"
+"v": "voice/c1/c1bike_8.mp3"
 },
 {
 "w": "sys",
@@ -69,6 +87,28 @@ window.STORY_C1={
 "t": "……謝謝喔。",
 "e": "3",
 "v": "voice/c1/c1bike2_2.mp3"
+},
+{
+"w": "zero",
+"t": "別急。一步一步改，總有一天它會變成方舟。",
+"e": "n",
+"v": "voice/c1/c1bike2_3.mp3"
+},
+{
+"w": "hero",
+"t": "方舟？就這台？",
+"e": "2",
+"v": "voice/c1/c1bike2_4.mp3"
+},
+{
+"w": "zero",
+"t": "我沒說是這個月。",
+"e": "n",
+"v": "voice/c1/c1bike2_5.mp3"
+},
+{
+"w": "sys",
+"t": "零號廢域——一切從零開始"
 }
 ]
 },
@@ -911,16 +951,28 @@ window.STORY_C1={
 },
 {
 "w": "zero",
-"t": "……又是那個主管。",
-"e": "a",
+"t": "……你原本那個世界，傳來的。",
+"e": "n",
 "v": "voice/c1/c1s8_4.mp3"
+},
+{
+"w": "hero",
+"t": "刪掉。",
+"e": "3",
+"v": "voice/c1/c1s8_5.mp3"
+},
+{
+"w": "zero",
+"t": "已讀。",
+"e": "n",
+"v": "voice/c1/c1s8_6.mp3"
 },
 {
 "w": "zero",
 "t": "……這種東西，你可以不用收。",
 "e": "s",
 "orb": 1,
-"v": "voice/c1/c1s8_5.mp3"
+"v": "voice/c1/c1s8_7.mp3"
 }
 ]
 },

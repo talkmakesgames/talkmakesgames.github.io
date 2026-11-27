@@ -44,6 +44,8 @@
   #vid { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   #tapStart { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:rgba(0,0,0,.65); font:900 26px sans-serif; color:var(--cyan); }
   #skip { position:absolute; top:18px; right:18px; padding:9px 16px; font:800 16px sans-serif; border-radius:999px; background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.5); z-index:3; }
+  #vfast { position:absolute; top:18px; right:150px; padding:9px 16px; font:800 16px sans-serif; border-radius:999px; background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.5); z-index:3; }
+  #vfast.on { background:#3ff0ff; color:#031016; }
   #vidSub { position:absolute; left:0; right:0; bottom:200px; text-align:center; font:900 34px sans-serif; color:#9ff8ff; text-shadow:0 0 6px #002a30,0 0 2px #000,2px 2px 0 #000; opacity:0; transition:opacity .3s; }
   /* 取名 */
   #nameBox { position:absolute; left:52px; right:52px; top:330px; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
@@ -167,6 +169,7 @@
   <div class="scr" id="scr-video">
     <video id="vid" playsinline preload="auto"></video>
     <div id="vidSub"></div>
+    <button id="vfast">x2</button>
     <button id="skip">跳過 ▶▶</button>
     <div id="tapStart"><div>▶</div><div>點一下開始</div><div style="font:700 14px sans-serif;color:#8fa0ae">建議開啟聲音</div></div>
   </div>
@@ -251,12 +254,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11270357"></script>
-<script src="story/ch1.js?v=11270357"></script>
-<script src="story/intro.js?v=11270357"></script>
-<script src="story/story.js?v=11270357"></script>
-<script src="gear.js?v=11270357"></script>
-<script src="wide.js?v=11270357"></script>
+<script src="i18n.js?v=11270845"></script>
+<script src="story/ch1.js?v=11270845"></script>
+<script src="story/intro.js?v=11270845"></script>
+<script src="story/story.js?v=11270845"></script>
+<script src="gear.js?v=11270845"></script>
+<script src="wide.js?v=11270845"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -320,7 +323,7 @@ const day = () => Math.floor((NOW() - S.firstDay) / 86400000) + 1;
 const fmt = n => n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '萬' : Math.floor(n).toLocaleString();
 function addDiary(text) { S.diary.push({ day: day(), text }); save(); }
 
-// ═══ 第一次開遊戲的流程：開場影片 → 試玩 → 解說 A → 取名 → 解說 B → 首頁（只跑一次） ═══
+// ═══ 第一次開遊戲的流程：開場影片 → 試玩 → 解說 A → 取名 → 腳踏車劇情 → 首頁（只跑一次） ═══
 const params = new URLSearchParams(location.search);
 if (params.get('from') === 'trial' && S.intro === 'trial') { S.intro = 'explainA'; save(); history.replaceState(null, '', location.pathname); }
 let vidNext = null, vidReplay = false;
@@ -333,6 +336,11 @@ function playVideo(src, next, opts) {
 $('tapStart').onclick = () => { $('tapStart').style.display = 'none'; const p = $('vid').play(); if (p && p.catch) p.catch(() => {}); };
 function endVideo() { const v = $('vid'); v.pause(); v.removeAttribute('src'); v.load(); const n = vidNext; vidNext = null; if (n) n(); }
 $('vid').onended = endVideo; $('skip').onclick = endVideo;
+// x2 加速播放（跟劇情的 x2 是同一個設定）
+const vFast = () => { let f = false; try { f = localStorage.getItem('zw-story-fast') === '1'; } catch (e) {} return f; };
+const vFastShow = () => { const f = vFast(); $('vfast').className = f ? 'on' : ''; $('vid').playbackRate = f ? 2 : 1; };
+$('vfast').onclick = e => { e.stopPropagation(); const f = !vFast(); try { localStorage.setItem('zw-story-fast', f ? '1' : '0'); } catch (er) {} if (window.Story) Story.fast = f; vFastShow(); };
+$('vid').addEventListener('loadedmetadata', vFastShow); $('vid').addEventListener('play', vFastShow);
 
 function runIntro() {
   if (S.intro === 'opening') playVideo(QUICK ? 'video/opening_short.mp4' : 'video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
@@ -340,15 +348,14 @@ function runIntro() {
   else if (S.intro === 'explainA' && QUICK2 && window.Story && window.STORY_INTRO) Story.play('introA', { data: window.STORY_INTRO, name: '我', base: '', onDone: () => { S.intro = 'naming'; save(); startNaming(); } });   // ?quick=2：互動版
   else if (S.intro === 'explainA') playVideo('video/explainA.mp4', () => { S.intro = 'naming'; save(); startNaming(); });
   else if (S.intro === 'naming') startNaming();
-  else if (S.intro === 'explainB' && QUICK2 && window.Story && window.STORY_INTRO) Story.play('introB', { data: window.STORY_INTRO, name: S.hero, base: '', onDone: finishIntro });   // ?quick=2：互動版
-  else if (S.intro === 'explainB') playVideo('video/explainB.mp4', finishIntro, { sub: `零：「${S.hero}。」` });
+  else if (S.intro === 'explainB') finishIntro();   // 舊存檔停在解說B：直接接腳踏車劇情
   else goHome();
 }
 function finishIntro() {
   S.intro = 'done'; S.lastSeen = NOW();
   // 試玩是零的「未來模擬」，模擬裡的敵人資料先記成「看過」（名字＋剪影），真的打倒才解鎖完整資料
   ['zombie', 'dasher', 'heavy', 'mech'].forEach(k => S.codex.seen[k] = 1);
-  addDiary('加班加到穿越。主管還在問報告。');
+  addDiary('加班加到穿越。醒來的地方，到處都是機械殭屍。');
   save(); bikeIntro();
 }
 
@@ -376,7 +383,7 @@ $('nameOk').onclick = () => {
     $('nameAsk').innerHTML = '幫 AI 取名字<br><span style="font-size:14px;color:#8fa0ae">不改就叫「零」</span>'; $('nameIn').value = ''; $('nameIn').placeholder = '零';
     $('loginOld').style.display = 'none';
   } else {
-    S.ai = v || '零'; S.intro = 'explainB'; save(); runIntro();
+    S.ai = v || '零'; save(); finishIntro();   // 2026-11-27 拿掉解說B，取名完直接進腳踏車劇情
   }
 };
 $('loginOld').onclick = () => cloudLogin(true);
@@ -787,7 +794,7 @@ function renderDiary() {
     const ORDER = ['c1bike', 'c1bike2', 'c1s1', 'c1s1b', 'c1base1', 'c1food', 'c1s1c', 'c1s1d', 'c1s2', 'c1s3', 'c1s4', 'c1s4b', 'c1s5', 'c1s6', 'c1s7', 'c1s8', '@c1_drama', 'c1s9'];
     Object.keys(SC).forEach(k => { if (!ORDER.includes(k)) ORDER.push(k); });   // 之後新增的段落接在最後
     const row = (attr, n) => `<div class="vrow" ${attr}><span>▶</span>${n}</div>`;
-    let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening"', '加班到穿越（開場）') + row('data-v="explainA"', '這是什麼世界') + row('data-v="explainB"', '現在要做什麼');
+    let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening"', '加班到穿越（開場）') + row('data-v="explainA"', '這是什麼世界');
     const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k));
     if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title)).join('');
     h += '<div style="font-size:14px;color:#7a6440;margin-top:8px">' + (seen('c1s8') ? '下一章破解後，會再解鎖新的劇情' : '繼續往前走，劇情會一段一段解鎖') + '</div>';
@@ -870,9 +877,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11270357"></script>
-<script src="team.js?v=11270357"></script>
-<script src="puzzle.js?v=11270357"></script>
+<script src="extras.js?v=11270845"></script>
+<script src="team.js?v=11270845"></script>
+<script src="puzzle.js?v=11270845"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
