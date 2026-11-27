@@ -159,6 +159,16 @@
   /* 2026-11-28 第零章：新資源跳出來、方舟剪影 */
   #topbar .res.newres { animation: resPop .9s cubic-bezier(.3,1.7,.5,1); box-shadow: 0 0 14px #ffd23f; }
   @keyframes resPop { 0% { transform: scale(0); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  #vidOv { position:absolute; inset:0; pointer-events:none; z-index:2; }
+  #vidOv .vo-sub { position:absolute; left:4%; right:4%; bottom:19%; text-align:center; font:900 30px sans-serif; color:#fff; text-shadow:0 0 4px #000,2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000; animation:voIn .15s; }
+  #vidOv .vo-sub.zero { color:#9ff8ff; text-shadow:0 0 6px #002a30,2px 2px 0 #002a30,-2px -2px 0 #002a30; }
+  #vidOv .vo-cap { position:absolute; left:6%; top:5%; padding:6px 12px; border-radius:6px; background:rgba(0,0,0,.55); font:800 22px sans-serif; color:#fff; letter-spacing:2px; }
+  #vidOv .vo-file { position:absolute; left:6%; top:11%; padding:4px 10px; border-radius:4px; background:rgba(11,26,34,.85); font:700 15px monospace; color:#9ff8ff; }
+  #vidOv .vo-phone { position:absolute; left:8%; right:8%; top:13%; padding:14px 16px; border-radius:16px; background:rgba(255,255,255,.96); color:#111; font:800 19px sans-serif; box-shadow:0 6px 20px rgba(0,0,0,.6); animation:voIn .25s; }
+  #vidOv .vo-pop { position:absolute; left:10%; right:10%; top:28%; padding:22px 16px 18px; border-radius:10px; border:2px solid #55f0ff; background:rgba(0,40,46,.93); color:#cffcff; font:800 21px sans-serif; text-align:center; line-height:1.6; box-shadow:0 0 30px rgba(85,240,255,.5); animation:voIn .25s; }
+  #vidOv .vo-pop b { display:inline-block; margin-top:12px; padding:6px 22px; border-radius:8px; background:#55f0ff; color:#00262c; }
+  #vidOv .vo-pop b.pr { background:#fff; transform:scale(.92); }
+  @keyframes voIn { from { opacity:0; transform:translateY(8px); } }
   #arkMini { position:absolute; right:10px; top:118px; width:96px; height:58px; z-index:6; cursor:pointer; }
   #arkMini .ad, #arkMini .al { position:absolute; inset:0 0 14px 0; background:url(img/v9.webp) center/contain no-repeat; }
   #arkMini .ad { filter: brightness(0) drop-shadow(0 0 1px #3ff0ff); opacity:.55; }
@@ -185,6 +195,7 @@
   <div class="scr" id="scr-video">
     <video id="vid" playsinline preload="auto"></video>
     <div id="vidSub"></div>
+    <div id="vidOv"></div>
     <button id="vfast">x2</button>
     <button id="skip">跳過 ▶▶</button>
     <div id="tapStart"><div>▶</div><div>點一下開始</div><div style="font:700 14px sans-serif;color:#8fa0ae">建議開啟聲音</div></div>
@@ -270,12 +281,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11280246"></script>
-<script src="story/ch1.js?v=11280246"></script>
-<script src="story/intro.js?v=11280246"></script>
-<script src="story/story.js?v=11280246"></script>
-<script src="gear.js?v=11280246"></script>
-<script src="wide.js?v=11280246"></script>
+<script src="i18n.js?v=11280302"></script>
+<script src="story/ch1.js?v=11280302"></script>
+<script src="story/intro.js?v=11280302"></script>
+<script src="story/story.js?v=11280302"></script>
+<script src="gear.js?v=11280302"></script>
+<script src="wide.js?v=11280302"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -343,8 +354,20 @@ function addDiary(text) { S.diary.push({ day: day(), text }); save(); }
 const params = new URLSearchParams(location.search);
 if (params.get('from') === 'trial' && S.intro === 'trial') { S.intro = 'explainA'; save(); history.replaceState(null, '', location.pathname); }
 let vidNext = null, vidReplay = false;
+let vidOv = null;   // 2026-11-28 影片疊字（字幕、手機訊息、彈窗不燒進影片）
+function vidOvTick() {
+  const v = $('vid'), box = $('vidOv'); if (!box) return;
+  if (!vidOv || !$('scr-video').classList.contains('on')) { box.innerHTML = ''; return; }
+  const t = v.currentTime, on = vidOv.overlays.filter(o => t >= o.t0 && t <= o.t1);
+  const key = on.map(o => o.t0 + (o.press && t >= o.press ? 'p' : '')).join('|');
+  if (box.dataset.k !== key) { box.dataset.k = key;
+    box.innerHTML = on.map(o => o.type === 'sub' ? `<div class="vo-sub ${o.who}">${o.text}</div>` : o.type === 'caption' ? `<div class="vo-cap">${o.text}</div>` : o.type === 'file' ? `<div class="vo-file">${o.text}</div>`
+      : o.type === 'phone' ? `<div class="vo-phone">${o.text}</div>` : o.type === 'popup' ? `<div class="vo-pop"><div>${o.text.replace(/\n/g, '<br>')}</div><b class="${o.press && t >= o.press ? 'pr' : ''}">【${o.btn}】</b></div>` : '').join(''); }
+  requestAnimationFrame(vidOvTick);
+}
 function playVideo(src, next, opts) {
-  vidNext = next; vidReplay = !!(opts && opts.replay);
+  vidNext = next; vidReplay = !!(opts && opts.replay); vidOv = null;
+  if (opts && opts.ov) fetch(opts.ov).then(r => r.json()).then(j => { vidOv = j; requestAnimationFrame(vidOvTick); }).catch(() => {});
   const v = $('vid'); v.src = src; v.currentTime = 0; $('tapStart').style.display = 'flex'; $('vidSub').style.opacity = 0;
   show('video');
   if (opts && opts.sub) { v.ontimeupdate = () => { $('vidSub').textContent = opts.sub; $('vidSub').style.opacity = v.currentTime < 2.4 ? 1 : 0; }; } else v.ontimeupdate = null;
@@ -359,7 +382,7 @@ $('vfast').onclick = e => { e.stopPropagation(); const f = !vFast(); try { local
 $('vid').addEventListener('loadedmetadata', vFastShow); $('vid').addEventListener('play', vFastShow);
 
 function runIntro() {
-  if (S.intro === 'opening') playVideo(QUICK ? 'video/opening_short.mp4' : 'video/opening.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; });
+  if (S.intro === 'opening') playVideo('video/opening_v6.mp4', () => { S.intro = 'trial'; save(); location.href = 'battle/?trial=1'; }, { ov: 'video/opening_v6.json' });   // 2026-11-28 開場 v6「符合傳送資格」
   else if (S.intro === 'trial') location.replace('battle/?trial=1');
   else if (S.intro === 'explainA') overload(() => { S.intro = 'naming'; save(); startNaming(); });   // 2026-11-28 第零章：試玩後＝緊急模式過載（取代解說A影片）
   else if (S.intro === 'naming') startNaming();
@@ -877,12 +900,13 @@ function renderDiary() {
     const ORDER = ['c0over', 'c0s1', 'c0s1b', 'c0food', 'c0s2', 'c0s2b', 'c0s3', 'c0s3b', 'c0s4', 'c0s4b', 'c0s4c', 'c0s5', 'c0s5b', 'c0s6', 'c0s6b', 'c0s7', 'c0s7b', 'c0s8', 'c0s8b', 'c0s9', 'c0s9b', 'c0s10', 'c0s10b'];   // 2026-11-28 第零章
     Object.keys(SC).forEach(k => { if (!ORDER.includes(k)) ORDER.push(k); });   // 之後新增的段落接在最後
     const row = (attr, n) => `<div class="vrow" ${attr}><span>▶</span>${n}</div>`;
-    let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening"', '加班到穿越（開場）') + row('data-v="explainA"', '這是什麼世界');
-    const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k));
-    if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title)).join('');
+    const C0T = { c0s1: '第 1 關　餓', c0s1b: '廢鐵', c0food: '食物機器人', c0s2: '第 2 關　彎腰', c0s2b: '撿廢鐵的機器人', c0s3: '第 3 關　當機', c0s3b: '電池', c0s4: '第 4 關　三輪車', c0s5b: '店員的名牌', c0s6: '第 6 關　收費亭', c0s6b: '金幣', c0s7: '第 7 關　狗叫聲', c0s7b: '不要放棄', c0s8: '第 8 關　使命必達', c0s8b: '小貨車', c0s9: '第 9 關　煙', c0s9b: '往東', c0name: '記下了' };
+    let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening_v6"', '符合傳送資格（開場）');
+    const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k) && k.startsWith('c0'));
+    if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第零章　零號廢域</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title || C0T[k] || k)).join('');
     h += '<div style="font-size:14px;color:#7a6440;margin-top:8px">' + (seen('c1s8') ? '下一章破解後，會再解鎖新的劇情' : '繼續往前走，劇情會一段一段解鎖') + '</div>';
     B.innerHTML = h;
-    B.querySelectorAll('.vrow[data-v]').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true }));
+    B.querySelectorAll('.vrow[data-v]').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true, ov: r.dataset.v === 'opening_v6' ? 'video/opening_v6.json' : null }));
     if (window.Story) B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
   } else {
     const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['第一章進度', `${S.cleared.zero || 0} / 6 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
@@ -962,9 +986,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11280246"></script>
-<script src="team.js?v=11280246"></script>
-<script src="puzzle.js?v=11280246"></script>
+<script src="extras.js?v=11280302"></script>
+<script src="team.js?v=11280302"></script>
+<script src="puzzle.js?v=11280302"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
