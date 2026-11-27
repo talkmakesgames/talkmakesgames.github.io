@@ -111,7 +111,10 @@
   #stDetail .lab { color:var(--dim); font:800 12px sans-serif; margin:8px 0 4px; letter-spacing:1px; }
   #stDetail .ens { display:flex; gap:8px; } #stDetail .ens div { width:58px; text-align:center; font:700 11px sans-serif; color:#c8fbff; }
   #stDetail .ens img { width:52px; height:52px; object-fit:contain; display:block; margin:0 auto; background:rgba(4,12,16,.6); border-radius:10px; }
-  #stDetail .drops span { display:inline-block; background:rgba(4,30,36,.9); border:1px solid rgba(63,240,255,.4); border-radius:8px; padding:3px 8px; margin:0 4px 4px 0; font:800 13px sans-serif; }
+  #stDetail .drops span { display:inline-flex; align-items:center; gap:5px; background:rgba(4,30,36,.9); border:1px solid rgba(63,240,255,.4); border-radius:8px; padding:3px 9px 3px 4px; margin:0 4px 4px 0; font:800 13px sans-serif; vertical-align:middle; }
+  #stDetail .drops span img { width:28px; height:28px; object-fit:contain; border-radius:6px; }
+  #stDetail .drops span .fr { position:relative; display:inline-block; width:28px; height:28px; }
+  #stDetail .drops span .fr i { position:absolute; right:-5px; bottom:-5px; font-style:normal; font-size:13px; }
   #stDetail .drops span.first { border-color:#ffd23f; color:#ffd23f; } #stDetail .drops span.got { opacity:.45; text-decoration:line-through; }
   #stDetail .cost { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
   #stDetail .cost b { font:900 15px sans-serif; } #stDetail .warn { color:#ff9a9a; }
@@ -254,12 +257,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11271237"></script>
-<script src="story/ch1.js?v=11271237"></script>
-<script src="story/intro.js?v=11271237"></script>
-<script src="story/story.js?v=11271237"></script>
-<script src="gear.js?v=11271237"></script>
-<script src="wide.js?v=11271237"></script>
+<script src="i18n.js?v=11271248"></script>
+<script src="story/ch1.js?v=11271248"></script>
+<script src="story/intro.js?v=11271248"></script>
+<script src="story/story.js?v=11271248"></script>
+<script src="gear.js?v=11271248"></script>
+<script src="wide.js?v=11271248"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -615,12 +618,12 @@ function openZone(i) {
 // 2026-11-27 選關：點關卡只是選擇，下面看詳細，按「出發」才開打
 let stSel = null;
 const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情獎勵, 備註]
-  ['肚子餓', '天快黑了。去翻倒的便利商店貨車找吃的。', ['zombie', 'dasher'], 'scrap', '🧩廢鐵採集機器人碎片 ×9', ''],
-  ['加油站', '往商場街的路上有一座加油站。也許還有油。', ['zombie', 'dasher'], 'oil', '🧩石油收集器碎片 ×9', ''],
-  ['巷子裡的聲音', '巷子裡傳來金屬爪子刮地的聲音。有東西在逃。', ['zombie', 'dasher', 'heavy'], 'scrap', '鐵鏽加入', ''],
-  ['看見倖存者', '高架橋下有人被殭屍追著。掩護他們撐到商場街入口。', ['zombie', 'dasher', 'heavy'], 'power', '🧩電能機器人碎片 ×9', '追逐關：撐過 6 回合就贏'],
-  ['營地門口', '殭屍跟到商場街門口了。守住營地大門。', ['zombie', 'dasher', 'heavy'], 'scrap', '交易所開放', ''],
-  ['清除單位', '廣場上的大傢伙會來掃營地。打倒它。', ['zombie', 'dasher', 'mech'], 'oil', '載具藍圖、青晶核心 ×3', '頭目會把零件鏽掉：在旁邊合成灰零件可以敲碎'],
+  ['肚子餓', '天快黑了。去翻倒的便利商店貨車找吃的。', ['zombie', 'dasher'], 'scrap', [['@scrap', '廢鐵採集機器人碎片 ×9']], ''],
+  ['加油站', '往商場街的路上有一座加油站。也許還有油。', ['zombie', 'dasher'], 'oil', [['@oil', '石油收集器碎片 ×9']], ''],
+  ['巷子裡的聲音', '巷子裡傳來金屬爪子刮地的聲音。有東西在逃。', ['zombie', 'dasher', 'heavy'], 'scrap', [['img/story/i_dog.webp', '鐵鏽加入']], ''],
+  ['看見倖存者', '高架橋下有人被殭屍追著。掩護他們撐到商場街入口。', ['zombie', 'dasher', 'heavy'], 'power', [['@power', '電能機器人碎片 ×9']], '追逐關：撐過 6 回合就贏'],
+  ['營地門口', '殭屍跟到商場街門口了。守住營地大門。', ['zombie', 'dasher', 'heavy'], 'scrap', [['img/r_coin.webp', '交易所開放']], ''],
+  ['清除單位', '廣場上的大傢伙會來掃營地。打倒它。', ['zombie', 'dasher', 'mech'], 'oil', [['img/r_blueprint.webp', '載具藍圖'], ['img/r_core.webp', '青晶核心 ×3']], '頭目會把零件鏽掉：在旁邊合成灰零件可以敲碎'],
 ];
 const FRAG_N = { scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' };
 function renderStageDetail() {
@@ -631,12 +634,15 @@ function renderStageDetail() {
   const recOk = !boss || S.tier > 1 || (S.sub || 0) >= 1;
   const enHtml = ens.map(k => { const c = CODEX.find(x => x[0] === k), known = kills[k] || seen[k];
     return `<div><img src="img/${c ? c[1] : 'e_zombie'}.webp" alt="" style="${known ? '' : 'filter:brightness(0);opacity:.6'}">${known && c ? c[2] : '？？？'}</div>`; }).join('');
-  const firstItems = [first].concat(gear ? ['裝備：' + gear.n] : []);
+  const GEAR_IC = { tool: '🔧', gear: '🛡️', charm: '🎖️' };
+  const ico = im => im.startsWith('@') ? `<b class="fr"><img src="img/dev_${im.slice(1)}.webp" alt=""><i>🧩</i></b>` : im.startsWith('img/') ? `<img src="${im}" alt="">` : `<b style="font-size:20px;width:28px;text-align:center">${im}</b>`;
+  const chip = ([im, tx], cls) => `<span${cls ? ` class="${cls}"` : ''}>${ico(im)}${tx}</span>`;
+  const firstItems = first.concat(gear ? [[GEAR_IC[gear.slot] || '🎒', '裝備：' + gear.n]] : []);
   $('stDetail').innerHTML = `<h4>${boss ? '頭目' : '1-' + (j + 1)}　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
     <div class="hint">${hint}</div>${note ? `<div class="hint" style="color:#ffd23f">⚠ ${note}</div>` : ''}
     <div class="lab">會遇到</div><div class="ens">${enHtml}</div>
-    <div class="lab">可能掉落</div><div class="drops"><span>金幣</span><span>廢鐵</span><span>電路板</span><span>🧩${FRAG_N[fk]}碎片 ×2～4</span></div>
-    <div class="lab">第一次過關</div><div class="drops">${firstItems.map(x => `<span class="first${done ? ' got' : ''}">${x}</span>`).join('')}${done ? '<span style="border:0;background:none;color:var(--dim)">已領取</span>' : ''}</div>
+    <div class="lab">可能掉落</div><div class="drops">${[['img/r_coin.webp', '金幣'], ['img/r_scrap.webp', '廢鐵'], ['img/r_chip.webp', '電路板'], ['@' + fk, FRAG_N[fk] + '碎片 ×2～4']].map(x => chip(x)).join('')}</div>
+    <div class="lab">第一次過關</div><div class="drops">${firstItems.map(x => chip(x, 'first' + (done ? ' got' : ''))).join('')}${done ? '<span style="border:0;background:none;color:var(--dim)">已領取</span>' : ''}</div>
     <div class="cost"><b>${free ? '🚲 踩腳踏車，不花汽油' : `⛽ 汽油 -${cost}`}</b><span class="${enough ? '' : 'warn'}">${free ? '' : `剩 ${S.res.fuel}`}</span></div>
     ${boss ? `<div class="${recOk ? '' : 'warn'}" style="margin-top:6px">${recOk ? '✔' : '✖'} 建議：載具改裝到 +1 以上${recOk ? '' : '（到「載具」改裝）'}</div>` : ''}
     <button id="stGo" class="${enough ? '' : 'dim'}">出發</button>`;
@@ -877,9 +883,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11271237"></script>
-<script src="team.js?v=11271237"></script>
-<script src="puzzle.js?v=11271237"></script>
+<script src="extras.js?v=11271248"></script>
+<script src="team.js?v=11271248"></script>
+<script src="puzzle.js?v=11271248"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
