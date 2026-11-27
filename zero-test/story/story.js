@@ -180,14 +180,17 @@
         if (L.tap) {   // 連點小遊戲：限時內點滿 N 下才會往下（失敗就重來，不會卡關）
           waitAct = true; tapg.classList.add('on'); const bar = tapg.querySelector('.bar i'), tm = tapg.querySelector('.tm i'), msg = tapg.querySelector('small');
           const N = L.tap, LIM = (L.tapT || 6) * 1000; let n = 0, t0 = 0, tt = null, fail = false;
+          const branch = (L.tapWin || L.tapLose) ? (win => { const sc2 = data.scenes[win ? L.tapWin : L.tapLose]; if (sc2) lines.splice(i + 1, 0, ...sc2.lines); try { o.onTap && o.onTap(win); } catch (e) {} }) : null;   // 2026-11-27 甩掉／沒甩掉兩條路
           const reset = () => { n = 0; t0 = 0; fail = false; bar.style.width = '0'; tm.style.width = '100%'; msg.textContent = `點 ${N} 下甩開它！`; };
           reset();
           const tickT = () => { if (!t0) return; const k = 1 - (performance.now() - t0) / LIM; tm.style.width = Math.max(0, k * 100) + '%';
-            if (k <= 0 && n < N) { clearInterval(tt); tt = null; fail = true; msg.textContent = '被追上了！再踩一次！'; tone('hit'); box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk'); setTimeout(reset, 1100); } };
+            if (k <= 0 && n < N) { clearInterval(tt); tt = null; fail = true; tone('hit'); box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk');
+              if (branch) { msg.textContent = '被追上了！'; branch(false); setTimeout(() => { tapg.classList.remove('on'); if (root) root.onpointerdown = null; waitAct = false; next(); }, 1100); }
+              else { msg.textContent = '被追上了！再踩一次！'; setTimeout(reset, 1100); } } };
           root.onpointerdown = () => { if (!waitAct || fail || n >= N) return; if (!t0) { t0 = performance.now(); tt = setInterval(tickT, 50); }
             n++; bar.style.width = Math.min(100, n / N * 100) + '%'; msg.textContent = `${n} / ${N}`; tone('tap');
             box.classList.remove('shk'); void box.offsetWidth; box.classList.add('shk');
-            if (n >= N) { clearInterval(tt); tt = null; msg.textContent = '甩掉了！'; tone('join'); setTimeout(() => { tapg.classList.remove('on'); if (root) root.onpointerdown = null; waitAct = false; next(); }, 600); } };
+            if (n >= N) { clearInterval(tt); tt = null; msg.textContent = '甩掉了！'; tone('join'); if (branch) branch(true); setTimeout(() => { tapg.classList.remove('on'); if (root) root.onpointerdown = null; waitAct = false; next(); }, 600); } };
         }
         if (L.choice) {   // 選擇：選完插入對應的台詞
           waitAct = true; chs.innerHTML = ''; chs.classList.add('on');

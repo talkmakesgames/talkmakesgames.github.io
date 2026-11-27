@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11270845"></script>
-<script src="../story/ch1.js?v=11270845"></script>
-<script src="../story/story.js?v=11270845"></script>
-<script src="../gear.js?v=11270845"></script>
-<script src="../wide.js?v=11270845"></script>
+<script src="../i18n.js?v=11271237"></script>
+<script src="../story/ch1.js?v=11271237"></script>
+<script src="../story/story.js?v=11271237"></script>
+<script src="../gear.js?v=11271237"></script>
+<script src="../wide.js?v=11271237"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -1650,7 +1650,8 @@ if (STAGE && window.Story && CLEARED >= STAGE && POST[STAGE] && !storySeen(POST[
   Story.video('../video/c1_drama.mp4', () => Story.play('c1s9', { name: heroName(), base: '../', onDone: () => { storyMark('c1s8'); storyMark('c1s9'); G.state = 'title'; } }));
 } else if (STAGE && PRE[STAGE] && window.Story && !storySeen(PRE[STAGE])) {
   G.state = 'story';
-  Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); } });
+  Story.play(PRE[STAGE], { name: heroName(), base: '../', onDone: () => { storyMark(PRE[STAGE]); audioInit(); startGame(); },
+    onTap: win => { if (!win) return; try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); s.res = s.res || {}; s.res.scrap = (s.res.scrap || 0) + 10; localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {} } });   // 甩掉店員殭屍：多撿 10 個廢鐵
 }
 
 // ── 寬螢幕（電腦／橫拿平板，2026-11-26）：兩邊空白換成模糊背景＋左右資訊欄；直式手機不受影響（文字用 tr()，見 i18n.js）──
