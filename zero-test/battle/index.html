@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11281918"></script>
-<script src="../story/ch1.js?v=11281918"></script>
-<script src="../story/story.js?v=11281918"></script>
-<script src="../gear.js?v=11281918"></script>
-<script src="../wide.js?v=11281918"></script>
+<script src="../i18n.js?v=11282007"></script>
+<script src="../story/ch1.js?v=11282007"></script>
+<script src="../story/story.js?v=11282007"></script>
+<script src="../gear.js?v=11282007"></script>
+<script src="../wide.js?v=11282007"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -131,18 +131,18 @@ const KINDS = {
   drone: { name: '偵察無人機', hp: 5200, cd: 1, atk: 430, s: 0.9 },   // 2026-11-28 一號廢域
   boss: { name: '巨型機甲', hp: 125000, cd: 3, atk: 2200, s: 1.0 },
 };
-if (OS === 5) KINDS.boss = { name: '殭屍店員', hp: 36000, cd: 2, atk: 950, s: 1.0 };
-if (OS === 101) KINDS.boss = { name: '小禾的改裝機', hp: 24000, cd: 2, atk: 700, s: 0.9 };   // 2026-11-28 第一章
+if (OS === 5) KINDS.boss = { name: '殭屍店員', hp: 36000, cd: 2, atk: 1200, s: 1.0 };
+if (OS === 101) KINDS.boss = { name: '小禾的改裝機', hp: 34000, cd: 2, atk: 700, s: 0.9 };   // 2026-11-28 第一章
 if (OS === 105) KINDS.boss = { name: '屍群首領', hp: 62000, cd: 3, atk: 1500, s: 1.0 };
 if (OS === 110) KINDS.boss = { name: '屍潮巨獸', hp: 105000, cd: 3, atk: 1800, s: 1.05 };
-if (OS === 10) KINDS.boss = { name: '機械獵犬', hp: 95000, cd: 2, atk: 1600, s: 1.0 };
+if (OS === 10) KINDS.boss = { name: '機械獵犬', hp: 95000, cd: 2, atk: 2100, s: 1.0 };
 // 試玩版（247 天後、第 6 階青晶房車）：主角傷害 ×POW；第一波血量打折，讓新手先覺得自己很強
 // 從遊戲流程進來（?trial=1）：結算按鈕變「繼續」，回到遊戲（解說影片 A）
 const TRIAL_FLOW = /[?&]trial=1/.test(location.search);
 const POW = OT ? 112 : STAGE ? (3 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) * GE.atk) : 120;
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(150 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
-const CH1_HP = [1.0, 1.2, 1.3, 1.4, 1.3, 1.5, 1.6, 1.65, 1.7, 1.45], CH1_ATK = [0.55, 0.7, 0.75, 0.8, 0.6, 0.85, 0.88, 0.9, 0.9, 0.6];   // 2026-11-28 第一章 10 關
+const CH1_HP = [1.0, 1.2, 1.3, 1.4, 1.3, 1.5, 1.6, 1.65, 1.7, 1.45], CH1_ATK = [0.55, 0.7, 0.75, 0.8, 0.78, 0.85, 0.88, 0.9, 0.9, 0.85];   // 2026-11-28 第一章 10 關
 const SL = OS;   // 2026-11-28 7 關：規則用原本的編號   // 2026-11-28 第零章 10 關，規則直接用關卡編號   // 2026-11-26 新增 1-1 肚子餓：1-1、1-2 用同一套規則，後面的關卡往後移一關（SL＝原本的關卡規則編號）
 const STAGE_HP = [0, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.9, 1.0][SL] || CH1_HP[SL - 101] || 1, ATK_MUL = STAGE ? ([0, 0.35, 0.4, 0.45, 0.5, 0.42, 0.6, 0.65, 0.7, 0.65, 0.5][SL] || CH1_ATK[SL - 101] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = STAGE > 7 ? 17 : 7;   // 2026-11-28 章末頭目：第零章第 7 關、第一章第 17 關   // 2026-11-28 改 7 關（第 4 關中頭目、第 7 關大頭目）   // 第零章（零號廢域）：10 關，第 5 關中型頭目、第 10 關大頭目
@@ -158,7 +158,7 @@ const STAGE_WAVES = {   // 2026-11-28 第零章：小關 1 波、第 5 關 2 波
   9: [['dasher', 'dasher', 'zombie'], ['heavy', 'dasher', 'zombie', 'dasher']],   // 新第 6 關（狗叫聲＋煙）2 波
   10: [['zombie', 'dasher'], ['heavy', 'dasher'], ['boss']],
   // 2026-11-28 第一章：小關 2 波、第 5 關（105）中型頭目、第 10 關（110）屍潮防守 4 波
-  101: [['drone', 'zombie', 'drone'], ['boss']],
+  101: [['boss']],   // 2026-11-28 使用者：第一章第 1 關只打小禾的改裝機
   102: [['zombie', 'drone', 'zombie'], ['dasher', 'heavy']],
   103: [['zombie', 'zombie', 'dasher'], ['heavy', 'dasher', 'zombie']],
   104: [['drone', 'dasher', 'drone'], ['heavy', 'zombie', 'heavy']],
@@ -667,7 +667,7 @@ function stepEnemy() {
   e.cd--;
   if (e.cd <= 0) {
     e.cd = e.cdMax; e.lunge = 1; e.atkT = 0;
-    const dmg = e.atk + (e.enraged ? 400 : 0);
+    const dmg = e.atk + (e.enraged ? (STAGE ? Math.round(e.atk * 0.4) : 400) : 0);   // 2026-11-28 暴走加成改成比例（正式關數值縮小後，固定 +400 會一擊打爆車子）
     if (e.k === 'boss' && RUST_ON) rustify(e.enraged ? 4 : 3);
     if (DOG_ON && G.dogArmed && e.k !== 'boss') {   // 玩家叫鐵鏽護車：這一回合的小攻擊全部擋下
       G.dogBlocked = true; G.dogT = 1.4; SFX.hit(); G.shake = Math.max(G.shake, 6);
@@ -1177,7 +1177,7 @@ HERO.handAt = () => { return heroHand(); };
 // ── 敵人（剪影＋紅色發光眼） ──
 function drawEnemy(e) {
   const K = e.K, s = K.s * (e.vs || 1), boss = e.k === 'boss';   // 同一種敵人大小略有不同
-  const dieA = e.dead ? Math.max(0, 1 - e.dieT / 0.35) : 1;
+  const dieA = e.dead ? Math.max(0, 1 - e.dieT / (OS === 101 && e.k === 'boss' ? 1.4 : 0.35)) : 1;   // 小禾的機器停機慢一點
   if (dieA <= 0) return;
   const lungeY = e.lunge > 0 ? Math.sin((1 - e.lunge) * Math.PI) * 60 : 0;
   const x = e.x + (e.hit > 0 ? Math.sin(G.t * 90) * 4 * e.hit : 0), y = e.y + lungeY + Math.sin(G.t * 3 + e.bob) * 2;
@@ -1193,7 +1193,11 @@ function drawEnemy(e) {
     ctx.scale(1 / squash, squash);
     ctx.drawImage(im, -w / 2, -SH, w, SH);
     if (e.hit > 0 && tw) { ctx.globalAlpha = dieA * Math.min(1, e.hit) * 0.75; ctx.drawImage(tw, -w / 2, -SH, w, SH); }
-    if (e.dead && tc) { ctx.globalAlpha = Math.min(1, e.dieT * 5) * dieA; ctx.drawImage(tc, -w / 2, -SH, w, SH); }
+    if (e.dead && OS === 101 && e.k === 'boss') {   // 2026-11-28 小禾的機器是人開的：不閃淨化青光，改成變暗、冒煙停機
+      ctx.save(); ctx.globalAlpha = Math.min(1, e.dieT * 3) * dieA; ctx.filter = 'grayscale(1) brightness(0.45)'; ctx.drawImage(im, -w / 2, -SH, w, SH); ctx.restore();
+      for (let i = 0; i < 6; i++) { const t = (e.dieT * 0.8 + i / 6) % 1; ctx.globalAlpha = (1 - t) * 0.55 * dieA; ctx.fillStyle = '#9aa0a6'; ctx.beginPath(); ctx.arc(-w * 0.1 + Math.sin(i * 2.1) * w * 0.18, -SH * 0.75 - t * 90, 14 + t * 26, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = dieA;
+    } else if (e.dead && tc) { ctx.globalAlpha = Math.min(1, e.dieT * 5) * dieA; ctx.drawImage(tc, -w / 2, -SH, w, SH); }
     if (!e.dead && e.cyanT > 0 && tc) { ctx.globalAlpha = dieA * 0.65 * Math.min(1, e.cyanT * 3); ctx.drawImage(tc, -w / 2, -SH, w, SH); ctx.globalAlpha = dieA; }   // 淨化：整隻閃青光
     if (e.enraged) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.15 * Math.sin(G.t * 10); const rg = ctx.createRadialGradient(0, -SH * 0.5, 10, 0, -SH * 0.5, SH * 0.6); rg.addColorStop(0, 'rgba(255,45,60,0.8)'); rg.addColorStop(1, 'rgba(255,45,60,0)'); ctx.fillStyle = rg; ctx.fillRect(-SH, -SH * 1.1, SH * 2, SH * 1.2); }
     e._top = y - SH * s - 16;
@@ -1473,7 +1477,7 @@ function drawResult() {
   ctx.fillStyle = `rgba(2,6,8,${0.95 * t})`; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.globalAlpha = t; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '900 54px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = win ? CYAN : '#ff5a5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 24;
-  ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? (STAGE > 7 ? '第一章　完' : '第零章　完') : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
+  ctx.fillText(OT ? '加班結束' : win ? (CHASE ? '逃脫成功' : STAGE === ZN ? (STAGE > 7 ? '第一章　完' : '第零章　完') : OS === 101 ? '擋下來了' : '淨化完成') : '車子失守', W / 2, 150); ctx.shadowBlur = 0;
   ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜撐過 ${G.wave} 波` + (G.otNew ? '｜新紀錄！' : `｜今天最佳 ${Math.max(G.wave, (G.otPrev && G.otPrev.today) || 0)} 波`) : STAGE ? `第零章 第 ${STAGE} 關` + (win ? ' 過關' : CHASE ? `｜撐了 ${G.turns} 回合` : `｜撐到第 ${G.wave + 1} 波`) : (win ? '巨型機甲已被擊倒' : `撐到第 ${G.wave + 1} 波`), W / 2, 196);
   if (!(STAGE && G.reward)) {
     ctx.font = '800 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#c8fbff'; ctx.fillText('最高連擊', W / 2, 270);
