@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11281156"></script>
-<script src="../story/ch1.js?v=11281156"></script>
-<script src="../story/story.js?v=11281156"></script>
-<script src="../gear.js?v=11281156"></script>
-<script src="../wide.js?v=11281156"></script>
+<script src="../i18n.js?v=11281237"></script>
+<script src="../story/ch1.js?v=11281237"></script>
+<script src="../story/story.js?v=11281237"></script>
+<script src="../gear.js?v=11281237"></script>
+<script src="../wide.js?v=11281237"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -1029,7 +1029,7 @@ function drawAI() {
     ctx.save(); ctx.shadowColor = full ? '#ffd23f' : CYAN; ctx.shadowBlur = full ? 26 : 14;
     ctx.drawImage(im, x - im.width * k / 2, y - im.height * k / 2, im.width * k, im.height * k); ctx.restore();
     if (full) { ctx.save(); ctx.strokeStyle = '#ffd23f'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(G.t * 8); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 46 + 4 * Math.sin(G.t * 8), 0, 7); ctx.stroke(); ctx.restore();
-      ctx.fillStyle = '#ffd23f'; ctx.font = '800 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('點我 EMP', x, y + 56); }
+      ctx.fillStyle = '#ffd23f'; ctx.font = '800 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('點我 EMP', x, y + 56); }
   } else {
   // 線纜
   ctx.strokeStyle = '#1c2228'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 10, y + 18); ctx.quadraticCurveTo(x - 30, y + 40, RV.x + RV.w - 20, RV.y + 10); ctx.stroke();
@@ -1050,13 +1050,13 @@ function drawAI() {
   ctx.shadowColor = bandCol; ctx.shadowBlur = full ? 22 : 12; ctx.fillStyle = bandCol; ctx.fillRect(x - 16, y - 2, 34, 5);
   ctx.shadowBlur = 0; ctx.fillStyle = '#05080a'; ctx.fillRect(x - 1, y - 2, 4, 5); ctx.restore();
   if (full) { ctx.save(); ctx.strokeStyle = '#ffd23f'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(G.t * 8); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 34 + 4 * Math.sin(G.t * 8), 0, 7); ctx.stroke(); ctx.restore();
-    ctx.fillStyle = '#ffd23f'; ctx.font = '800 13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('點我 EMP', x, y + 44); }
+    ctx.fillStyle = '#ffd23f'; ctx.font = '800 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('點我 EMP', x, y + 44); }
   }
   a.drawX = x; a.drawY = y;
   // 台詞泡泡
   if (a.lineT > 0 && G.state !== 'result' && G.state !== 'cards' && G.state !== 'tip' && G.comboShow <= 0) {
     const al = Math.min(1, a.lineT * 3, (2.8 - a.lineT) * 6 + 0.01);
-    ctx.save(); ctx.globalAlpha = al; ctx.font = '700 15px "Microsoft JhengHei","PingFang TC",sans-serif';
+    ctx.save(); ctx.globalAlpha = al; ctx.font = '700 17px "Microsoft JhengHei","PingFang TC",sans-serif';
     const lines = wrap(a.line, 190); const bw = 214, bh = 16 + lines.length * 20, bx = clamp(x - bw + 40, 8, W - bw - 8), by = y - 60 - bh;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(bx, by, bw, bh, 8); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x - 6, by + bh); ctx.lineTo(x + 2, by + bh + 12); ctx.lineTo(x + 10, by + bh); ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.fill();
@@ -1208,9 +1208,9 @@ function drawEnemy(e) {
   ctx.save(); ctx.fillStyle = e.stun ? '#4a2a7a' : danger ? '#b3121e' : '#2a2f36'; ctx.strokeStyle = danger ? '#ff6670' : '#8a929c'; ctx.lineWidth = 2;
   if (danger) { ctx.shadowColor = RED; ctx.shadowBlur = 10 + 6 * Math.sin(G.t * 10); }
   ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 7); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#fff'; ctx.font = '900 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.stun ? 'Z' : e.cd, cx, cy + 1);
+  ctx.fillStyle = '#fff'; ctx.font = '900 16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.stun ? 'Z' : e.cd, cx, cy + 1);
   ctx.restore();
-  if (e.burn > 0) { ctx.fillStyle = '#ff8a4a'; ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🔥', x - bw / 2 - 10, top + 6); }
+  if (e.burn > 0) { ctx.fillStyle = '#ff8a4a'; ctx.font = '700 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🔥', x - bw / 2 - 10, top + 6); }
 }
 
 // ── 特效 ──
@@ -1257,7 +1257,7 @@ function drawFX() {
     const txt = typeof t.s === 'number' ? fmt(t.s) : t.s;
     ctx.save(); ctx.globalAlpha = a; ctx.translate(t.x + (tier === 2 && t.t < 0.25 ? (Math.random() - 0.5) * 6 : 0), t.y); ctx.scale(sc, sc);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    if (t.crit) { ctx.font = '900 15px "Microsoft JhengHei",sans-serif'; ctx.lineWidth = 4; ctx.strokeStyle = '#3a2600'; ctx.strokeText('暴擊！', 0, -26); ctx.fillStyle = '#ffe14d'; ctx.fillText('暴擊！', 0, -26); }
+    if (t.crit) { ctx.font = '900 17px "Microsoft JhengHei",sans-serif'; ctx.lineWidth = 4; ctx.strokeStyle = '#3a2600'; ctx.strokeText('暴擊！', 0, -26); ctx.fillStyle = '#ffe14d'; ctx.fillText('暴擊！', 0, -26); }
     ctx.font = `900 ${tier === 2 ? 34 : tier === 1 ? 30 : 22}px "Arial Black","Microsoft JhengHei",sans-serif`;
     ctx.lineWidth = tier ? 7 : 5; ctx.strokeStyle = tier === 2 ? '#3a0a00' : '#000'; ctx.strokeText(txt, 0, 0);
     if (tier) { ctx.shadowColor = t.color; ctx.shadowBlur = 16; }
@@ -1271,7 +1271,7 @@ function bar(x, y, w, h, v, col, label) {
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(x, y, w, h, h / 2); ctx.fill();
   ctx.save(); roundRect(x, y, w, h, h / 2); ctx.clip(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.fillRect(x, y, w * clamp(v, 0, 1), h); ctx.restore();
   ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1; roundRect(x, y, w, h, h / 2); ctx.stroke();
-  ctx.fillStyle = '#ffffff'; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.shadowColor = '#000'; ctx.shadowBlur = 3; ctx.fillText(label, x + 8, y + h / 2 + 0.5); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#ffffff'; ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.shadowColor = '#000'; ctx.shadowBlur = 3; ctx.fillText(label, x + 8, y + h / 2 + 0.5); ctx.shadowBlur = 0;
 }
 function drawUI() {
   // 中間欄底色
@@ -1287,13 +1287,13 @@ function drawUI() {
   bar(x0, FIELD_H + 42, 250, 18, G.energy / 100, G.energy >= 100 ? '#ffd23f' : '#a35cff', !EMP_ON ? '零的能量（還沒恢復）' : G.energy >= 100 ? 'AI 能量 滿（點 AI 小頭）' : `AI 能量 ${Math.floor(G.energy)}%`);
   ctx.fillStyle = '#e6eef5'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
   ctx.fillText(BOSS_WAVE() ? '頭目戰' : CHASE ? '追逐中' : OT ? `加班第 ${G.wave + 1} 波` : `第 ${G.wave + 1}/${WAVES.length} 波`, W - 14, FIELD_H + 14);
-  ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#a9b6c2'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
+  ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#a9b6c2'; ctx.fillText(`回合 ${G.turns + 1}`, W - 14, FIELD_H + 40);
   // 轉珠時間條
   const tl = G.timeLimit + G.mods.time;
   const tv = G.state === 'drag' && G.swapped ? G.timer / tl : 1;
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, FIELD_H + 72, W - x0 - 14, 10);
   ctx.fillStyle = tv < 0.3 ? '#ff5a5a' : CYAN; ctx.fillRect(x0, FIELD_H + 72, (W - x0 - 14) * tv, 10);
-  ctx.fillStyle = '#a9b6c2'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#a9b6c2'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(G.state === 'drag' && G.swapped ? `轉珠 ${Math.max(0, G.timer).toFixed(1)} 秒` : G.state === 'player' && (tutDone || G.moves > 2) ? '按住零件拖動，連成 3 個以上就合成' : '', x0, FIELD_H + 88);
   // 零件盤底
   const pg = ctx.createLinearGradient(0, BY - 6, 0, H); pg.addColorStop(0, '#15191e'); pg.addColorStop(1, '#07090b');
@@ -1380,8 +1380,8 @@ function drawTutorial() {
   const bw = W - 132, bx = 120, by = BY - 50;   // 資訊列下半（蓋掉重複的提示字），在主角右邊
   ctx.fillStyle = 'rgba(4,14,18,0.94)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 2; roundRect(bx, by, bw, 46, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.fillText(step.t, bx + bw / 2, by + 16);
-  ctx.fillStyle = '#9fdfe8'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillText(step.s, bx + bw / 2, by + 35);
-  ctx.fillStyle = '#6f8592'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(`${k + 1}/3`, bx + bw - 8, by + 9);
+  ctx.fillStyle = '#9fdfe8'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillText(step.s, bx + bw / 2, by + 35);
+  ctx.fillStyle = '#6f8592'; ctx.font = '700 14px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(`${k + 1}/3`, bx + bw - 8, by + 9);
   ctx.restore();
 }
 function drawCombo() {
@@ -1409,7 +1409,7 @@ function drawCards() {
   ctx.fillStyle = 'rgba(2,6,8,0.82)'; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = CYAN; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.shadowColor = CYAN; ctx.shadowBlur = 16; ctx.fillText('這波清除！選一張改裝卡', W / 2, 210); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#8fa0ae'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillText('用撿到的零件改裝房車', W / 2, 248);
+  ctx.fillStyle = '#8fa0ae'; ctx.font = '700 17px "Microsoft JhengHei",sans-serif'; ctx.fillText('用撿到的零件改裝房車', W / 2, 248);
   cardRects = [];
   G.cards.forEach((c, i) => {
     const w = 152, h = 300, x = 18 + i * (w + 9), t = clamp((G.cardT - i * 0.08) * 4, 0, 1), y = 300 + (1 - easeOutBack(t)) * 200;
@@ -1425,9 +1425,9 @@ function drawCards() {
     } else sigil(x + w / 2, y + 28, 2, CYAN, 0.9);
     const ty = art ? 172 : 74;
     ctx.fillStyle = '#e8ffff'; ctx.font = '900 21px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'center'; ctx.fillText(c.t, x + w / 2, y + ty);
-    ctx.fillStyle = '#a9c4cc'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif';
+    ctx.fillStyle = '#a9c4cc'; ctx.font = '700 17px "Microsoft JhengHei",sans-serif';
     c.d.split('\n').forEach((l, k) => ctx.fillText(l, x + w / 2, y + ty + 38 + k * 22));
-    ctx.fillStyle = CYAN; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.fillText('點這張', x + w / 2, y + h - 22);
+    ctx.fillStyle = CYAN; ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillText('點這張', x + w / 2, y + h - 22);
     ctx.restore();
   });
 }
@@ -1452,7 +1452,7 @@ function drawResult() {
       if (on && k > 0 && (G.starSfx || 0) <= i) { G.starSfx = i + 1; tone(700 + i * 180, 1400 + i * 200, 0.18, 'triangle', 0.16); }   // 星星一顆一顆「叮」
       ctx.save(); ctx.translate(W / 2 + (i - 1) * 96, 288); ctx.scale(sc, sc); ctx.font = '900 76px sans-serif'; ctx.fillStyle = on ? '#ffd23f' : '#2c3640'; if (on) { ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 24; } ctx.fillText('★', 0, 0); ctx.restore(); }
     const cond = [['過關', win], ['裝甲剩一半', win && G.armor >= G.armorMax * 0.5], [`${STAR_COMBO} 連擊`, win && G.maxCombo >= STAR_COMBO]];
-    ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
+    ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
     const QW = { 1: ['廢鐵到手。不是拿來吃的。', '第一戰。你沒有尖叫，進步了。'], 2: ['廢鐵越多，機器人越多。', '……運氣成分很高。'], 3: ['殭屍身上有電池。別浪費。', '三隻都倒了。勉強及格。'], 4: ['路清了。腳踏車就在前面。', '你的手速比走路快一點。'], 5: ['她倒下了。……又站起來了。', '店員清除。打烊了。'], 6: ['收費亭清空。這次不用付錢。', '你終於有一次沒付錢就通過了。'], 7: ['狗叫聲停了一下。只是一下。', '……你剛剛那樣算有努力。'], 8: ['小貨車到手。不要撞到我。', '使命必達。你也是。'], 9: ['煙在東邊。快到了。', '你今天沒有拖後腿。數據異常。'], 10: ['牠倒下了。牠在發抖。', '……你做到了。'] }[STAGE] || ['這波清除。'];
     const PW = (STAGE && SV && window.ZW_GEAR) ? { p: ZW_GEAR.power(SV).total, r: ZW_GEAR.rec(STAGE) } : null;
@@ -1467,7 +1467,7 @@ function drawResult() {
     ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; const qw = ctx.measureText('零：' + q).width + 30;
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
-    ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
+    ctx.font = '800 17px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
     rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]].concat(R.core ? [['青晶核心', '+' + R.core]] : []).filter(([n]) => n !== '電路板' || R.chip).filter(([n]) => n !== '金幣' || R.coin);   // 用到才出現
     const extra = [R.fuel ? `汽油 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : '', G.reward.frag ? `🧩${{ scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' }[G.reward.frag.k]}碎片 ×${G.reward.frag.n}` : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
@@ -1477,7 +1477,7 @@ function drawResult() {
     ctx.font = '700 18px "Microsoft JhengHei",sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#a9c4cc'; ctx.fillText(k, 110, y);
     ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillText(v, W - 110, y);
   });
-  if (!STAGE && G.picked && G.picked.length) { ctx.textAlign = 'center'; ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('改裝：' + G.picked.join('、'), W / 2, 690); }
+  if (!STAGE && G.picked && G.picked.length) { ctx.textAlign = 'center'; ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; ctx.fillText('改裝：' + G.picked.join('、'), W / 2, 690); }
   btnRect = { x: W / 2 - 120, y: 730, w: 240, h: 64 }; btn2Rect = null;
   const toBase = STAGE === 1 && win;   // 1-1 打完：不給下一關，先回基地看資源介紹
   const nextN = STAGE && !toBase ? (win ? (STAGE < ZN ? STAGE + 1 : 0) : STAGE) : 0;   // 過關→下一關；打輸→再試一次；頭目打贏→只能回基地
@@ -1488,9 +1488,9 @@ function drawResult() {
   if (btn2Rect) { ctx.fillStyle = 'rgba(4,14,18,0.9)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(btn2Rect.x, btn2Rect.y, btn2Rect.w, btn2Rect.h, 22); ctx.fill(); ctx.stroke();
     ctx.fillStyle = CYAN; ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.fillText(STAGE && !win ? '回去升級' : '回營地', W / 2, btn2Rect.y + 23); }
   const freeFuel = !SV || (SV.tier || 1) < 2;   // 2026-11-27 還沒裝石油收集器＝踩腳踏車，不花汽油
-  if (STAGE && nextN && !freeFuel) { ctx.font = '700 12px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === ZN ? '頭目關要花汽油 20' : '要花汽油 10', W / 2, 716); }
-  if (fuelMsg) { ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText(fuelMsg, W / 2, 864); }
-  ctx.font = '700 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; if (!fuelMsg) ctx.fillText('廢域方舟｜動嘴做遊戲', W / 2, 880);
+  if (STAGE && nextN && !freeFuel) { ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(nextN === ZN ? '頭目關要花汽油 20' : '要花汽油 10', W / 2, 716); }
+  if (fuelMsg) { ctx.font = '800 17px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText(fuelMsg, W / 2, 864); }
+  ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592'; if (!fuelMsg) ctx.fillText('廢域方舟｜動嘴做遊戲', W / 2, 880);
   ctx.restore();
 }
 function drawTitle() {
@@ -1512,11 +1512,11 @@ function drawTitle() {
   ctx.fillStyle = RED; ctx.globalAlpha = 0.6; ctx.fillRect(W / 2 - 170, 352 + ty0, 340, 2); ctx.globalAlpha = 1;
   sigil(W / 2, 380 + ty0, 3, CYAN, 1);
   ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 14; ctx.fillText(OT ? '加班模式' : STAGE ? `第零章 第 ${STAGE} 關` : '247 天後', W / 2, 418 + ty0); ctx.shadowBlur = 0;
-  ctx.font = '700 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜全部玩家同一盤｜能力統一` : STAGE ? `載具：${BIKE ? '破腳踏車' : VEH_NAMES[TIER - 1]} Lv.${TIER}${SUB ? ' +' + SUB : ''}｜武器 ${SLOTS.length} 座` : '零號廢域｜載具：青晶房車 Lv.6｜試玩', W / 2, 452 + ty0);
+  ctx.font = '700 17px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(OT ? `${OT_DAY} 的盤面｜全部玩家同一盤｜能力統一` : STAGE ? `載具：${BIKE ? '破腳踏車' : VEH_NAMES[TIER - 1]} Lv.${TIER}${SUB ? ' +' + SUB : ''}｜武器 ${SLOTS.length} 座` : '零號廢域｜載具：青晶房車 Lv.6｜試玩', W / 2, 452 + ty0);
   btnRect = { x: W / 2 - 120, y: IMG.bg ? 660 : 560, w: 240, h: 70 };
   ctx.fillStyle = CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = 24 * pulse; roundRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, 35); ctx.fill(); ctx.shadowBlur = 0;
   ctx.fillStyle = '#00262c'; ctx.font = '900 30px "Microsoft JhengHei",sans-serif'; ctx.fillText(STAGE ? '出發' : '開始', W / 2, btnRect.y + 36);
-  ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592';
+  ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#6f8592';
   ['按住零件拖動，經過的零件會交換位置', '橫排或直排 3 個以上相同 → 合成攻擊', '敵人頭上的數字歸零就會攻擊車子'].forEach((s, i) => ctx.fillText(s, W / 2, (IMG.bg ? 775 : 700) + i * 26));
   ctx.restore();
 }
@@ -1534,7 +1534,7 @@ function drawTip() {
   ctx.fillStyle = 'rgba(8,14,20,0.96)'; ctx.strokeStyle = '#ffd28a'; ctx.lineWidth = 2; roundRect(bx, by, bw, bh, 16); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffd28a'; ctx.font = '900 24px "Microsoft JhengHei",sans-serif'; ctx.fillText(T.t, W / 2, by + 34);
   ctx.fillStyle = '#e8f6f8'; ctx.font = '700 17px "Microsoft JhengHei",sans-serif'; T.d.forEach((l, i) => ctx.fillText(l, W / 2, by + 76 + i * 28));
-  ctx.fillStyle = `rgba(159,248,255,${0.5 + 0.5 * pu})`; ctx.font = '800 14px "Microsoft JhengHei",sans-serif'; ctx.fillText('點一下繼續', W / 2, by + bh - 16);
+  ctx.fillStyle = `rgba(159,248,255,${0.5 + 0.5 * pu})`; ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillText('點一下繼續', W / 2, by + bh - 16);
   ctx.restore();
 }
 function drawC1() {
@@ -1549,12 +1549,12 @@ function drawC1() {
     ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(cx, cy, 35, 0, 7); ctx.stroke();
     ctx.strokeStyle = full ? '#ffb35c' : '#a9b3bd'; if (full) { ctx.shadowColor = '#ffb35c'; ctx.shadowBlur = 12 + 12 * pu; }
     ctx.beginPath(); ctx.arc(cx, cy, 35, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * G.he / 100); ctx.stroke(); ctx.shadowBlur = 0;
-    ctx.font = '800 13px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = full ? '#ffd29a' : '#9aa6b2'; ctx.fillText(full ? '點我改裝' : '小禾', cx, b.y + b.h + 8);
+    ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = full ? '#ffd29a' : '#9aa6b2'; ctx.fillText(full ? '點我改裝' : '小禾', cx, b.y + b.h + 8);
   }
   if (SL === 2 && G.state !== 'result' && ICON.dog) {   // 1-2：被追的狗縮在主角後面發抖（還是紅眼）
     const sx = 16 + Math.sin(G.t * 30) * 1.5, sy = 448; ctx.save(); ctx.beginPath(); ctx.arc(sx + 18, sy, 18, 0, 7); ctx.fillStyle = '#2a2018'; ctx.fill(); ctx.clip(); ctx.drawImage(ICON.dog, sx, sy - 18, 36, 36);
     ctx.fillStyle = `rgba(255,40,40,${0.25 + 0.2 * Math.sin(G.t * 6)})`; ctx.fillRect(sx, sy - 18, 36, 36); ctx.restore();
-    ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText('發抖中', sx + 18, sy + 28);
+    ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff9a9a'; ctx.fillText('發抖中', sx + 18, sy + 28);
   }
   if (DOG_ON) {   // 鐵鏽小頭像：擋過攻擊就變暗
     const x = 34, y = 178, used = G.dogUsed, armed = G.dogArmed;   // 左上、小禾頭像上方
@@ -1564,7 +1564,7 @@ function drawC1() {
     ctx.save(); ctx.globalAlpha = used ? 0.45 : 1; ctx.beginPath(); ctx.arc(x + (G.dogT > 0 ? Math.sin(G.t * 40) * 4 : 0), y, 20, 0, 7); ctx.fillStyle = '#2a2018'; ctx.fill(); ctx.clip();
     if (ICON.dog) ctx.drawImage(ICON.dog, x - 20, y - 20, 40, 40); ctx.restore();
     ctx.strokeStyle = used ? '#56616b' : '#ffd28a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 21, 0, 7); ctx.stroke();
-    ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = used ? '#6b7680' : '#ffd28a'; ctx.fillText(used ? '已擋過' : armed ? '待命中' : danger ? '現在點！' : '護車', x + 6, y + 32);
+    ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = used ? '#6b7680' : '#ffd28a'; ctx.fillText(used ? '已擋過' : armed ? '待命中' : danger ? '現在點！' : '護車', x + 6, y + 32);
   }
   if (CHASE && G.state !== 'result') {   // 追逐倒數
     const left = Math.max(0, CHASE - G.turns); ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(W / 2 - 92, 60, 184, 34, 17); ctx.fill();
@@ -1577,7 +1577,7 @@ function drawC1() {
   }
   if (G.state === 'heRow') {   // 選一排
     for (let r = 0; r < ROWS; r++) { const n = G.board[r].filter(p => p && (p.t === 3 || p.t === RUST)).length; if (!n) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(BX, BY + r * CELL, COLS * CELL, CELL); }
-      else { ctx.strokeStyle = `rgba(255,179,92,${0.55 + 0.4 * Math.sin(G.t * 6)})`; ctx.lineWidth = 3; ctx.strokeRect(BX + 3, BY + r * CELL + 3, COLS * CELL - 6, CELL - 6); ctx.font = '900 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd29a'; ctx.textAlign = 'right'; ctx.fillText('×' + n, BX + COLS * CELL - 8, BY + r * CELL + 14); ctx.textAlign = 'center'; } }
+      else { ctx.strokeStyle = `rgba(255,179,92,${0.55 + 0.4 * Math.sin(G.t * 6)})`; ctx.lineWidth = 3; ctx.strokeRect(BX + 3, BY + r * CELL + 3, COLS * CELL - 6, CELL - 6); ctx.font = '900 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd29a'; ctx.textAlign = 'right'; ctx.fillText('×' + n, BX + COLS * CELL - 8, BY + r * CELL + 14); ctx.textAlign = 'center'; } }
     ctx.fillStyle = 'rgba(40,24,8,0.92)'; roundRect(W / 2 - 170, BY - 48, 340, 40, 12); ctx.fill();
     ctx.font = '900 18px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ffd29a'; ctx.fillText('小禾：要改哪一排？點它。', W / 2, BY - 28);
   }
@@ -1588,9 +1588,9 @@ function drawC1() {
     cs.forEach((t, i) => { const r = { x: x0 + i * (bw + gap), y: BY + 70, w: bw, h: 120, t }; pickRects.push(r);
       ctx.fillStyle = TYPES[t].dark; ctx.strokeStyle = TYPES[t].color; ctx.lineWidth = 3; roundRect(r.x, r.y, r.w, r.h, 14); ctx.fill(); ctx.stroke();
       drawPiece({ t, plus: false }, r.x + r.w / 2, r.y + 46, 0.9);
-      ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(TYPES[t].fx, r.x + r.w / 2, r.y + 100); if (t <= 2 && !SLOTS.includes(t)) { ctx.font = '700 11px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('（車上沒裝）', r.x + r.w / 2, r.y + 114); } });
+      ctx.font = '800 17px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(TYPES[t].fx, r.x + r.w / 2, r.y + 100); if (t <= 2 && !SLOTS.includes(t)) { ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('（車上沒裝）', r.x + r.w / 2, r.y + 114); } });
     if (G.heRowSel != null) { ctx.strokeStyle = '#ffb35c'; ctx.lineWidth = 3; ctx.strokeRect(BX + 2, BY + G.heRowSel * CELL + 2, COLS * CELL - 4, CELL - 4); }
-    ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('這一排的灰色零件和鏽塊都會改成這個顏色（點空白處取消）', W / 2, BY + 230);
+    ctx.font = '700 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9aa6b2'; ctx.fillText('這一排的灰色零件和鏽塊都會改成這個顏色（點空白處取消）', W / 2, BY + 230);
   }
   if (G.orb) {   // 黑色報告珠
     const o = G.orb, q = cellPos(o.c, o.r), pu = 0.5 + 0.5 * Math.sin(G.t * 5);
@@ -1598,7 +1598,7 @@ function drawC1() {
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(BX, BY, COLS * CELL, ROWS * CELL);
       ctx.shadowColor = '#ff3b4a'; ctx.shadowBlur = 20 + 16 * pu; const gr = ctx.createRadialGradient(q.x - 10, q.y - 12, 3, q.x, q.y, 40); gr.addColorStop(0, '#4a4f58'); gr.addColorStop(1, '#050608');
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(q.x, q.y, 38, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.font = '900 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff6a74'; ctx.fillText('報告', q.x, q.y);
+      ctx.font = '900 17px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#ff6a74'; ctx.fillText('報告', q.x, q.y);
       ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.5 * pu})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, 48 + 8 * pu, 0, 7); ctx.stroke();
       ctx.font = '900 20px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#fff'; if (!o.rec) ctx.fillText('點一下，把它按掉', q.x, q.y + 80);
     }

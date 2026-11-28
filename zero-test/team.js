@@ -9,40 +9,40 @@
   function dot() { const d = $('teamDot'); if (d) d.style.display = S.gear.fresh.length ? 'block' : 'none'; }
   const css = `
   #tmTabs { display:flex; gap:8px; }
-  #tmTabs button { flex:1; height:44px; border-radius:12px; border:1.5px solid rgba(63,240,255,.5); background:rgba(4,12,16,.9); color:#c8fbff; font:900 16px sans-serif; position:relative; }
+  #tmTabs button { flex:1; height:44px; border-radius:12px; border:1.5px solid rgba(63,240,255,.5); background:rgba(4,12,16,.9); color:#c8fbff; font:900 18px sans-serif; position:relative; }
   #tmTabs button.on { background:#3ff0ff; color:#00262c; border-color:#3ff0ff; }
   #tmTabs button.lock { opacity:.4; }
   #tmTabs button i { position:absolute; top:4px; right:6px; width:9px; height:9px; border-radius:50%; background:#ff4a5a; }
   #tmBody { display:flex; gap:10px; margin-top:10px; align-items:stretch; }
   #tmArt { width:42%; flex:none; min-height:430px; border-radius:14px; background:radial-gradient(ellipse at 50% 70%, rgba(63,240,255,.18), rgba(4,12,16,.9) 70%); border:1.5px solid rgba(63,240,255,.35); display:flex; align-items:flex-end; justify-content:center; overflow:hidden; position:relative; }
   #tmArt img { width:100%; height:100%; object-fit:contain; object-position:bottom; position:absolute; inset:0; }
-  #tmArt b { position:absolute; left:8px; top:8px; font:900 13px sans-serif; color:#9ff8ff; background:rgba(0,0,0,.5); padding:2px 8px; border-radius:8px; }
-  #tmPanel { flex:1; min-width:0; background:rgba(4,12,16,.92); border:1.5px solid rgba(63,240,255,.35); border-radius:14px; padding:10px; color:#e8f6f8; font:700 13px sans-serif; }
-  #tmPanel h3 { margin:0; font:900 19px sans-serif; } #tmPanel h3 span { color:#9ff8ff; font-size:15px; margin-left:4px; }
-  #tmPanel .role { color:#ffd23f; font:800 12px sans-serif; margin:2px 0 8px; }
+  #tmArt b { position:absolute; left:8px; top:8px; font:900 16px sans-serif; color:#9ff8ff; background:rgba(0,0,0,.5); padding:2px 8px; border-radius:8px; }
+  #tmPanel { flex:1; min-width:0; background:rgba(4,12,16,.92); border:1.5px solid rgba(63,240,255,.35); border-radius:14px; padding:10px; color:#e8f6f8; font:700 16px sans-serif; }
+  #tmPanel h3 { margin:0; font:900 19px sans-serif; } #tmPanel h3 span { color:#9ff8ff; font-size:17px; margin-left:4px; }
+  #tmPanel .role { color:#ffd23f; font:800 15px sans-serif; margin:2px 0 8px; }
   #tmPanel .st { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed rgba(63,240,255,.18); }
   #tmPanel .st em { font-style:normal; color:#9ff8ff; } #tmPanel .st small { color:#7fe39a; margin-left:4px; }
-  #tmPanel .lab { color:#8fa0ae; font:800 11px sans-serif; margin:10px 0 4px; letter-spacing:1px; }
+  #tmPanel .lab { color:#8fa0ae; font:800 14px sans-serif; margin:10px 0 4px; letter-spacing:1px; }
   #tmPanel .ab { line-height:1.55; color:#d8eef2; }
-  #tmPanel .upb { width:100%; margin-top:10px; min-height:42px; border:0; border-radius:10px; background:#ffd23f; color:#2a1c00; font:900 14px sans-serif; padding:4px; }
+  #tmPanel .upb { width:100%; margin-top:10px; min-height:42px; border:0; border-radius:10px; background:#ffd23f; color:#2a1c00; font:900 17px sans-serif; padding:4px; }
   #tmPanel .upb.dim { opacity:.4; }
   #tmPanel .slots { display:flex; flex-direction:column; gap:6px; }
-  #tmPanel .slots button { text-align:left; background:rgba(4,30,36,.9); border:1.5px solid rgba(63,240,255,.4); border-radius:10px; padding:6px 8px; color:#e8f6f8; font:800 12px sans-serif; position:relative; }
+  #tmPanel .slots button { text-align:left; background:rgba(4,30,36,.9); border:1.5px solid rgba(63,240,255,.4); border-radius:10px; padding:6px 8px; color:#e8f6f8; font:800 15px sans-serif; position:relative; }
   #tmPanel .slots button.on { border-color:#ffd23f; background:rgba(255,210,63,.15); }
-  #tmPanel .slots small { color:#8fa0ae; } #tmPanel .slots i { color:#9ff8ff; font-style:normal; display:block; font-size:11px; }
-  #tmPanel .slots u { position:absolute; top:4px; right:6px; background:#ff4a5a; color:#fff; font-size:10px; border-radius:6px; padding:0 4px; text-decoration:none; }
+  #tmPanel .slots small { color:#8fa0ae; } #tmPanel .slots i { color:#9ff8ff; font-style:normal; display:block; font-size:14px; }
+  #tmPanel .slots u { position:absolute; top:4px; right:6px; background:#ff4a5a; color:#fff; font-size:13px; border-radius:6px; padding:0 4px; text-decoration:none; }
   #tmPick { margin-top:10px; background:rgba(4,12,16,.94); border:1.5px solid #ffd23f; border-radius:14px; padding:10px; }
   #tmPick div[data-eq] { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:8px 10px; margin-top:6px; border-radius:8px; background:rgba(255,255,255,.04); cursor:pointer; color:#e8f6f8; }
   #tmPick div[data-eq].on { background:rgba(63,240,255,.15); }
   #tmPow { display:flex; align-items:baseline; gap:8px; } #tmPow b { font:900 34px "Arial Black",sans-serif; color:#ffd23f; text-shadow:0 0 12px rgba(255,210,63,.5); }
   #tmPow i { font-style:normal; color:#7fe39a; font:900 18px sans-serif; animation:tmUp 1.6s ease-out forwards; } @keyframes tmUp { 0% { opacity:0; transform:translateY(8px) } 15% { opacity:1; transform:none } 80% { opacity:1 } 100% { opacity:0; transform:translateY(-10px) } }
-  .tmCalcBtn { margin-top:4px; background:none; border:1px solid rgba(63,240,255,.5); color:#9ff8ff; border-radius:8px; padding:3px 10px; font:800 12px sans-serif; }
-  .tmCalc { margin-top:6px; padding:8px; border-radius:10px; background:rgba(0,0,0,.35); font:700 12px sans-serif; color:#d8eef2; }
+  .tmCalcBtn { margin-top:4px; background:none; border:1px solid rgba(63,240,255,.5); color:#9ff8ff; border-radius:8px; padding:3px 10px; font:800 15px sans-serif; }
+  .tmCalc { margin-top:6px; padding:8px; border-radius:10px; background:rgba(0,0,0,.35); font:700 15px sans-serif; color:#d8eef2; }
   .tmCalc div { display:flex; justify-content:space-between; gap:6px; padding:2px 0; } .tmCalc .h { color:#ffd23f; font-weight:900; margin-top:4px; } .tmCalc .eq { border-top:1px solid rgba(63,240,255,.3); margin-top:3px; padding-top:4px; color:#9ff8ff; font-weight:900; }
-  .tmGoal { margin-top:8px; font:800 11px sans-serif; color:#8fa0ae; } .tmGoal .bar { height:8px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; margin-top:3px; } .tmGoal .bar i { display:block; height:100%; background:linear-gradient(90deg,#3ff0ff,#ffd23f); }
-  .tmRec { margin-top:8px; padding:8px; border-radius:10px; border:1.5px solid #7fe39a; background:rgba(127,227,154,.08); font:800 12px sans-serif; color:#d8f6e0; }
-  .tmRec button { margin-top:6px; width:100%; border:0; border-radius:8px; background:#7fe39a; color:#06210f; font:900 13px sans-serif; padding:6px; }
-  .tmCombo { width:100%; border-collapse:collapse; margin-top:4px; font:800 12px sans-serif; } .tmCombo td { border:1px solid rgba(63,240,255,.2); padding:3px; text-align:center; } .tmCombo tr:first-child td { color:#8fa0ae; }
+  .tmGoal { margin-top:8px; font:800 14px sans-serif; color:#8fa0ae; } .tmGoal .bar { height:8px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; margin-top:3px; } .tmGoal .bar i { display:block; height:100%; background:linear-gradient(90deg,#3ff0ff,#ffd23f); }
+  .tmRec { margin-top:8px; padding:8px; border-radius:10px; border:1.5px solid #7fe39a; background:rgba(127,227,154,.08); font:800 15px sans-serif; color:#d8f6e0; }
+  .tmRec button { margin-top:6px; width:100%; border:0; border-radius:8px; background:#7fe39a; color:#06210f; font:900 16px sans-serif; padding:6px; }
+  .tmCombo { width:100%; border-collapse:collapse; margin-top:4px; font:800 15px sans-serif; } .tmCombo td { border:1px solid rgba(63,240,255,.2); padding:3px; text-align:center; } .tmCombo tr:first-child td { color:#8fa0ae; }
   `;
   // 每個角色面板要顯示的數值：[名稱, 目前值, 下一級值]
   function stats(c, lv) {   // 2026-11-28 角色只升專長
@@ -67,7 +67,7 @@
       <div class="h">🛡 耐久</div>${P.dlines.map(row).join('')}<div class="eq"><span>＝ 裝甲</span><span>${P.dur}</span></div>
       <div class="eq"><span>戰力 ＝ 輸出 × 耐久 ÷ 50</span><span>${P.total}</span></div><div class="h">⚡ 大招（另計）</div>${row([`零・電磁脈衝 Lv.${P.empLv}`, '每次約 ' + P.emp])}</div>` : '';
     const goal = 19284, b = bestUp();
-    return `<div id="tmPow"><span style="font:900 14px sans-serif;color:#9ff8ff">戰力</span><b>${P.total.toLocaleString()}</b>${up ? `<i>+${up}</i>` : ''}</div>
+    return `<div id="tmPow"><span style="font:900 17px sans-serif;color:#9ff8ff">戰力</span><b>${P.total.toLocaleString()}</b>${up ? `<i>+${up}</i>` : ''}</div>
       <button class="tmCalcBtn" data-calc="1">${showCalc ? '收起計算 ▲' : '查看計算 ▼'}</button>${calc}
       <div class="tmGoal">緊急模式　${goal.toLocaleString()}　｜　目前 ${P.total.toLocaleString()}<div class="bar"><i style="width:${Math.max(1, Math.min(100, P.total / goal * 100))}%"></i></div></div>
       ${b ? `<div class="tmRec">推薦：${b.n}　戰力 +${b.d}<br><span style="color:#9fb">${costText(b.c)}${afford(b.c) ? '' : '（材料還不夠）'}</span><button data-rec="1">去升級</button></div>` : ''}`;
@@ -97,18 +97,18 @@
       gear = `<div class="lab">裝備（點一格換）</div><div class="slots">${Object.entries(Z.SLOTS).map(([k, n]) => { const it = Z.ITEMS[S.gear.eq[k]], fresh = S.gear.own.some(id => Z.ITEMS[id].slot === k && S.gear.fresh.includes(id));
         return `<button data-slot="${k}" class="${pickSlot === k ? 'on' : ''}"><small>${n}</small>　${it ? it.n : '（空）'}<i>${it ? it.txt : ''}</i>${fresh ? '<u>NEW</u>' : ''}</button>`; }).join('')}</div>`;
       if (pickSlot) { const mine = S.gear.own.filter(id => Z.ITEMS[id].slot === pickSlot);
-        pick = `<div id="tmPick"><div style="font:900 15px sans-serif;color:#ffd23f">換${Z.SLOTS[pickSlot]}</div>${mine.length ? mine.map(id => { const it = Z.ITEMS[id], on = S.gear.eq[pickSlot] === id;
-          return `<div data-eq="${id}" class="${on ? 'on' : ''}"><div><div style="font:900 14px sans-serif">${it.n}${S.gear.fresh.includes(id) ? ' <span style="color:#ff6a78;font-size:11px">NEW</span>' : ''}</div><div style="font:700 12px sans-serif;color:#8fa0ae">${it.d}</div></div>
-            <div style="font:800 12px sans-serif;color:${on ? '#ffd23f' : '#9ff8ff'};white-space:nowrap">${on ? '穿著（點一下脫下）' : it.txt}</div></div>`; }).join('') : '<div style="color:#8fa0ae;margin-top:6px">這一格還沒有裝備。第一次打過每一關都會掉一件。</div>'}</div>`; }
+        pick = `<div id="tmPick"><div style="font:900 17px sans-serif;color:#ffd23f">換${Z.SLOTS[pickSlot]}</div>${mine.length ? mine.map(id => { const it = Z.ITEMS[id], on = S.gear.eq[pickSlot] === id;
+          return `<div data-eq="${id}" class="${on ? 'on' : ''}"><div><div style="font:900 17px sans-serif">${it.n}${S.gear.fresh.includes(id) ? ' <span style="color:#ff6a78;font-size:14px">NEW</span>' : ''}</div><div style="font:700 15px sans-serif;color:#8fa0ae">${it.d}</div></div>
+            <div style="font:800 15px sans-serif;color:${on ? '#ffd23f' : '#9ff8ff'};white-space:nowrap">${on ? '穿著（點一下脫下）' : it.txt}</div></div>`; }).join('') : '<div style="color:#8fa0ae;margin-top:6px">這一格還沒有裝備。第一次打過每一關都會掉一件。</div>'}</div>`; }
     }
     let body;
     if (!open(c)) body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" style="filter:brightness(0);opacity:.5"></div><div id="tmPanel"><h3>？？？</h3><div class="role">${c.id === 'he' ? '第二章會遇到' : `打過 1-${c.need} 會遇到`}</div></div></div>`;
     else {
       const note = top ? (c.id === 'zero' && lv < Z.MAXLV ? '已到上限：升級「零的充電座」可以再升' : '已經最高等級') : '';
       body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" data-fb="${art[1] || ''}">${c.id === 'dog' ? '<b>寵物</b>' : ''}</div>
-        <div id="tmPanel"><div style="font:800 12px sans-serif;color:#ffd23f;margin-bottom:4px">🚗 車子戰力 ${Z.power(S).total.toLocaleString()}</div><h3>${nameOf(c)}<span>Lv.${lv}</span></h3><div class="role">${c.role}</div>${st}
+        <div id="tmPanel"><div style="font:800 15px sans-serif;color:#ffd23f;margin-bottom:4px">🚗 車子戰力 ${Z.power(S).total.toLocaleString()}</div><h3>${nameOf(c)}<span>Lv.${lv}</span></h3><div class="role">${c.role}</div>${st}
           <div class="lab">${ab[0]}</div><div class="ab">${ab[1]}</div>${gear}
-          ${top ? `<div class="lab" style="color:#ffd23f">${note}</div>` : c.id === 'zero' && !(S.seenRes && S.seenRes.core) ? `<button class="upb dim" data-lock="1">🔒 需要青晶核心<br><span style="font-size:11px">打倒大頭目才會拿到</span></button>` : `<button class="upb${afford(cost) ? '' : ' dim'}" data-up="${c.id}">升級 → Lv.${lv + 1}<br>${costText(cost)}</button>`}</div></div>${pick}`;
+          ${top ? `<div class="lab" style="color:#ffd23f">${note}</div>` : c.id === 'zero' && !(S.seenRes && S.seenRes.core) ? `<button class="upb dim" data-lock="1">🔒 需要青晶核心<br><span style="font-size:14px">打倒大頭目才會拿到</span></button>` : `<button class="upb${afford(cost) ? '' : ' dim'}" data-up="${c.id}">升級 → Lv.${lv + 1}<br>${costText(cost)}</button>`}</div></div>${pick}`;
     }
     $('teamGrid').innerHTML = `<div id="tmTabs">${tabs}</div>${body}`;
     $('teamGrid').querySelectorAll('img[data-fb]').forEach(im => { if (im.dataset.fb) im.onerror = () => { im.onerror = null; im.src = im.dataset.fb; }; });
@@ -136,8 +136,8 @@
       return `<button data-slot="${k}" class="${pickSlot === k ? 'on' : ''}"><small>${n}</small>　${it ? it.n : '（空）'}<i>${it ? it.txt : ''}</i>${fresh ? '<u>NEW</u>' : ''}</button>`; }).join('')}</div>`;
     let pick = '';
     if (pickSlot) { const mine = S.gear.own.filter(id => Z.ITEMS[id].slot === pickSlot);
-      pick = `<div id="tmPick"><div style="font:900 15px sans-serif;color:#ffd23f">換${Z.SLOTS[pickSlot]}</div>${mine.length ? mine.map(id => { const it = Z.ITEMS[id], on = S.gear.eq[pickSlot] === id;
-        return `<div data-eq="${id}" class="${on ? 'on' : ''}"><div><div style="font:900 14px sans-serif">${it.n}</div><div style="font:700 12px sans-serif;color:#8fa0ae">${it.d}</div></div><div style="font:800 12px sans-serif;color:${on ? '#ffd23f' : '#9ff8ff'};white-space:nowrap">${on ? '穿著（點一下脫下）' : it.txt}</div></div>`; }).join('') : '<div style="color:#8fa0ae;margin-top:6px">這一格還沒有裝備。</div>'}</div>`; }
+      pick = `<div id="tmPick"><div style="font:900 17px sans-serif;color:#ffd23f">換${Z.SLOTS[pickSlot]}</div>${mine.length ? mine.map(id => { const it = Z.ITEMS[id], on = S.gear.eq[pickSlot] === id;
+        return `<div data-eq="${id}" class="${on ? 'on' : ''}"><div><div style="font:900 17px sans-serif">${it.n}</div><div style="font:700 15px sans-serif;color:#8fa0ae">${it.d}</div></div><div style="font:800 15px sans-serif;color:${on ? '#ffd23f' : '#9ff8ff'};white-space:nowrap">${on ? '穿著（點一下脫下）' : it.txt}</div></div>`; }).join('') : '<div style="color:#8fa0ae;margin-top:6px">這一格還沒有裝備。</div>'}</div>`; }
     const vn = S.flags && S.flags.trike ? ((typeof VEH !== 'undefined' ? VEH[S.tier - 1] : '') + ' +' + (S.sub || 0)) : '破腳踏車';
     $('teamGrid').innerHTML = `<div id="tmTabs">${tabs}</div><div id="tmBody"><div id="tmArt" style="align-items:center"><img src="${veh}" alt="" style="object-fit:contain;object-position:center"><b>${vn}</b></div>
       <div id="tmPanel">${carPanel()}<div class="lab">${ABILITY.car[0]}</div><div class="ab">${ABILITY.car[1]}</div>${slots}</div></div>${pick}`;
@@ -148,6 +148,7 @@
     $('teamGrid').querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { const id = b.dataset.eq, k = Z.ITEMS[id].slot; S.gear.eq[k] = S.gear.eq[k] === id ? null : id; save(); renderTeam(); });
   }
   // 回到基地時：剛打到的裝備提示一次
-  if (S.gear.fresh.length && S.intro === 'done') setTimeout(() => toast(`拿到新裝備：${S.gear.fresh.map(id => Z.ITEMS[id].n).join('、')}（在「隊伍」）`, 3000), 1200);
+  { const nw = S.gear.fresh.filter(id => !(S.gear.told || []).includes(id));   // 2026-11-28 每件裝備只提示一次
+    if (nw.length && S.intro === 'done') { S.gear.told = (S.gear.told || []).concat(nw); save(); setTimeout(() => toast(`拿到新裝備：${nw.map(id => Z.ITEMS[id].n).join('、')}（在「隊伍」）`, 3000), 1200); } }
   dot();
 })();
