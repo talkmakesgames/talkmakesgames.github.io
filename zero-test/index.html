@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281338"></script>
-<script src="story/ch1.js?v=11281338"></script>
-<script src="story/intro.js?v=11281338"></script>
-<script src="story/story.js?v=11281338"></script>
-<script src="gear.js?v=11281338"></script>
-<script src="wide.js?v=11281338"></script>
+<script src="i18n.js?v=11281405"></script>
+<script src="story/ch1.js?v=11281405"></script>
+<script src="story/intro.js?v=11281405"></script>
+<script src="story/story.js?v=11281405"></script>
+<script src="gear.js?v=11281405"></script>
+<script src="wide.js?v=11281405"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -557,7 +557,8 @@ function homeStory() {   // 2026-11-28 第零章：第 1、2、3、4、5、6、8
   if (cl >= 5 && !S.flags.turret1) { S.flags.turret1 = 1; S.sub = Math.max(S.sub || 0, 1); save(); renderTop(); toast('🔧 鐵捲門馬達改成砲塔，裝上三輪車了（改裝 +1）', 2800); }
   if (cl >= 6 && !S.story.c0s6b) { seeRes('coin'); S.res.coin = Math.max(S.res.coin || 0, 300); return play('c0m4h', null, () => { S.story.c0s6 = S.story.c0s6b = 1; save(); if (!homeStory()) setTimeout(goGuide, 600); }); }
   if (cl >= 10 && !resSeen('core')) { seeRes('core'); save(); renderTop(); setTimeout(() => toast('🔷 青晶核心：零只能用它升級。重打大頭目會掉。', 3200), 800); }
-  if (cl >= 8 && !S.story.c0s8b) { if (S.tier < 2) { S.tier = 2; S.sub = 0; } seeRes('fuel'); S.res.fuel = Math.max(S.res.fuel || 0, 50); renderTop(); return play('c0s8b'); }
+  if (cl >= 8 && !S.story.c0s8b) { try { history.replaceState(null, '', location.pathname); } catch (e) {}   // 2026-11-28 小貨車也用拼圖合成（使用者：先 3×3）
+    const pz = () => { if (!window.Puzzle) return setTimeout(pz, 150); Puzzle.open({ img: 'img/v2.webp', size: 3, title: '合成：小貨車', noCancel: true, onDone: () => { if (S.tier < 2) { S.tier = 2; S.sub = 0; } seeRes('fuel'); S.res.fuel = Math.max(S.res.fuel || 0, 50); save(); renderTop(); play('c0s8b'); } }); }; setTimeout(pz, 450); return true; }   // puzzle.js 在頁面最後才載入，等它好
   return false;
 }
 function trikeIntro() {   // 第 4 關打完：腳踏車 → 拼圖合成三輪車 → 方舟剪影
@@ -621,7 +622,7 @@ function goHome(first) {
   S.flags = S.flags || {}; ['team', 'facility'].forEach(k => { if (menuOpen(k)) S.flags['m_' + k] = 1; });   // 2026-11-28 不再跳「開放了」：第 1 關劇情已經帶去設備
   if (!first) idleReport(devR);
   S.lastSeen = NOW(); save();
-  const NEXT = ['肚子在叫。點「出發」往東走。', '要更多廢鐵，就再出去一趟。前面三隻殭屍，排好再消。', '一直走路太慢了。前面好像有一台腳踏車。', '便利商店就在前面。……你確定要進去？', '路邊那台小貨車，引擎好像還是好的。', '往東。狗叫聲越來越近了。', '牠在前面等你。準備好再出發。'][(S.cleared && S.cleared.zero) || 0];
+  const NEXT = ['肚子在叫。點「出發」往東走。', '要更多廢鐵，就再出去一趟。前面三隻殭屍，排好再消。', '破腳踏車快散了。', '便利商店就在前面。……你確定要進去？', '路邊那台小貨車，引擎好像還是好的。', '往東。狗叫聲越來越近了。', '牠在前面等你。準備好再出發。'][(S.cleared && S.cleared.zero) || 0];
   setTimeout(() => zeroSay(first ? NEXT || '走吧。不知道做什麼就看左上角的「任務」。' : NEXT && Math.random() < 0.7 ? NEXT : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
@@ -765,7 +766,7 @@ let stSel = null;
 const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情獎勵, 備註]　2026-11-28 第零章 7 關（原本 10 關，沒有小故事的關併在一起）
   ['餓', '從昨天中午就沒吃東西了。附近只有廢鐵。', ['zombie'], 'scrap', [['@scrap', '廢鐵採集機器人碎片 ×9'], ['img/dev_food.webp', '食物機器人']], ''],
   ['當機', '要做更多機器人，就要更多廢鐵。前面三隻，排好再消。', ['zombie', 'dasher'], 'scrap', [['img/dev_scrap.webp', '廢鐵採集機器人'], ['img/r_power.webp', '電力']], '打 2 波'],
-  ['三輪車', '一直走路太慢了。前面有一台腳踏車。', ['dasher', 'zombie'], 'scrap', [['img/v1.webp', '三輪車']], ''],
+  ['三輪車', '破腳踏車快散了。', ['dasher', 'zombie'], 'scrap', [['img/v1.webp', '三輪車']], ''],
   ['殭屍店員', '便利商店的自動門卡在半開。櫃台後面，有人還在上班。', ['zombie', 'clerk'], 'scrap', [['🔧', '第一座砲塔'], ['img/r_coin.webp', '金幣']], '中型頭目：打 2 波'],
   ['使命必達', '路邊有一台有車斗的小貨車，引擎還是好的。', ['zombie', 'heavy', 'dasher'], 'scrap', [['img/v2.webp', '小貨車'], ['img/r_fuel.webp', '汽油']], ''],
   ['狗叫聲', '遠方傳來機械的狗叫聲。有東西在追我們。', ['heavy', 'dasher', 'zombie'], 'scrap', [['🌫️', '看見遠方的煙']], '打 2 波'],
@@ -1049,9 +1050,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281338"></script>
-<script src="team.js?v=11281338"></script>
-<script src="puzzle.js?v=11281338"></script>
+<script src="extras.js?v=11281405"></script>
+<script src="team.js?v=11281405"></script>
+<script src="puzzle.js?v=11281405"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
