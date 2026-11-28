@@ -2,9 +2,9 @@
 // 用法：Story.play('c1s1', { name: '主角名字', base: '../', onDone() {} })
 //       Story.video('../video/c1_drama.mp4', onDone)
 (function () {
-  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？', zhou: '老周', zhen: '阿珍', zs: '零（小聲）', clerk: '殭屍店員', hound: '機械獵犬' };
-  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp', clerk: () => 'img/e_clerk.webp', hound: () => 'img/e_wolf.webp', zhou: () => 'img/story/p_zhou.webp', zhen: () => 'img/story/p_zhen.webp' };
-  const SIDE = { hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R', zhou: 'R', zhen: 'R', clerk: 'R', hound: 'R' };
+  const NAMES = { hero: null, zero: '零', he: '小禾', doc: '博士', radio: '收音機', gen: '？？？', zhou: '老周', zhen: '阿珍', yeh: '葉醫生', kai: '阿凱', zs: '零（小聲）', clerk: '殭屍店員', hound: '機械獵犬' };
+  const PORTRAIT = { zero: e => `img/story/p_zero_${e || 'n'}.webp`, he: e => `img/story/p_he_${e || 'cold'}.webp`, hero: e => `img/face${e || 0}.webp`, doc: () => 'img/story/p_doc.webp', clerk: () => 'img/e_clerk.webp', hound: () => 'img/e_wolf.webp', zhou: () => 'img/story/p_zhou.webp', zhen: () => 'img/story/p_zhen.webp', yeh: () => 'img/story/p_yeh.webp', kai: () => 'img/story/p_kai.webp' };
+  const SIDE = { yeh: 'R', kai: 'R', hero: 'L', zero: 'R', he: 'R', doc: 'R', radio: 'R', zhou: 'R', zhen: 'R', clerk: 'R', hound: 'R' };
   const css = `
   #sty{position:fixed;inset:0;z-index:50;background:#000;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
   #sty.over{background:rgba(0,0,0,.35)}

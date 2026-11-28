@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281433"></script>
-<script src="story/ch1.js?v=11281433"></script>
-<script src="story/intro.js?v=11281433"></script>
-<script src="story/story.js?v=11281433"></script>
-<script src="gear.js?v=11281433"></script>
-<script src="wide.js?v=11281433"></script>
+<script src="i18n.js?v=11281502"></script>
+<script src="story/ch1.js?v=11281502"></script>
+<script src="story/intro.js?v=11281502"></script>
+<script src="story/story.js?v=11281502"></script>
+<script src="gear.js?v=11281502"></script>
+<script src="wide.js?v=11281502"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -326,7 +326,7 @@ function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]
   $('modalBox').querySelectorAll('button').forEach(b => b.onclick = () => { $('modal').style.display = 'none'; const f = buttons[+b.dataset.i][1]; if (f) f(); });
 }
 const VEHN = ['廢鐵三輪車', '使命必達小貨車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
-const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜第零章 ${(x.cleared && x.cleared.zero) || 0}/7`;
+const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜${((x.cleared && x.cleared.zero) || 0) > 7 ? '第一章 ' + (((x.cleared && x.cleared.zero) || 0) - 7) + '/10' : '第零章 ' + ((x.cleared && x.cleared.zero) || 0) + '/7'}`;
 // ═══ 帳號（Google 登入，只用來備份存檔；不存、不顯示 Email） ═══
 async function cloudLogin(fromNaming, already) {
   if (!window.Cloud || !Cloud.ready) { toast('帳號系統還沒設定好', 2200); return; }
@@ -497,8 +497,8 @@ function renderTop() {
 const DEV = [   // [代號, 名字, 說明, 圖（之後換成機器人的圖）, 最高等級, 開放條件（劇情）, 開放說明]
   ['food', '食物機器人', '從空氣裡的水分和一些不明材料做出食物。味道不保證。', 'img/dev_food.webp', 1, () => S.story && (S.story.c0s1b || S.story.c1base1), '打完第 1 關開放'],
   ['scrap', '廢鐵採集機器人', '自動去附近撿廢鐵。碎片：打關卡掉落（第 1 關第一次過關給 9 塊）', 'img/dev_scrap.webp', 5, () => S.dev.food && ((S.cleared && S.cleared.zero) || 0) >= 2, '合成食物機器人、打完第 2 關開放'],
-  ['oil', '石油收集器', '裝在車上，自動收集汽油。', 'img/dev_oil.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 8, '一號廢域開放'],
-  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。', 'img/dev_power.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 8, '一號廢域開放'],
+  ['oil', '石油收集器', '裝在車上，自動收集汽油。', 'img/dev_oil.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 10, '一號廢域第 3 關開放'],
+  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。', 'img/dev_power.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 11, '一號廢域第 4 關開放'],
 ];
 const PZ_SIZE = [0, 3, 4, 4, 5, 6];   // 合成＝3×3，升級越高拼圖越大
 const devUse = () => (S.dev.scrap ? 2 + S.dev.scrap : 0) + (S.dev.oil ? 2 + S.dev.oil : 0);   // 每小時耗電
@@ -562,7 +562,52 @@ function homeStory() {   // 2026-11-28 第零章：第 1、2、3、4、5、6、8
   if (cl >= 10 && !resSeen('core')) { seeRes('core'); save(); renderTop(); setTimeout(() => toast('🔷 青晶核心：零只能用它升級。重打大頭目會掉。', 3200), 800); }
   if (cl >= 8 && !S.story.c0s8b) { try { history.replaceState(null, '', location.pathname); } catch (e) {}   // 2026-11-28 小貨車也用拼圖合成（使用者：先 3×3）
     const pz = () => { if (!window.Puzzle) return setTimeout(pz, 150); Puzzle.open({ img: 'img/v2.webp', size: 3, title: '合成：小貨車', noCancel: true, onDone: () => { if (S.tier < 2) { S.tier = 2; S.sub = 0; } seeRes('fuel'); S.res.fuel = Math.max(S.res.fuel || 0, 50); save(); renderTop(); play('c0s8b'); } }); }; setTimeout(pz, 450); return true; }   // puzzle.js 在頁面最後才載入，等它好
+  // ═══ 2026-11-28 第一章：打完回首頁的解鎖（一關一樣）═══
+  const cn = (S.cleared && S.cleared.zero) || 0;
+  if (cn >= 8 && S.res.chip && !resSeen('chip')) { seeRes('chip'); save(); renderTop(); }
+  if (cn >= 9 && !S.flags.heJoin) { S.flags.heJoin = 1; save(); renderMenu(); toast('🔧 小禾加入隊伍：灰色零件集滿，點小禾就能改裝一整排', 3200); }
+  if (cn >= 10 && !S.flags.oilOpen) { S.flags.oilOpen = 1; save(); toast('🛢️ 設備：石油收集器開放了（自動收集汽油）', 3000); }
+  if (cn >= 11 && !S.flags.powOpen) { S.flags.powOpen = 1; save(); toast('⚡ 設備：電能機器人開放了（會發電，電池也變大）', 3000); }
+  if (cn >= 12 && !S.flags.camp) { S.flags.camp = 1; save(); renderCampBtn(); toast('🏕️ 難民營開放了：左邊「難民營」可以用金幣兌換東西', 3200); }
+  if (cn >= 16 && !S.story.k1s9b) { try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    const pz = () => { if (!window.Puzzle) return setTimeout(pz, 150); Puzzle.open({ img: 'img/v3.webp', size: 3, title: '合成：房車', noCancel: true, onDone: () => { if (S.tier < 3) { S.tier = 3; S.sub = 0; } save(); renderTop();
+      play('k1s9b', null, () => rvName(() => { if (!homeStory()) setTimeout(goGuide, 600); })); } }); };
+    setTimeout(pz, 450); return true; }
+  if (cn >= 17 && !S.story.k1end) { const k = S.flags.kai === 'saved' ? 'k1endx' : 'k1end'; return play(k, null, () => { S.story.k1end = 1; addDiary('房車往港口出發。老周說，這叫「會回來」，不叫再見。'); save(); if (!homeStory()) setTimeout(goGuide, 600); }); }
   return false;
+}
+// 2026-11-28 房車取名（零建議「社畜一號」）
+function rvName(after) {
+  const d = document.createElement('div'); d.id = 'rvPop';
+  d.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center';
+  d.innerHTML = `<div style="width:min(420px,90%);background:rgba(4,14,18,.97);border:1.5px solid var(--cyan);border-radius:14px;padding:16px;text-align:center;color:var(--ink);font:700 17px sans-serif">
+    <img src="img/v3.webp" style="width:220px" alt=""><div style="font:900 20px sans-serif;margin:6px 0 10px">幫房車取個名字</div>
+    <input id="rvIn" maxlength="8" value="社畜一號" style="width:80%;height:48px;font:900 22px sans-serif;text-align:center;color:#fff;background:rgba(0,30,36,.75);border:2px solid var(--cyan);border-radius:10px;outline:none">
+    <button id="rvOk" style="display:block;margin:12px auto 0;width:80%;height:52px;border:0;border-radius:14px;background:var(--cyan);color:#00262c;font:900 20px sans-serif">確定</button></div>`;
+  document.body.appendChild(d);
+  $('rvOk').onclick = () => { const n = ($('rvIn').value || '').trim() || '社畜一號'; S.vehName = n; VEH[2] = n; d.remove(); save(); renderTop(); toast('🚐 ' + n + '，出發準備完成', 2400); if (after) after(); };
+}
+// 2026-11-28 難民營（第一章第 5 關以後）：用金幣兌換
+function renderCampBtn() {
+  let b = $('campBtn'); if (!(S.flags && S.flags.camp)) { if (b) b.style.display = 'none'; return; }
+  if (!b) { b = document.createElement('button'); b.id = 'campBtn'; b.innerHTML = '<b>🏕️</b>難民營'; b.style.cssText = 'position:absolute;left:12px;top:366px;width:84px;height:84px;border-radius:16px;background:rgba(4,12,16,.88);border:1.5px solid #b8c98a;color:#d8e7b0;font:900 17px sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;z-index:4'; b.querySelector('b').style.cssText = 'font-size:30px;line-height:1'; $('scr-home').appendChild(b); b.onclick = openCamp; }
+  b.style.display = 'flex';
+}
+function openCamp() {
+  const old = $('campPop'); if (old) old.remove();
+  const d = document.createElement('div'); d.id = 'campPop';
+  d.style.cssText = 'position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding-top:60px';
+  const L = tradeList();
+  d.innerHTML = `<div style="width:min(460px,92%);background:rgba(4,14,18,.97);border:1.5px solid #b8c98a;border-radius:14px;padding:14px 16px;color:var(--ink);font:700 17px/1.5 sans-serif">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><img src="img/story/p_zhen.webp" style="width:52px;height:52px;border-radius:10px" alt=""><div><b style="font:900 20px sans-serif">難民營　交易所</b><div style="color:var(--dim);font-size:15px">阿珍：「AI 做的東西不收。」</div></div></div>
+    ${L.map(([t, give], i) => `<button data-tr="${i}" style="display:block;width:100%;margin-top:8px;text-align:left;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(184,201,138,.6);background:rgba(20,30,16,.8);color:#e8f2d0;font:800 17px sans-serif;${afford(give) ? '' : 'opacity:.45'}">${t}</button>`).join('')}
+    <button id="campX" style="display:block;width:100%;margin-top:12px;height:46px;border-radius:12px;border:1.5px solid var(--cyan);background:rgba(4,30,36,.9);color:var(--cyan);font:900 18px sans-serif">關閉</button></div>`;
+  document.body.appendChild(d);
+  $('campX').onclick = () => d.remove();
+  d.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { const [t, give, get] = L[+b.dataset.tr];
+    if (!afford(give)) { toast('不夠換：' + costText(give), 2000); return; }
+    pay(give); if (get.frag) { S.frag = S.frag || {}; S.frag[get.frag] = (S.frag[get.frag] || 0) + 1; } else for (const k in get) { S.res[k] = (S.res[k] || 0) + get[k]; seeRes(k); }
+    save(); renderTop(); toast('換好了：' + t, 1800); openCamp(); });
 }
 function trikeIntro() {   // 第 4 關打完：腳踏車 → 拼圖合成三輪車 → 方舟剪影
   const done = () => { S.flags.trike = 1; S.story.c0s4b = 1; S.story.c0s4c = 1; addDiary('把壞掉的腳踏車拼成三輪車。零說總有一天它會變成方舟。'); save(); renderTop(); renderArk(); if (!homeStory()) setTimeout(goGuide, 600); };
@@ -617,7 +662,7 @@ function baseStory() {
 }
 function zeroSay(t) { const b = $('bubble'); b.textContent = t; b.style.opacity = 1; clearTimeout(bubbleT); bubbleT = setTimeout(() => b.style.opacity = 0, 3600); }
 function goHome(first) {
-  migrate7(); migrateSeen(); const devR = runDevices(); if (S.flags && S.flags.trike) pedalPower(); show('home'); renderTop(); renderArk(); renderAcct(); renderQuestDot(); renderMenu(); setTimeout(renderVehArrow, 50);
+  migrate7(); migrateSeen(); if (S.vehName) VEH[2] = S.vehName; const devR = runDevices(); if (S.flags && S.flags.trike) pedalPower(); show('home'); renderTop(); renderArk(); renderAcct(); renderQuestDot(); renderMenu(); renderCampBtn(); setTimeout(renderVehArrow, 50);
   S.flags = S.flags || {}; ['team', 'facility'].forEach(k => { if (menuOpen(k)) S.flags['m_' + k] = 1; });
   if (baseStory()) return;
   setTimeout(foodGuide, 400); setTimeout(goGuide, 700);
@@ -625,7 +670,7 @@ function goHome(first) {
   S.flags = S.flags || {}; ['team', 'facility'].forEach(k => { if (menuOpen(k)) S.flags['m_' + k] = 1; });   // 2026-11-28 不再跳「開放了」：第 1 關劇情已經帶去設備
   if (!first) idleReport(devR);
   S.lastSeen = NOW(); save();
-  const NEXT = ['肚子在叫。點「出發」往東走。', '要更多廢鐵，就再出去一趟。前面三隻殭屍，排好再消。', '破腳踏車快散了。', '便利商店就在前面。……你確定要進去？', '路邊那台小貨車，引擎好像還是好的。', '往東。狗叫聲越來越近了。', '牠在前面等你。準備好再出發。'][(S.cleared && S.cleared.zero) || 0];
+  const NEXT = ['肚子在叫。點「出發」往東走。', '要更多廢鐵，就再出去一趟。前面三隻殭屍，排好再消。', '破腳踏車快散了。', '便利商店就在前面。……你確定要進去？', '路邊那台小貨車，引擎好像還是好的。', '往東。狗叫聲越來越近了。', '牠在前面等你。準備好再出發。', '往難民營走。路上好像有一支車隊。', '小禾蹲在鐵鏽旁邊，看著牠的腳。', '小禾好像有話想問你。', '小禾的遮陽板上，夾著一張照片。', '難民營就在前面。門口好像不太對。', '營裡有人在幫傷患縫傷口。', '守營門的年輕人在跟你揮手。', '……夜裡，營地好像有聲音。', '老周說，營裡有一台展示用的房車。', '螢幕全部亮了。屍潮要來了。', '房車往港口出發了。'][(S.cleared && S.cleared.zero) || 0];
   setTimeout(() => zeroSay(first ? NEXT || '走吧。不知道做什麼就看左上角的「任務」。' : NEXT && Math.random() < 0.7 ? NEXT : questReady() ? '左上角有任務可以領獎勵。我替你數過了，別浪費。' : ZERO_LINES()[Math.floor(Math.random() * 6)]), 600);
 }
 $('zeroHome').onclick = () => { const L = ZERO_LINES(); zeroSay(L[Math.floor(Math.random() * L.length)]); };
@@ -704,6 +749,10 @@ const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標
   ['q16', '使命必達', '打過第 5 關，拿到小貨車', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 300, fuel: 30 }],
   ['q9', '拿星星', '在第零章累積 12 顆星', () => [Math.min(starSum(), 12), 12], { coin: 500, scrap: 300 }],
   ['q12', '第一個', '打倒「機械獵犬」，把牠救回來', () => [(S.cleared.zero || 0) >= 7 ? 1 : 0, 1], { coin: 1000, scrap: 500 }],
+  ['q20', '不熟', '一號廢域第 1 關：遇見小禾', () => [(S.cleared.zero || 0) >= 8 ? 1 : 0, 1], { scrap: 300 }],
+  ['q21', '兩百個人', '打過一號廢域第 5 關「營門屍群」', () => [(S.cleared.zero || 0) >= 12 ? 1 : 0, 1], { coin: 600, chip: 20 }],
+  ['q22', '社畜一號', '把小貨車拼成房車', () => [S.tier >= 3 ? 1 : 0, 1], { coin: 800, scrap: 600 }],
+  ['q23', '今晚', '守住屍潮（一號廢域第 10 關）', () => [(S.cleared.zero || 0) >= 17 ? 1 : 0, 1], { coin: 1500, chip: 40 }],
 ];
 const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '汽油', core: '青晶核心' };
 const rwText = r => Object.entries(r).map(([k, v]) => `${RW[k]} +${v}`).join('、');
@@ -736,32 +785,41 @@ function renderMap() {
   $('stageList').style.display = 'none';
   $('mapZones').innerHTML = ZONES.map((z, i) => `<div data-z="${i}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px"></div>`).join('');
   $('mapZones').querySelectorAll('div').forEach(d => d.onclick = () => openZone(+d.dataset.z));
-  openZone(0);   // 2026-11-27 直接打開零號廢域的關卡（少點一次）
+  openZone(((S.cleared && S.cleared.zero) || 0) >= 7 ? 1 : 0);   // 2026-11-28 直接打開目前進度的廢域
 }
+// 2026-11-28 各廢域的關卡範圍（j＝全域關卡編號−1）：零號廢域第 1～7 關、一號廢域第 8～17 關
+const ZR = [[0, 7], [7, 17]];
+const isBoss = j => j === 6 || j === 16, isMid = j => j === 3 || j === 11;
+const localN = j => j < 7 ? j + 1 : j - 6;
 function openZone(i) {
   const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub;
-  if (i === 1 && (S.cleared.zero || 0) >= 7) { $('stDetail').innerHTML = ''; $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:14px 10px;font:700 17px/1.6 sans-serif;color:#d8e4ea">   <!-- 2026-11-28 章末：一號廢域製作中 -->
+  const cl = S.cleared.zero || 0;
+  if (i === 2 && cl >= 17) { $('stDetail').innerHTML = ''; $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:14px 10px;font:700 17px/1.6 sans-serif;color:#d8e4ea">   <!-- 章末：二號廢域製作中 -->
     <img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">
-    <div style="font:900 22px sans-serif;color:var(--cyan);margin-bottom:6px">第一章　製作中</div>
-    <div style="color:#8fa0ae;margin-bottom:12px">遠方的煙還在。下一段路，正在做。</div>
+    <div style="font:900 22px sans-serif;color:var(--cyan);margin-bottom:6px">第二章　製作中</div>
+    <div style="color:#8fa0ae;margin-bottom:12px">房車往港口出發。下一段路，正在做。</div>
     <div style="text-align:left;border:1.5px solid #2a5560;border-radius:12px;padding:10px 14px;background:rgba(4,14,18,.6)">
       <div style="color:#ffd23f;font-weight:900;margin-bottom:4px">等待的時候可以：</div>
-      🔷 重打「機械獵犬」：每次掉 2～3 個青晶核心，拿去升級零<br>
-      🚚 到「隊伍」照推薦升級，把戰力衝高<br>
-      ⭐ 把每一關打到三顆星（5 連擊以上）
-    </div><button id="zBack" style="margin-top:12px;width:100%;height:48px;border-radius:12px;border:1.5px solid var(--cyan);background:rgba(4,30,36,.9);color:var(--cyan);font:900 18px sans-serif">← 回零號廢域</button></div>`;
-    $('zBack').onclick = () => openZone(0); return; }
-  if (i > 0) { $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 17px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
-  const cl = S.cleared.zero || 0;
-  if (stSel == null || stSel > cl) stSel = Math.min(cl, 6);
-  $('nodes').innerHTML = Array.from({ length: 7 }, (_, j) => {
-    const boss = j === BOSS_J || j === MID_J, open = j <= cl, done = j < cl;
+      🌙 無盡模式：看你能撐過幾波屍潮<br>
+      🔷 重打「機械獵犬」「屍潮」拿青晶核心，升級零<br>
+      ⭐ 把每一關打到三顆星
+    </div><button id="zBack" style="margin-top:12px;width:100%;height:48px;border-radius:12px;border:1.5px solid var(--cyan);background:rgba(4,30,36,.9);color:var(--cyan);font:900 18px sans-serif">← 回一號廢域</button></div>`;
+    $('zBack').onclick = () => openZone(1); return; }
+  if (i >= 2 || (i === 1 && cl < 7)) { $('stDetail').innerHTML = ''; $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 17px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
+  const [a, b] = ZR[i];
+  if (stSel == null || stSel > cl || stSel < a || stSel >= b) stSel = Math.max(a, Math.min(cl, b - 1));
+  const node = (j) => { const boss = isBoss(j) || isMid(j), open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
     const st = (S.stars || {})['zero-' + (j + 1)] || 0;
-    return `<div class="node${j === stSel ? ' sel' : ''}" data-s="${j}"><img src="img/${ic}.webp" alt="">${j === BOSS_J ? '頭目' : j === MID_J ? '中頭目' : '第 ' + (j + 1) + ' 關'}<div style="color:#ffd23f;font-size:14px;height:13px">${done ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`;
-  }).join('') + (cl >= 7 ? `<div class="node" id="zNext"><img src="img/n_lock.webp" alt="">一號廢域<div style="color:var(--cyan);font-size:14px;height:13px">製作中</div></div>` : '');
-  if ($('zNext')) $('zNext').onclick = () => openZone(1);
-  $('nodes').querySelectorAll('.node[data-s]').forEach(n => n.onclick = () => { const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; } stSel = j; openZone(0); });
+    return `<div class="node${j === stSel ? ' sel' : ''}" data-s="${j}"><img src="img/${ic}.webp" alt="">${isBoss(j) ? '頭目' : isMid(j) ? '中頭目' : '第 ' + localN(j) + ' 關'}<div style="color:#ffd23f;font-size:14px;height:13px">${done ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; };
+  const nav = (id, n, sub) => `<div class="node" id="${id}"><img src="img/n_lock.webp" alt="">${n}<div style="color:var(--cyan);font-size:14px;height:13px">${sub}</div></div>`;
+  let h = ''; for (let j = a; j < b; j++) h += node(j);
+  if (i === 0 && cl >= 7) h += nav('zNext', '一號廢域', '前往 →');
+  if (i === 1) h += nav('zPrev', '零號廢域', '← 回去') + (cl >= 17 ? nav('zNext', '二號廢域', '製作中') : '');
+  $('nodes').innerHTML = h;
+  if ($('zNext')) $('zNext').onclick = () => openZone(i + 1);
+  if ($('zPrev')) $('zPrev').onclick = () => openZone(0);
+  $('nodes').querySelectorAll('.node[data-s]').forEach(n => n.onclick = () => { const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; } stSel = j; openZone(i); });
   renderStageDetail();
 }
 // 2026-11-27 選關：點關卡只是選擇，下面看詳細，按「出發」才開打
@@ -774,11 +832,22 @@ const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情�
   ['使命必達', '路邊有一台有車斗的小貨車，引擎還是好的。', ['zombie', 'heavy', 'dasher'], 'scrap', [['img/v2.webp', '小貨車'], ['img/r_fuel.webp', '汽油']], ''],
   ['狗叫聲', '遠方傳來機械的狗叫聲。有東西在追我們。', ['heavy', 'dasher', 'zombie'], 'scrap', [['🌫️', '看見遠方的煙']], '打 2 波'],
   ['機械獵犬', '一隻機械獵犬，一路聞著你的味道追來。', ['zombie', 'heavy', 'hound'], 'scrap', [['img/story/i_dog.webp', '淨化／鐵鏽加入']], '大頭目：打 3 波'],
+  // 2026-11-28 第一章　一號廢域（全域第 8～17 關）
+  ['不熟', '往難民營的路上，遇到一支收物資的小車隊。', ['zombie', 'dasher', 'hemech'], 'scrap', [['img/story/p_he_smile.webp', '遇見小禾']], '打 2 波'],
+  ['狗', '小禾蹲下來，修鐵鏽卡住的腳。', ['zombie', 'dasher', 'heavy'], 'scrap', [['🔧', '小禾的改裝']], '打 2 波'],
+  ['拼', '「你們那邊的人，為什麼要那麼拼？」', ['zombie', 'dasher', 'heavy'], 'scrap', [['img/dev_oil.webp', '石油收集器']], '打 2 波'],
+  ['照片', '小禾的遮陽板上，夾著一張舊照片。', ['dasher', 'zombie', 'heavy'], 'scrap', [['img/dev_power.webp', '電能機器人']], '打 2 波'],
+  ['營門屍群', '難民營門口，被殭屍堵死了。', ['zombie', 'heavy', 'mech'], 'scrap', [['🏕️', '難民營（金幣兌換）']], '中型頭目：打 3 波'],
+  ['醫生', '營裡有人，用手在幫傷患縫合傷口。', ['zombie', 'heavy', 'dasher'], 'scrap', [['img/story/p_yeh.webp', '葉醫生的修補']], '打 2 波'],
+  ['阿凱', '守營門的年輕人，很愛開玩笑。', ['dasher', 'zombie', 'heavy'], 'scrap', [['img/story/p_kai.webp', '認識阿凱']], '打 2 波'],
+  ['放手', '夜裡，殭屍爬進了營地。', ['zombie', 'dasher', 'heavy'], 'scrap', [['🕯️', '……']], '打 2 波'],
+  ['房車', '營裡的人，把露營用品店的展示房車拖了出來。', ['heavy', 'dasher', 'zombie'], 'scrap', [['img/v3.webp', '房車（拼圖合成、取名）']], '打 2 波'],
+  ['屍潮', '所有殘破的螢幕，同時亮了起來。', ['zombie', 'heavy', 'mech'], 'scrap', [['🌙', '無盡模式']], '屍潮防守戰：打 4 波'],
 ];
 const FRAG_N = { scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' };
-const BOSS_J = 6, MID_J = 3;   // 2026-11-28 7 關   // 2026-11-28 第零章：第 10 關大頭目、第 5 關中型頭目
+const BOSS_J = 6, MID_J = 3;   // （舊；現在用 isBoss／isMid）   // 2026-11-28 7 關   // 2026-11-28 第零章：第 10 關大頭目、第 5 關中型頭目
 function renderStageDetail() {
-  const j = stSel, [t, hint, ens, fk, first, note] = STAGES[j], boss = j === BOSS_J, cl = S.cleared.zero || 0, done = j < cl;
+  const j = stSel, [t, hint, ens, fk, first, note] = STAGES[j], boss = isBoss(j), cl = S.cleared.zero || 0, done = j < cl;
   const st = (S.stars || {})['zero-' + (j + 1)] || 0, kills = S.codex.kills || {}, seen = S.codex.seen || {};
   const gearId = window.ZW_GEAR && Object.keys(ZW_GEAR.ITEMS).find(k => ZW_GEAR.ITEMS[k].from === j + 1), gear = gearId && ZW_GEAR.ITEMS[gearId];
   const cost = boss ? 20 : 10, free = S.tier < 2, enough = free || S.res.fuel >= cost;
@@ -789,7 +858,7 @@ function renderStageDetail() {
   const ico = im => im.startsWith('@') ? `<b class="fr"><img src="img/dev_${im.slice(1)}.webp" alt=""><i>🧩</i></b>` : im.startsWith('img/') ? `<img src="${im}" alt="">` : `<b style="font-size:20px;width:28px;text-align:center">${im}</b>`;
   const chip = ([im, tx], cls) => `<span${cls ? ` class="${cls}"` : ''}>${ico(im)}${tx}</span>`;
   const firstItems = first.concat(gear ? [[GEAR_IC[gear.slot] || '🎒', '裝備：' + gear.n]] : []);
-  $('stDetail').innerHTML = `<h4>第 ${j + 1} 關　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
+  $('stDetail').innerHTML = `<h4>${j >= 7 ? '一號廢域　' : ''}第 ${localN(j)} 關　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
     <div class="hint">${hint}</div>${note ? `<div class="hint" style="color:#ffd23f">⚠ ${note}</div>` : ''}
     <div class="lab">會遇到</div><div class="ens">${enHtml}</div>
     <div class="lab">可能掉落</div><div class="drops">${[['img/r_scrap.webp', '廢鐵']].concat(resSeen('coin') ? [['img/r_coin.webp', '金幣']] : []).concat(resSeen('fuel') ? [['img/r_fuel.webp', '汽油']] : []).concat(boss && done ? [['img/r_core.webp', '青晶核心 ×2～3']] : []).concat([['@' + fk, FRAG_N[fk] + '碎片 ×2～4']]).map(x => chip(x)).join('')}</div>
@@ -833,7 +902,7 @@ function renderGarage() {
   $('garageGrid').innerHTML = up + cards.join('');
   if ($('upSub')) $('upSub').onclick = () => { if (!afford(sc)) { toast('資源不夠：' + costText(sc)); return; } const pw0 = window.ZW_GEAR ? ZW_GEAR.power(S).total : 0; pay(sc); S.sub++; if (window.ZW_GEAR) setTimeout(() => toast(`戰力 +${ZW_GEAR.power(S).total - pw0}`, 1800), 1600); if (S.flags && S.flags.firstUp === 1) { S.flags.firstUp = 2; toast('改裝完成 +1。零：「……勉強像一台車了。」', 3200); } else toast(`改裝完成：+${S.sub}`); save(); renderGarage(); };
   if ($('upTier')) $('upTier').onclick = () => {
-    if (((S.cleared && S.cleared.zero) || 0) < 7) { toast('🔒 第零章裡，車子要靠劇情升級（第 5 關會撿到小貨車）', 2600); return; }
+    if (((S.cleared && S.cleared.zero) || 0) < 17) { toast('🔒 前兩章，車子要靠劇情升級（小貨車、房車都是撿來拼的）', 2600); return; }
     if (!afford(tc)) { toast('資源不夠：' + costText(tc), 2400); return; }
     pay(tc); S.tier++; S.sub = 0; addDiary(`把車升級成「${VEH[S.tier - 1]}」了。零說：「終於不像垃圾車了。勉強像回收車。」`); save(); toast(`升階完成：${VEH[S.tier - 1]}！`, 2400); renderGarage();
   };
@@ -879,10 +948,9 @@ function renderStore() {
   const mm = MEMO.filter(m => m[3]()).map(([id, , img]) => ({ id: 'm:' + id, html: `<img src="${img}" alt="">` }));
   if (mm.length) sec.push(['紀念品', mm]);
   const all = sec.flatMap(x => x[1]); if (!storeSel || !all.some(c => c.id === storeSel)) storeSel = all.length ? all[0].id : null;
-  let html = tradeHtml() + sec.map(([t, cells]) => `<div style="margin:12px 0 0;font:900 17px sans-serif;color:var(--dim);letter-spacing:1px">${t}</div><div class="stgrid">` +
+  let html = sec.map(([t, cells]) => `<div style="margin:12px 0 0;font:900 17px sans-serif;color:var(--dim);letter-spacing:1px">${t}</div><div class="stgrid">` +
     cells.map(c => `<div class="stc${c.id === storeSel ? ' sel' : ''}" data-id="${c.id}">${c.html}</div>`).join('') + '</div>').join('') + '<div class="stinfo" id="stInfo"></div>';
   $('storeGrid').innerHTML = html;
-  bindTrade();
   $('storeGrid').querySelectorAll('.stc[data-id]').forEach(e => e.onclick = () => { storeSel = e.dataset.id; renderStore(); });
   let info = '';
   const [ty, id] = storeSel ? [storeSel.slice(0, 1), storeSel.slice(2)] : ['', ''];
@@ -971,12 +1039,15 @@ function renderDiary() {
     let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening_v6"', '符合傳送資格（開場）');
     const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k) && k.startsWith('c0'));
     if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第零章　零號廢域</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title || C0T[k] || k)).join('');
+    { const K1 = ['k1s1', 'k1s1b', 'k1s2', 'k1s2b', 'k1s3', 'k1s3b', 'k1s4', 'k1s4b', 'k1s5', 'k1s5b', 'k1s6', 'k1s6b', 'k1s7', 'k1s7b', 'k1s8', 'k1s8x', 'k1s8b', 'k1s8xb', 'k1s9', 'k1s9b', 'k1s10', 'k1s10b', 'k1end', 'k1endx'].filter(k => SC[k] && seen(k));   // 2026-11-28 第一章
+      const K1T = { k1s1: '第 1 關　不熟', k1s1b: '小禾', k1s2: '第 2 關　狗', k1s2b: '改裝', k1s3: '第 3 關　拼', k1s3b: '什麼都不想做', k1s4: '第 4 關　照片', k1s4b: '青色的線條', k1s5b: '騎小貨車的瘋子', k1s6: '第 6 關　醫生', k1s6b: '來這裡以前', k1s7: '第 7 關　阿凱', k1s7b: '夜裡', k1s8b: '沒救到的', k1s8xb: '救到了', k1s9: '第 9 關　房車', k1s10b: '今晚' };
+      if (K1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章　一號廢域</div>' + K1.map(k => row(`data-s="${k}"`, SC[k].title || K1T[k] || k)).join(''); }
     h += '<div style="font-size:17px;color:#7a6440;margin-top:8px">' + (seen('c1s8') ? '下一章破解後，會再解鎖新的劇情' : '繼續往前走，劇情會一段一段解鎖') + '</div>';
     B.innerHTML = h;
     B.querySelectorAll('.vrow[data-v]').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true, ov: r.dataset.v === 'opening_v6' ? 'video/opening_v6.json' : null }));
     if (window.Story) B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
   } else {
-    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['第零章進度', `${S.cleared.zero || 0} / 7 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
+    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['進度', (S.cleared.zero || 0) > 7 ? `第一章 ${(S.cleared.zero || 0) - 7} / 10 關` : `第零章 ${S.cleared.zero || 0} / 7 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
   }
 }
@@ -988,6 +1059,7 @@ const CODEX = [
   ['bomber', 'e_bomber', '自爆型', '機械屍群', '零號廢域', '走到面前會自爆，對房車造成大傷害。', '在它走近之前打爆它。不然換你被打爆。'],
   ['clerk', 'e_clerk', '殭屍店員', '中型頭目', '零號廢域', '便利商店的店員。一直說歡迎光臨，一直沒有下班。', '那不是記得。是被留下來的工作程式。'],
   ['hound', 'e_wolf', '機械獵犬', '頭目', '零號廢域', '聞著味道追人的機械狗。左耳只剩一半，項圈上有編號。', '牠還記得什麼。還記得，就還會痛。'],
+  ['hemech', 'b_mech', '小禾的改裝機', '頭目', '一號廢域', '小禾用廢料自己改裝的機器。她以為零是紅眼的偵察機。', '我剛剛還救了你。'],
   ['mech', 'b_mech', '巨型機甲', '頭目', '零號廢域', '零號廢域的頭目。血量一半以下會暴走，攻擊變頻繁。', '存活機率 3%。不過你的運氣一向很差。'],
   ['scout', 'e_scout', '偵察機', '無人機群', '一號廢域', '飛在空中，只有機槍和閃電打得到。', '它在看你。我也在看你。差別是我比較嫌棄。'],
   ['bombdrone', 'e_bombdrone', '轟炸機', '無人機群', '一號廢域', '從空中丟炸彈，會打亂你的零件。', '炸彈的準度比你的轉珠好。'],
@@ -1053,9 +1125,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281433"></script>
-<script src="team.js?v=11281433"></script>
-<script src="puzzle.js?v=11281433"></script>
+<script src="extras.js?v=11281502"></script>
+<script src="team.js?v=11281502"></script>
+<script src="puzzle.js?v=11281502"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
