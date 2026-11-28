@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281512"></script>
-<script src="story/ch1.js?v=11281512"></script>
-<script src="story/intro.js?v=11281512"></script>
-<script src="story/story.js?v=11281512"></script>
-<script src="gear.js?v=11281512"></script>
-<script src="wide.js?v=11281512"></script>
+<script src="i18n.js?v=11281802"></script>
+<script src="story/ch1.js?v=11281802"></script>
+<script src="story/intro.js?v=11281802"></script>
+<script src="story/story.js?v=11281802"></script>
+<script src="gear.js?v=11281802"></script>
+<script src="wide.js?v=11281802"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -764,16 +764,22 @@ const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標
   ['q22', '社畜一號', '把小貨車拼成房車', () => [S.tier >= 3 ? 1 : 0, 1], { coin: 800, scrap: 600 }],
   ['q23', '今晚', '守住屍潮（一號廢域第 10 關）', () => [(S.cleared.zero || 0) >= 17 ? 1 : 0, 1], { coin: 1500, chip: 40 }],
 ];
+// 2026-11-28 使用者：已領取、還不能做的任務都不顯示。這裡寫每個任務「什麼時候開始能做」
+const qcl = () => (S.cleared && S.cleared.zero) || 0;
+const QOPEN = { q1: () => true, q6: () => !!(S.story && (S.story.c0s1b || S.story.c1base1)), q2: () => qcl() >= 1, q4: () => true, q13: () => qcl() >= 2, q14: () => qcl() >= 3,
+  q15: () => qcl() >= 5, q3: () => !!(S.flags && S.flags.trike), q7: () => qcl() >= 1, q16: () => qcl() >= 4, q9: () => qcl() >= 1, q12: () => qcl() >= 6,
+  q20: () => qcl() >= 7, q21: () => qcl() >= 11, q22: () => qcl() >= 15, q23: () => qcl() >= 16 };
+const questOpen = q => !QOPEN[q[0]] || QOPEN[q[0]]();
 const RW = { coin: '金幣', scrap: '廢鐵', chip: '電路板', fuel: '汽油', core: '青晶核心' };
 const rwText = r => Object.entries(r).map(([k, v]) => `${RW[k]} +${v}`).join('、');
 function questState(q) { const [cur, max] = q[3](); const claimed = (S.quests || {})[q[0]]; return { cur, max, done: cur >= max, claimed }; }
-function questReady() { return QUESTS.filter(q => { const st = questState(q); return st.done && !st.claimed; }).length; }
+function questReady() { return QUESTS.filter(q => { const st = questState(q); return st.done && !st.claimed && questOpen(q); }).length; }
 function renderQuestDot() { const n = questReady(), d = $('questDot'); d.textContent = n; d.style.display = n ? 'block' : 'none'; }
 function renderQuests() {
   S.quests = S.quests || {};
-  const order = QUESTS.map((q, i) => ({ q, i, st: questState(q) })).sort((a, b) => (a.st.claimed - b.st.claimed) || ((b.st.done && !b.st.claimed) - (a.st.done && !a.st.claimed)) || a.i - b.i);
+  const order = QUESTS.map((q, i) => ({ q, i, st: questState(q) })).filter(x => !x.st.claimed && questOpen(x.q)).sort((a, b) => (a.st.claimed - b.st.claimed) || ((b.st.done && !b.st.claimed) - (a.st.done && !a.st.claimed)) || a.i - b.i);
   $('questGrid').innerHTML = order.map(({ q, st }) => `<div class="card q ${st.claimed ? 'done' : ''}"><div class="qt"><div>${st.claimed ? '✅ ' : ''}${q[1]}</div><div class="sub">${q[2]}</div><div class="sub" style="color:#ffd23f">獎勵：${rwText(q[4])}</div><div class="bar"><i style="width:${Math.round(st.cur / st.max * 100)}%"></i></div></div>
-    <button data-q="${q[0]}" ${st.done && !st.claimed ? '' : 'disabled'}>${st.claimed ? '已領' : st.done ? '領取' : `${st.cur}/${st.max}`}</button></div>`).join('');
+    <button data-q="${q[0]}" ${st.done && !st.claimed ? '' : 'disabled'}>${st.claimed ? '已領' : st.done ? '領取' : `${st.cur}/${st.max}`}</button></div>`).join('') || '<div class="card" style="grid-column:1/-1;text-align:center;color:var(--dim);padding:18px">目前的任務都完成了。繼續往前走，會有新的任務。</div>';
   $('questGrid').querySelectorAll('button[data-q]').forEach(b => b.onclick = () => {
     const q = QUESTS.find(x => x[0] === b.dataset.q); if (!q) return;
     for (const [k, v] of Object.entries(q[4])) S.res[k] = k === 'fuel' ? Math.min(FUEL_MAX(), S.res.fuel + v) : (S.res[k] || 0) + v;
@@ -1135,9 +1141,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281512"></script>
-<script src="team.js?v=11281512"></script>
-<script src="puzzle.js?v=11281512"></script>
+<script src="extras.js?v=11281802"></script>
+<script src="team.js?v=11281802"></script>
+<script src="puzzle.js?v=11281802"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
