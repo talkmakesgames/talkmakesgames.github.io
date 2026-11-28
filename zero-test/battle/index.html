@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11281043"></script>
-<script src="../story/ch1.js?v=11281043"></script>
-<script src="../story/story.js?v=11281043"></script>
-<script src="../gear.js?v=11281043"></script>
-<script src="../wide.js?v=11281043"></script>
+<script src="../i18n.js?v=11281135"></script>
+<script src="../story/ch1.js?v=11281135"></script>
+<script src="../story/story.js?v=11281135"></script>
+<script src="../gear.js?v=11281135"></script>
+<script src="../wide.js?v=11281135"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -119,7 +119,7 @@ const TYPES = [
   { name: '燃料', fx: '火焰砲', color: '#ff5240', dark: '#5a1410' },
   { name: '彈藥', fx: '機槍', color: '#ffd23f', dark: '#5a4608' },
   { name: '鋼鐵', fx: '修補', color: '#a9b3bd', dark: '#2c3238' },
-  { name: '能量', fx: 'AI 充能', color: '#b46bff', dark: '#33155a' },
+  { name: '充能', fx: '零的大招充能', color: '#b46bff', dark: '#33155a' },   // 2026-11-28 改名：避免跟青晶核心（AI 能量）搞混
 ];
 
 const KINDS = {
@@ -158,7 +158,7 @@ const RUST_ON = false;               // 頭目會把零件鏽掉
 const RUST = 9;                             // 鏽塊的零件種類（不會被合成）
 const C1 = () => window.STORY_C1 || { battle: {}, scenes: {} };
 const CLEARED0 = (SV && SV.cleared && SV.cleared.zero) || 0;
-const EMP_ON = !STAGE || STAGE > 7 || CLEARED0 >= 7;   // 2026-11-28 第 7 關打完才解鎖電磁脈衝
+const EMP_ON = true;   // 2026-11-28 使用者：零的大招第 1 關就能用
 function sayV(key) {   // 有配音的戰鬥台詞（第一章）
   const L = C1().battle[key]; if (!L) return;
   if (L.w === 'he') { G.heLine = L.t; G.heLineT = 2.8; G.ai.lineT = 0; } else say(L.t);

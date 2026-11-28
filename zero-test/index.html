@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281043"></script>
-<script src="story/ch1.js?v=11281043"></script>
-<script src="story/intro.js?v=11281043"></script>
-<script src="story/story.js?v=11281043"></script>
-<script src="gear.js?v=11281043"></script>
-<script src="wide.js?v=11281043"></script>
+<script src="i18n.js?v=11281135"></script>
+<script src="story/ch1.js?v=11281135"></script>
+<script src="story/intro.js?v=11281135"></script>
+<script src="story/story.js?v=11281135"></script>
+<script src="gear.js?v=11281135"></script>
+<script src="wide.js?v=11281135"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -722,7 +722,7 @@ const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情�
   ['三輪車', '一直走路太慢了。前面有一台腳踏車。', ['dasher', 'zombie'], 'scrap', [['img/v1.webp', '三輪車']], ''],
   ['殭屍店員', '便利商店的自動門卡在半開。櫃台後面，有人還在上班。', ['zombie', 'clerk'], 'scrap', [['🔧', '第一座砲塔']], '中型頭目：打 2 波'],
   ['收費亭', '前面是收費亭。以前要錢才能過。', ['zombie', 'heavy'], 'scrap', [['img/r_coin.webp', '金幣']], ''],
-  ['狗叫聲', '遠方傳來機械的狗叫聲。有東西在追我們。', ['dasher', 'zombie'], 'scrap', [['⚡', '零的大招：電磁脈衝']], ''],
+  ['狗叫聲', '遠方傳來機械的狗叫聲。有東西在追我們。', ['dasher', 'zombie'], 'scrap', [['🐾', '聽見獵犬的聲音']], ''],
   ['使命必達', '路邊有一台有車斗的小貨車，引擎還是好的。', ['zombie', 'heavy', 'dasher'], 'scrap', [['img/v2.webp', '小貨車'], ['img/r_fuel.webp', '汽油']], ''],
   ['煙', '狗叫聲越來越近了。', ['heavy', 'dasher', 'zombie'], 'scrap', [['🌫️', '看見遠方的煙']], ''],
   ['機械獵犬', '一隻機械獵犬，一路聞著你的味道追來。', ['zombie', 'heavy', 'hound'], 'scrap', [['img/story/i_dog.webp', '淨化／鐵鏽加入']], '大頭目：打 3 波'],
@@ -994,9 +994,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281043"></script>
-<script src="team.js?v=11281043"></script>
-<script src="puzzle.js?v=11281043"></script>
+<script src="extras.js?v=11281135"></script>
+<script src="team.js?v=11281135"></script>
+<script src="puzzle.js?v=11281135"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
