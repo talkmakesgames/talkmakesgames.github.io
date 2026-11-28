@@ -103,7 +103,35 @@
   .gain span { display:flex; align-items:center; gap:4px; } .gain img { width:34px; }
   /* 地圖 */
   #mapZones div { position:absolute; border-radius:16px; cursor:pointer; }
-  #stageList { top:150px; bottom:16px; padding:14px 14px 0; display:none; overflow-y:auto; }   /* 2026-11-28 面板往上移，出發按鈕固定在底部 */
+  #stageList { top:auto; bottom:0; left:0; right:0; max-height:64%; padding:14px 14px 0; display:none; overflow-y:auto; border-radius:18px 18px 0 0; z-index:8; }   /* 2026-11-28 地圖改版：關卡詳細改成從下方滑出 */
+  #stageList #slTitle, #stageList #slSub, #stageList #nodes:empty { display:none; }
+  #slClose { position:sticky; top:0; float:right; width:38px; height:38px; border-radius:50%; border:1.5px solid var(--cyan); background:rgba(4,14,18,.95); color:var(--cyan); font:900 18px sans-serif; z-index:4; }
+  /* 世界地圖：各廢域的標記 */
+  .wz { position:absolute; display:flex; align-items:center; gap:6px; transform:translate(-14px,-50%); cursor:pointer; z-index:3; }
+  .wz i { width:28px; height:28px; border-radius:50%; border:3px solid #ff4d5a; background:rgba(40,0,6,.7); flex:0 0 auto; box-shadow:0 0 12px #ff2d3c; }
+  .wz.clear i { border-color:#3ff0ff; box-shadow:0 0 12px #3ff0ff; background:rgba(0,30,36,.8); }
+  .wz.here i { border-color:#ffd23f; box-shadow:0 0 18px #ffd23f; animation:wzp 1s ease-in-out infinite alternate; }
+  .wz.lock { opacity:.55; } .wz.lock i { border-color:#667; box-shadow:none; }
+  .wz b { font:900 17px sans-serif; color:#fff; background:rgba(4,12,16,.85); border:1.5px solid rgba(255,255,255,.25); border-radius:10px; padding:4px 10px; white-space:nowrap; }
+  .wz.clear b { border-color:#3ff0ff; } .wz.here b { border-color:#ffd23f; color:#ffd23f; }
+  .wz small { display:block; font:800 13px sans-serif; color:#cfe; }
+  .wz .car { position:absolute; left:-30px; top:-46px; width:76px; animation:vabob .8s ease-in-out infinite alternate; pointer-events:none; }
+  @keyframes wzp { from { transform:scale(1) } to { transform:scale(1.25) } }
+  /* 廢域路線圖 */
+  #zoneView { position:absolute; inset:0; display:none; z-index:6; background:#05080b; }
+  #scr-map .close { z-index:9; }
+  #zoneView .zbg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  #zoneView .ztitle { position:absolute; top:20px; left:0; right:0; text-align:center; font:900 28px sans-serif; color:#fff; text-shadow:0 0 14px var(--cyan),0 0 4px #000; }
+  #zoneView .zsub { position:absolute; top:58px; left:0; right:0; text-align:center; font:800 15px sans-serif; color:#cfe; text-shadow:0 0 4px #000,0 0 6px #000; }
+  #zBackW { position:absolute; top:14px; left:14px; height:44px; padding:0 14px; border-radius:22px; border:1.5px solid var(--cyan); background:rgba(4,14,18,.88); color:var(--cyan); font:900 16px sans-serif; z-index:7; }
+  #zoneView svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .rnode { position:absolute; width:86px; transform:translate(-50%,-50%); text-align:center; font:900 15px sans-serif; color:#fff; text-shadow:0 0 4px #000,0 0 8px #000,0 0 2px #000; cursor:pointer; z-index:2; }
+  .rnode img.ic { width:52px; height:52px; display:block; margin:0 auto; }
+  .rnode.sel img.ic { filter:drop-shadow(0 0 12px #ffd23f); } .rnode.sel { color:#ffd23f; }
+  .rnode.lock { opacity:.75; }
+  .rnode .st { color:#ffd23f; font-size:13px; height:14px; }
+  .rnode .car { position:absolute; left:50%; top:-40px; width:70px; transform:translateX(-50%); animation:vabob .8s ease-in-out infinite alternate; pointer-events:none; }
+  .rnode.exit b { display:inline-block; background:rgba(4,12,16,.88); border:1.5px solid var(--cyan); border-radius:10px; padding:4px 8px; color:var(--cyan); }
   .node.sel img { filter:drop-shadow(0 0 10px #ffd23f); } .node.sel { color:#ffd23f; }
   #stDetail { margin-top:10px; border-top:1px solid rgba(63,240,255,.3); padding-top:10px; text-align:left; color:var(--ink); font:700 17px sans-serif; }
   #stDetail h4 { margin:0; font:900 20px sans-serif; color:#fff; } #stDetail h4 small { color:#ffd23f; font-size:18px; margin-left:8px; }
@@ -246,7 +274,8 @@
     <div class="title">選擇廢域</div>
     <button class="close" data-back>✕</button>
     <div id="mapZones"></div>
-    <div class="panel" id="stageList"><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div><div id="stDetail"></div></div>
+    <div id="zoneView"><img class="zbg" id="zBg" alt=""><svg id="zLine" viewBox="0 0 540 960"></svg><div class="ztitle" id="zTitle"></div><div class="zsub" id="zSub"></div><button id="zBackW">← 世界地圖</button><div id="zNodes"></div></div>
+    <div class="panel" id="stageList"><button id="slClose">✕</button><h3 id="slTitle"></h3><p id="slSub"></p><div id="nodes"></div><div id="stDetail"></div></div>
   </div>
 
   <!-- 新手任務 -->
@@ -282,12 +311,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281802"></script>
-<script src="story/ch1.js?v=11281802"></script>
-<script src="story/intro.js?v=11281802"></script>
-<script src="story/story.js?v=11281802"></script>
-<script src="gear.js?v=11281802"></script>
-<script src="wide.js?v=11281802"></script>
+<script src="i18n.js?v=11281827"></script>
+<script src="story/ch1.js?v=11281827"></script>
+<script src="story/intro.js?v=11281827"></script>
+<script src="story/story.js?v=11281827"></script>
+<script src="gear.js?v=11281827"></script>
+<script src="wide.js?v=11281827"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -797,11 +826,57 @@ const ZONES = [   // 地圖上可以點的區域（位置對應 world_map 圖）
   { k: 'fort', n: '四號廢域', sub: '紅眼要塞｜紅眼軍團', x: 200, y: 180, w: 320, h: 150 },
   { k: 'core', n: '母核', sub: '最終決戰', x: 160, y: 20, w: 240, h: 150 },
 ];
+// ═══ 2026-11-28 地圖改版（使用者選 B）：先看世界地圖 → 點廢域進入路線圖 → 點關卡從下方滑出詳細 → 出發 ═══
+const WZ = [[75, 758], [105, 622], [188, 518], [221, 401], [334, 330], [300, 92]];   // 世界地圖上各廢域的路標（舞台座標 540×960）
+const ZIMG = ['img/zone_zero.webp', 'img/zone_sand.webp'];
+// 路線圖上每一關的位置（依 zone_*.webp 的道路校正）；最後一個是「下一個廢域」出口
+const ROUTE = [
+  [[262, 850], [245, 705], [285, 595], [330, 490], [290, 365], [330, 262], [360, 160], [468, 92]],
+  [[255, 862], [252, 762], [236, 662], [248, 572], [318, 468], [196, 318], [248, 258], [352, 214], [300, 160], [402, 116], [478, 86]],
+];
+const zoneOf = cl => cl >= 7 ? 1 : 0;
+function vehImg() { return `img/v${S.flags && S.flags.trike ? S.tier : 0}.webp`; }
 function renderMap() {
-  $('stageList').style.display = 'none';
-  $('mapZones').innerHTML = ZONES.map((z, i) => `<div data-z="${i}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px"></div>`).join('');
-  $('mapZones').querySelectorAll('div').forEach(d => d.onclick = () => openZone(+d.dataset.z));
-  openZone(((S.cleared && S.cleared.zero) || 0) >= 7 ? 1 : 0);   // 2026-11-28 直接打開目前進度的廢域
+  $('stageList').style.display = 'none'; $('zoneView').style.display = 'none';
+  const cl = (S.cleared && S.cleared.zero) || 0, cur = zoneOf(cl), done = i => (i === 0 && cl >= 7) || (i === 1 && cl >= 17);
+  $('mapZones').innerHTML = ZONES.map((z, i) => {
+    const st = done(i) ? 'clear' : i === cur ? 'here' : i < 2 && i <= cur ? 'here' : 'lock';
+    const tag = st === 'clear' ? '✔ 已破解' : st === 'here' ? '你在這裡' : i === 2 && cl >= 17 ? '製作中' : '🔒';
+    return `<div data-z="${i}" style="left:${z.x}px;top:${z.y}px;width:${z.w}px;height:${z.h}px"></div>` +
+      `<div class="wz ${st}" data-wz="${i}" style="left:${WZ[i][0]}px;top:${WZ[i][1]}px"><i></i><b>${z.n}<small>${tag}</small></b>${i === cur ? `<img class="car" src="${vehImg()}" alt="">` : ''}</div>`;
+  }).join('');
+  $('mapZones').querySelectorAll('[data-z],[data-wz]').forEach(d => d.onclick = () => enterZone(+(d.dataset.z || d.dataset.wz)));
+  if (cl === 0) enterZone(0, true);   // 新手第一次：直接進零號廢域、打開第 1 關
+}
+function enterZone(i, autoOpen) {
+  const cl = (S.cleared && S.cleared.zero) || 0;
+  if (i >= 2) { if (cl >= 17 && i === 2) { openZone(2); return; } toast('🔒 要先破解前一個廢域', 1800); return; }
+  if (i === 1 && cl < 7) { toast('🔒 要先破解零號廢域', 1800); return; }
+  const z = ZONES[i], [a, b] = ZR[i], R = ROUTE[i];
+  $('zoneView').style.display = 'block'; $('stageList').style.display = 'none';
+  $('zBg').src = ZIMG[i]; $('zTitle').textContent = z.n; $('zSub').textContent = z.sub;
+  const P = j => R[j - a];
+  let line = ''; for (let j = a; j < b; j++) { const p0 = P(j), p1 = R[j - a + 1]; if (!p1) continue; const ok = j < cl;
+    line += `<line x1="${p0[0]}" y1="${p0[1]}" x2="${p1[0]}" y2="${p1[1]}" stroke="${ok ? '#3ff0ff' : 'rgba(255,255,255,.45)'}" stroke-width="${ok ? 5 : 3}" stroke-dasharray="${ok ? '0' : '8 8'}" stroke-linecap="round" ${ok ? 'style="filter:drop-shadow(0 0 6px #3ff0ff)"' : ''}/>`; }
+  $('zLine').innerHTML = line;
+  const curJ = Math.min(cl, b - 1);
+  let h = '';
+  for (let j = a; j < b; j++) { const [x, y] = P(j), boss = isBoss(j) || isMid(j), open = j <= cl, dn = j < cl, st = (S.stars || {})['zero-' + (j + 1)] || 0;
+    const ic = dn ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
+    h += `<div class="rnode${open ? '' : ' lock'}${j === stSel ? ' sel' : ''}" data-s="${j}" style="left:${x}px;top:${y}px">${j === curJ && open ? `<img class="car" src="${vehImg()}" alt="">` : ''}<img class="ic" src="img/${ic}.webp" alt="">${isBoss(j) ? '頭目' : isMid(j) ? '中頭目' : '第 ' + localN(j) + ' 關'}<div class="st">${dn ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; }
+  const ex = R[b - a];
+  if (i === 0 && cl >= 7) h += `<div class="rnode exit" id="zExit" style="left:${ex[0]}px;top:${ex[1]}px"><b>一號廢域 →</b></div>`;
+  if (i === 1 && cl >= 17) h += `<div class="rnode exit" id="zExit" style="left:${ex[0]}px;top:${ex[1]}px"><b>二號廢域　製作中</b></div>`;
+  $('zNodes').innerHTML = h;
+  $('zNodes').querySelectorAll('.rnode[data-s]').forEach(n => n.onclick = () => { const j = +n.dataset.s; if (j > cl) { toast('先過前一關'); return; } stSel = j; enterZone(i); openSheet(i); });
+  if ($('zExit')) $('zExit').onclick = () => i === 0 ? enterZone(1) : openZone(2);
+  $('zBackW').onclick = () => renderMap();
+  if (autoOpen) { stSel = curJ; openSheet(i); $('zNodes').querySelectorAll('.rnode').forEach(n => n.classList.toggle('sel', +n.dataset.s === stSel)); }
+}
+function openSheet(i) {   // 關卡詳細（從下方滑出）
+  const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub; $('nodes').innerHTML = '';
+  $('slClose').onclick = () => { $('stageList').style.display = 'none'; };
+  renderStageDetail(); $('stageList').scrollTop = 0;
 }
 // 2026-11-28 各廢域的關卡範圍（j＝全域關卡編號−1）：零號廢域第 1～7 關、一號廢域第 8～17 關
 const ZR = [[0, 7], [7, 17]];
@@ -820,7 +895,8 @@ function openZone(i) {
       🔷 重打「機械獵犬」「屍潮」拿青晶核心，升級零<br>
       ⭐ 把每一關打到三顆星
     </div><button id="zBack" style="margin-top:12px;width:100%;height:48px;border-radius:12px;border:1.5px solid var(--cyan);background:rgba(4,30,36,.9);color:var(--cyan);font:900 18px sans-serif">← 回一號廢域</button></div>`;
-    $('zBack').onclick = () => openZone(1); return; }
+    $('zBack').onclick = () => { $('stageList').style.display = 'none'; enterZone(1); }; $('slClose').onclick = () => { $('stageList').style.display = 'none'; }; return; }
+  if (i < 2 && !(i === 1 && cl < 7)) { enterZone(i); return; }   // 2026-11-28 一般情況走路線圖
   if (i >= 2 || (i === 1 && cl < 7)) { $('stDetail').innerHTML = ''; $('nodes').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:18px;color:#8fa0ae;font:700 17px sans-serif"><img src="img/n_lock.webp" style="width:60px;display:block;margin:0 auto 6px" alt="">要先破解前一個廢域，還要更強的載具</div>`; return; }
   const [a, b] = ZR[i];
   if (stSel == null || stSel > cl || stSel < a || stSel >= b) stSel = Math.max(a, Math.min(cl, b - 1));
@@ -1141,9 +1217,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281802"></script>
-<script src="team.js?v=11281802"></script>
-<script src="puzzle.js?v=11281802"></script>
+<script src="extras.js?v=11281827"></script>
+<script src="team.js?v=11281827"></script>
+<script src="puzzle.js?v=11281827"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });

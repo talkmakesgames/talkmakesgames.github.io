@@ -29,6 +29,13 @@
   const FAST = { 3: 45, 4: 120, 5: 240, 6: 420 };   // 快速完成：幾秒內拼完有額外獎勵
   function beep(f, d, v) { try { const a = beep.c = beep.c || new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; g.gain.value = v || .06; g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + d); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d); } catch (e) {} }
   function open(o) {
+    if (!o._sq) {   // 2026-11-28 長方形的圖（載具）先補成正方形，拼圖才不會被拉扁
+      const im = new Image(); im.onload = () => { o._sq = 1; if (im.width !== im.height) { const n = Math.max(im.width, im.height), cv = document.createElement('canvas'); cv.width = cv.height = n;
+        const g = cv.getContext('2d'), gr = g.createLinearGradient(0, 0, n, n); gr.addColorStop(0, '#0e4652'); gr.addColorStop(0.5, '#0a1c2a'); gr.addColorStop(1, '#3a1220'); g.fillStyle = gr; g.fillRect(0, 0, n, n);   // 藍圖底：每一塊顏色不同，空白的格子也分得出來
+        g.strokeStyle = 'rgba(63,240,255,.18)'; g.lineWidth = Math.max(1, n / 400); for (let i = 1; i < 16; i++) { const q = i * n / 16; g.beginPath(); g.moveTo(q, 0); g.lineTo(q, n); g.moveTo(0, q); g.lineTo(n, q); g.stroke(); }
+        g.strokeStyle = 'rgba(63,240,255,.35)'; g.lineWidth = n / 160; g.beginPath(); g.arc(n / 2, n / 2, n * 0.46, 0, Math.PI * 2); g.stroke();
+        g.drawImage(im, (n - im.width) / 2, (n - im.height) / 2); o.img = cv.toDataURL('image/png'); } open(o); };
+      im.onerror = () => { o._sq = 1; open(o); }; im.src = o.img; return; }
     close();
     if (!document.getElementById('pzcss')) { const st = document.createElement('style'); st.id = 'pzcss'; st.textContent = css; document.head.appendChild(st); }
     const N = Math.max(3, Math.min(6, o.size || 3)), B = 480, W = B / N;
