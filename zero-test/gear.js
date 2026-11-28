@@ -13,12 +13,14 @@
   };
   const DROP = {}; for (const k in ITEMS) if (ITEMS[k].from) DROP[ITEMS[k].from] = k;   // 第一次打過這一關掉的裝備
   const CHARS = [
-    { id: 'hero', img: 'img/face0.webp', role: '合成的手', eff: l => `武器傷害 +${6 * (l - 1)}%｜車子耐久 +${5 * (l - 1)}%`, cost: l => ({ coin: 80 * l, scrap: 50 * l }), need: 0 },
-    { id: 'zero', img: 'img/story/p_zero_n.webp', role: '大招：電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ coin: 120 * l, chip: 15 * l }), need: 0 },
-    { id: 'dog', name: '鐵鏽', img: 'img/story/i_dog.webp', role: '護車＋撿零件', eff: l => `每關多撿廢鐵 +${20 + 10 * (l - 1)}`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 10 },
+    { id: 'hero', img: 'img/face0.webp', role: '專長：合成加成', eff: l => `每連擊 +${pctS(SYNTH(l))}`, cost: l => ({ scrap: 80 * l }), need: 0 },   // 2026-11-28 主角沒有戰鬥力，只有合成加成（連擊）
+    { id: 'zero', img: 'img/story/p_zero_n.webp', role: '專長：大招電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ scrap: 60 * l, coin: 80 * l }), need: 0 },
+    { id: 'dog', name: '鐵鏽', img: 'img/story/i_dog.webp', role: '專長：護車＋撿零件', eff: l => `耐久 +${5 * l}%｜每關多撿廢鐵 +${20 + 10 * (l - 1)}`, cost: l => ({ scrap: 60 * l, coin: 60 * l }), need: 10 },
     { id: 'he', name: '小禾', img: 'img/story/p_he_smile.webp', role: '改裝：灰零件變色', eff: l => `充能速度 +${12 * (l - 1)}%`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 99 },   // 2026-11-26 小禾搬到第二章
   ];
-  const MAXLV = 10;
+  const MAXLV = 5;   // 2026-11-28 角色上限 Lv.5
+  const SYNTH = l => 0.10 + 0.025 * (Math.min(5, l) - 1);   // 主角合成加成：每連擊 +10%（Lv.1）～ +20%（Lv.5）
+  const pctS = v => (Math.round(v * 1000) / 10) + '%';
   function ensure(S) {   // 舊存檔補上隊伍和裝備；已經打過的關補發裝備
     if (!S) return S;
     S.team = S.team || { hero: 1, zero: 1, dog: 1, he: 1 };
@@ -29,8 +31,9 @@
   }
   function maxLv(S, id) { return id === 'zero' ? Math.min(MAXLV, 2 * ((S.fac && S.fac.dock) || 1)) : MAXLV; }   // 零的上限看「零的充電座」
   function eff(S) {   // 戰鬥用的加成
-    S = ensure(S); const t = S.team, e = { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1 };   // critDmg：暴擊多出的傷害（1＝+100%，也就是兩倍）
-    e.atk += 0.06 * (t.hero - 1); e.hp += 0.05 * (t.hero - 1); e.crit += 0.01 * (t.hero - 1); e.critDmg += 0.05 * (t.hero - 1) + 0.03 * (t.zero - 1);   // 2026-11-27 暴擊率、暴擊傷害
+    S = ensure(S); const t = S.team, e = { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1, synth: 0.1 };   // critDmg：暴擊多出的傷害（1＝+100%，也就是兩倍）
+    e.synth = SYNTH(t.hero);   // 2026-11-28 攻擊、暴擊、暴擊傷害只來自車子和裝備；角色只升專長
+    if (((S.cleared && S.cleared.zero) || 0) >= 10) e.hp += 0.05 * t.dog;   // 鐵鏽加入以後：護車
     e.emp += 0.15 * (t.zero - 1); e.energy += 0.05 * (t.zero - 1);
     e.dogScrap += 10 * (t.dog - 1); e.he += 0.12 * (t.he - 1);
     for (const s in S.gear.eq) { const it = ITEMS[S.gear.eq[s]]; if (!it) continue; const f = it.eff;
@@ -44,5 +47,28 @@
     if (!S.gear.eq[ITEMS[k].slot]) S.gear.eq[ITEMS[k].slot] = k;   // 那一格是空的就直接穿上
     return k;
   }
-  window.ZW_GEAR = { SLOTS, ITEMS, CHARS, MAXLV, ensure, maxLv, eff, drop };
+  // ── 2026-11-28 戰力：屬於車子。戰力＝輸出 × 耐久 ÷ 50；輸出＝平均一次 5 連擊（含暴擊期望）；耐久＝裝甲 ──
+  const r1 = v => Math.round(v * 100) / 100;
+  function power(S, o) {
+    S = ensure(S); o = o || {}; const e = eff(S), tier = o.tier || S.tier || 1, sub = o.sub != null ? o.sub : (S.sub || 0), hl = o.hero || S.team.hero;
+    const syn = SYNTH(hl), gAtk = e.atk, gHp = e.hp - ((((S.cleared && S.cleared.zero) || 0) >= 10) ? 0.05 * S.team.dog : 0), dogHp = e.hp - gHp;
+    const base = 30 * (1 + 0.05 * (tier - 1)), mSub = 1 + 0.08 * sub, crit = 0.10 + e.crit, mCrit = 1 + crit * e.critDmg, mCombo = 1 + 5 * syn;
+    const out = base * mSub * gAtk * mCrit * mCombo;
+    const armor = 150 * (1 + 0.15 * (tier - 1)), aSub = 1 + 0.1 * sub, dur = armor * aSub * (gHp + dogHp);
+    const total = Math.round(out * dur / 50);
+    const gearN = k => Object.values(S.gear.eq).map(id => ITEMS[id]).filter(it => it && it.eff[k]).map(it => it.n).join('、');
+    const lines = [['車子基礎傷害', Math.round(base)], ['× 改裝 +' + sub, '×' + r1(mSub)]];
+    if (gAtk > 1) lines.push(['× 裝備：' + gearN('atk'), '×' + r1(gAtk)]);
+    lines.push([`× 暴擊（${Math.round(crit * 100)}%，+${Math.round(e.critDmg * 100)}%）`, '×' + r1(mCrit)]);
+    lines.push([`× 5 連擊（主角 Lv.${hl}：每連擊 +${pctS(syn)}）`, '×' + r1(mCombo)]);
+    const dl = [['車子裝甲', Math.round(armor)], ['× 改裝 +' + sub, '×' + r1(aSub)]];
+    if (gHp > 1) dl.push(['× 裝備：' + gearN('hp'), '×' + r1(gHp)]);
+    if (dogHp > 0) dl.push(['× 鐵鏽護車 Lv.' + S.team.dog, '×' + r1(1 + dogHp)]);
+    const empDmg = Math.round(30 * 7 * e.emp);   // 大招（另計，不算進戰力）
+    return { total, out: Math.round(out), dur: Math.round(dur), lines, dlines: dl, emp: empDmg, syn, empLv: S.team.zero };
+  }
+  const REC = [0, 130, 135, 140, 145, 160, 165, 170, 200, 210, 230];   // 依電腦模擬「中等程度、沒刻意升級」能過的戰力校正   // 各關建議戰力（勢均力敵的程度）
+  function rec(stage) { return REC[stage] || Math.round(300 * Math.pow(1.12, stage - 10)); }
+  function recLevel(S, stage) { const p = power(S).total, r = rec(stage); return p >= r * 1.2 ? 'easy' : p >= r * 0.85 ? 'even' : 'hard'; }
+  window.ZW_GEAR = { SLOTS, ITEMS, CHARS, MAXLV, SYNTH, ensure, maxLv, eff, drop, power, rec, recLevel };
 })();

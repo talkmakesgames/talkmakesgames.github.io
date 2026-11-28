@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11280316"></script>
-<script src="../story/ch1.js?v=11280316"></script>
-<script src="../story/story.js?v=11280316"></script>
-<script src="../gear.js?v=11280316"></script>
-<script src="../wide.js?v=11280316"></script>
+<script src="../i18n.js?v=11281043"></script>
+<script src="../story/ch1.js?v=11281043"></script>
+<script src="../story/story.js?v=11281043"></script>
+<script src="../gear.js?v=11281043"></script>
+<script src="../wide.js?v=11281043"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -67,9 +67,10 @@ let SV = null;
 if (STAGE) { try { SV = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {} if (!SV) location.href = '../'; }
 const OT = !STAGE && /[?&]ot=1/.test(location.search);
 const BOSS_IMG = STAGE === 5 ? '../img/e_clerk.webp' : STAGE === 10 ? '../img/e_wolf.webp' : '';   // 2026-11-28 第零章：第 5 關殭屍店員、第 10 關機械獵犬
-const DS = STAGE ? 0.03 : 1;   // 2026-11-28 正式關卡數字縮小約 33 倍（前期傷害幾十到幾百）；試玩維持大數字   // 加班模式：每天同一個盤面、無限波次、能力統一
+const DS = STAGE ? 0.03 : 1, HPK = STAGE ? 0.48 : 1;   // HPK：2026-11-28 新連擊規則（倍率比較平緩）→ 敵人血量跟著調低
+//   // 2026-11-28 正式關卡數字縮小約 33 倍（前期傷害幾十到幾百）；試玩維持大數字   // 加班模式：每天同一個盤面、無限波次、能力統一
 const OT_DAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()), OT_SEED = +OT_DAY.replace(/-/g, '') % 100000;
-const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1 };   // 隊伍等級＋裝備的加成
+const GE = (STAGE && SV && window.ZW_GEAR) ? ZW_GEAR.eff(SV) : { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1, synth: 0.1 };   // 隊伍等級＋裝備的加成
 const TIER = OT ? 3 : SV ? Math.min(SV.tier || 1, 3) : 6, SUB = SV ? (SV.sub || 0) : 0;
 const VEH_NAMES = ['廢鐵三輪車', '使命必達小貨車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
 const SLOTS = ({ 1: [0], 2: [0, 1], 3: [0, 1, 2] })[TIER] || [0, 1, 2];   // 這台車裝了哪些武器（0 閃電、1 火焰、2 機槍）；沒裝的顏色只有主角的弱攻擊
@@ -127,7 +128,7 @@ const KINDS = {
   heavy: { name: '重裝型', hp: 26000, cd: 3, atk: 1600, s: 1.15 },
   boss: { name: '巨型機甲', hp: 125000, cd: 3, atk: 2200, s: 1.0 },
 };
-if (STAGE === 5) KINDS.boss = { name: '殭屍店員', hp: 45000, cd: 2, atk: 1100, s: 1.0 };
+if (STAGE === 5) KINDS.boss = { name: '殭屍店員', hp: 36000, cd: 2, atk: 950, s: 1.0 };
 if (STAGE === 10) KINDS.boss = { name: '機械獵犬', hp: 95000, cd: 2, atk: 1600, s: 1.0 };
 // 試玩版（247 天後、第 6 階青晶房車）：主角傷害 ×POW；第一波血量打折，讓新手先覺得自己很強
 // 從遊戲流程進來（?trial=1）：結算按鈕變「繼續」，回到遊戲（解說影片 A）
@@ -136,7 +137,7 @@ const POW = OT ? 112 : STAGE ? (3 * (1 + 0.08 * SUB) * (1 + 0.05 * (TIER - 1)) *
 const ARMOR0 = OT ? 7000 : STAGE ? Math.round(150 * (1 + 0.15 * (TIER - 1)) * (1 + 0.1 * SUB) * GE.hp) : 14000;
 const WAVE_HP = [0.75, 1, 1.05, 1];
 const SL = STAGE;   // 2026-11-28 第零章 10 關，規則直接用關卡編號   // 2026-11-26 新增 1-1 肚子餓：1-1、1-2 用同一套規則，後面的關卡往後移一關（SL＝原本的關卡規則編號）
-const STAGE_HP = [0, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.9, 1.0][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.65, 0.5][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
+const STAGE_HP = [0, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.9, 1.0][STAGE] || 1, ATK_MUL = STAGE ? ([0, 0.35, 0.4, 0.45, 0.5, 0.42, 0.6, 0.65, 0.7, 0.65, 0.5][STAGE] || 1) : 1;   // 第一章：1-3 追逐打得最兇
 const ZN = 10;   // 第零章（零號廢域）：10 關，第 5 關中型頭目、第 10 關大頭目
 const STAGE_WAVES = {   // 2026-11-28 第零章：小關 1 波、第 5 關 2 波、第 10 關 3 波
   1: [['zombie', 'zombie', 'zombie']],
@@ -358,7 +359,7 @@ function spawnWave() {
     const K = KINDS[k], boss = k === 'boss';
     const x = boss ? W / 2 : lerp(80, W - 112, n === 1 ? 0.5 : i / (n - 1));
     const y = boss ? (SPRITE_ON ? 228 : 185) : 150 + ((i % 2) ? 60 : 0) + (k === 'heavy' ? -10 : 0) + (k === 'dasher' ? 20 : 0);
-    return { k, K, hp: Math.round(K.hp * DS * (boss ? bsc : sc)), maxHp: Math.round(K.hp * DS * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * DS * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
+    return { k, K, hp: Math.round(K.hp * DS * HPK * (boss ? bsc : sc)), maxHp: Math.round(K.hp * DS * HPK * (boss ? bsc : sc)), cd: (boss && RUST_ON) ? 1 : K.cd, cdMax: K.cd, atk: Math.round(K.atk * DS * ATK_MUL * (OT ? 0.55 + 0.07 * G.wave : 1)),
       x, y: -120 - i * 30, tx: x, ty: y, hit: 0, dead: false, dieT: 0, stun: false, burn: 0, lunge: 0, enraged: false, bob: rnd() * 6, vs: boss ? 1 : [1, 0.92, 1.07, 0.96, 1.03][i % 5] };
   });
   if (TRIAL_FLOW && G.wave === 1 && !G.t0b && window.Story && C1().scenes.t0b) { G.t0b = 1; setTimeout(() => { if (G.state !== 'player') return; G.energy = 100; useEMP(); setTimeout(() => { if (G.state !== 'player') return; G.state = 'story'; Story.play('t0b', { name: '我', base: '../', onDone: () => { G.state = 'player'; } }); }, 2600); }, 1900); }
@@ -414,7 +415,7 @@ function update(dt) {
   for (const t of G.texts) { t.t += d; t.y -= 40 * d; }
   G.texts = G.texts.filter(t => t.t < t.life);
   G.shake = Math.max(0, G.shake - dt * 40); G.flash = Math.max(0, G.flash - dt * 3);
-  G.comboShow = Math.max(0, G.comboShow - dt);
+  G.comboShow = Math.max(0, G.comboShow - dt); G.multPop = Math.max(0, (G.multPop || 0) - dt);
   for (const e of G.enemies) { if (e.cyanT > 0) e.cyanT -= dt; if (STAGE === 10 && e.k === 'boss' && !e.dead && !G.houndPause && e.hp < e.maxHp / 2) { G.houndPause = 1; e.stun = true; e.cyanT = 0.8; } }   // 獵犬血量一半：停下來看主角一眼
   G.hero.poseT = Math.max(0, G.hero.poseT - d); if (G.hero.poseT <= 0) G.hero.pose = 0;
   // 主角合成動畫：in（0-7 伸手到蓄力）→ hold（連擊中，6-7 蓄力循環）→ out（8-11 推出光球）
@@ -504,7 +505,8 @@ function stepResolve() {
   }
 }
 function popGroup(g) {
-  G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.comboShow = 1.3;
+  G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.comboShow = 1.3; G.multPop = 0.25;
+  if (G.combo === 5) { try { SFX.charge(); } catch (e) {} if (typeof VIB === 'function') VIB(40); }   // 2026-11-28 第一次連到 5：鏘＋輕震
   const T = TYPES[g.t], hand = heroHand();
   let plusAt = null;
   if (g.cells.length >= G.mods.plus) { plusAt = g.cells[Math.floor(g.cells.length / 2)]; }
@@ -546,7 +548,7 @@ function gravity() {
 
 // ── 攻擊 ──
 function heroHand() { return IMG.hc0 ? { x: HERO.x + 52, y: HERO.y - 112 } : IMG.ha0 ? { x: HERO.x + 36, y: HERO.y - 122 } : IMG.hero0 ? { x: HERO.x + 52, y: HERO.y - 108 } : { x: HERO.x + 34, y: HERO.y - 52 }; }
-function mult() { const c = G.combo - 1; return STAGE ? 1 + 0.278 * c + 0.0556 * c * c : 1 + 0.25 * c; }   // 2026-11-28 正式關卡：1 連擊 1 倍、5 連擊 3 倍、10 連擊 8 倍
+function mult() { return STAGE ? 1 + GE.synth * G.combo : 1 + 0.25 * (G.combo - 1); }   // 2026-11-28 正式關卡：每連擊 +X%（主角合成加成 Lv.1 10% ～ Lv.5 20%）
 // 暴擊率：基本 10%，每 1 連擊 +2%（最高 60%）；暴擊傷害 ×2
 function critRate() { return Math.min(0.6, 0.10 + GE.crit + 0.02 * G.combo); }
 function hitFX(e, kind) {   // 每種武器自己的命中效果
@@ -770,7 +772,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S0)); } catch (e) {}
   return { r, stars, item, frag };
 }
-const STAR_COMBO = STAGE <= 2 ? 3 : STAGE <= 5 ? 4 : 5;   // 第三顆星要幾連擊
+const STAR_COMBO = STAGE <= 2 ? 3 : 5;   // 2026-11-28 第三顆星＝5 連擊（第 1、2 關 3 連擊）   // 第三顆星要幾連擊
 let btn2Rect = null, fuelMsg = '';
 function goStage(n) {   // 結算直接打下一關／再試一次：燃料規則跟首頁一樣（每 6 分鐘回 1；新手前 3 天免費；頭目 20）
   let S0 = null; try { S0 = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
@@ -1390,7 +1392,14 @@ function drawCombo() {
   ctx.font = `900 ${big ? 64 : mid ? 54 : 46}px "Arial Black","Microsoft JhengHei",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineWidth = 8; ctx.strokeStyle = '#001418'; ctx.strokeText(`${G.combo} COMBO`, 0, 0);
   ctx.fillStyle = big ? '#ffffff' : CYAN; ctx.shadowColor = CYAN; ctx.shadowBlur = big ? 40 : 20; ctx.fillText(`${G.combo} COMBO`, 0, 0);
-  ctx.font = '800 18px "Microsoft JhengHei",sans-serif'; ctx.shadowBlur = 0; ctx.fillStyle = '#c8fbff'; ctx.fillText(`傷害 ×${mult().toFixed(2)}`, 0, 40);
+  {   // 2026-11-28 倍率：特效大小看連擊數（1～2 普通、3～4 青色、5～9 黃色發光、10 以上橘色），每多 1 連擊跳一下
+    const c = G.combo, tier = c >= 10 ? 3 : c >= 5 ? 2 : c >= 3 ? 1 : 0, pk = (G.multPop || 0) / 0.25, pop = 1 + [0.12, 0.22, 0.38, 0.45][tier] * pk;
+    const fs = [20, 28, 40, 48][tier], col = ['#e8f6f8', CYAN, '#ffd23f', '#ff9a3d'][tier], mv = mult();
+    ctx.save(); ctx.translate(0, 34 + fs * 0.6); ctx.scale(pop, pop);
+    ctx.font = `900 ${fs}px "Arial Black","Microsoft JhengHei",sans-serif`; ctx.lineWidth = tier >= 2 ? 7 : 5; ctx.strokeStyle = '#001418';
+    const h100 = Math.round(mv * 100), txt = '×' + (h100 / 100).toFixed(h100 % 10 ? 2 : 1); ctx.strokeText(txt, 0, 0);
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = tier >= 2 ? 26 : tier ? 10 : 0; ctx.fillText(txt, 0, 0); ctx.restore();
+  }
   ctx.restore();
 }
 let cardRects = [], btnRect = null;
@@ -1446,7 +1455,9 @@ function drawResult() {
     ctx.font = '700 14px "Microsoft JhengHei",sans-serif'; cond.forEach(([t, ok], i) => { ctx.fillStyle = ok ? '#ffd23f' : '#5d6b75'; ctx.fillText(t, W / 2 + (i - 1) * 96, 346); });
     // 零的一句評語
     const QW = { 1: ['廢鐵到手。不是拿來吃的。', '第一戰。你沒有尖叫，進步了。'], 2: ['廢鐵越多，機器人越多。', '……運氣成分很高。'], 3: ['殭屍身上有電池。別浪費。', '三隻都倒了。勉強及格。'], 4: ['路清了。腳踏車就在前面。', '你的手速比走路快一點。'], 5: ['她倒下了。……又站起來了。', '店員清除。打烊了。'], 6: ['收費亭清空。這次不用付錢。', '你終於有一次沒付錢就通過了。'], 7: ['狗叫聲停了一下。只是一下。', '……你剛剛那樣算有努力。'], 8: ['小貨車到手。不要撞到我。', '使命必達。你也是。'], 9: ['煙在東邊。快到了。', '你今天沒有拖後腿。數據異常。'], 10: ['牠倒下了。牠在發抖。', '……你做到了。'] }[STAGE] || ['這波清除。'];
+    const PW = (STAGE && SV && window.ZW_GEAR) ? { p: ZW_GEAR.power(SV).total, r: ZW_GEAR.rec(STAGE) } : null;
     const LOSE = (() => {   // 2026-11-28 打輸：零先吐槽一句，再依這場的狀況給一句提示
+      if (PW && PW.p < PW.r * 0.85) return [[`戰力 ${PW.p}，這關建議 ${PW.r}。`, '先回去升級，「隊伍」有推薦。'], [`差 ${PW.r - PW.p} 戰力。不是你手太慢。`, '回去改裝車子或升級主角。']];
       if (EMP_ON && G.energy >= 100) return [['EMP 充滿了你都沒按，是在收藏嗎？', '能量滿了就點我。'], ['我等了三回合，你一次都沒叫我。', '能量條變黃，就點我的頭。']];
       if (G.maxCombo <= 3) return [['一次只消三個？你是在排隊嗎。', '先排好再一起消，連擊傷害會多很多。'], ['連擊這麼少，殭屍都在打呵欠。', '多走幾格，把同色串在一起。']];
       if (!(G.healed > 0)) return [['鋼鐵零件是修裝甲的，你全部當裝飾？', '灰色的鋼鐵消掉，就能補車。'], ['車子被打爛，你一次都沒修。', '消灰色的鋼鐵零件可以修補裝甲。']];
