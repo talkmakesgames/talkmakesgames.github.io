@@ -103,7 +103,7 @@
   .gain span { display:flex; align-items:center; gap:4px; } .gain img { width:34px; }
   /* 地圖 */
   #mapZones div { position:absolute; border-radius:16px; cursor:pointer; }
-  #stageList { top:300px; bottom:16px; padding:14px; display:none; overflow-y:auto; }
+  #stageList { top:150px; bottom:16px; padding:14px 14px 0; display:none; overflow-y:auto; }   /* 2026-11-28 面板往上移，出發按鈕固定在底部 */
   .node.sel img { filter:drop-shadow(0 0 10px #ffd23f); } .node.sel { color:#ffd23f; }
   #stDetail { margin-top:10px; border-top:1px solid rgba(63,240,255,.3); padding-top:10px; text-align:left; color:var(--ink); font:700 14px sans-serif; }
   #stDetail h4 { margin:0; font:900 20px sans-serif; color:#fff; } #stDetail h4 small { color:#ffd23f; font-size:16px; margin-left:8px; }
@@ -118,13 +118,13 @@
   #stDetail .drops span.first { border-color:#ffd23f; color:#ffd23f; } #stDetail .drops span.got { opacity:.45; text-decoration:line-through; }
   #stDetail .cost { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
   #stDetail .cost b { font:900 15px sans-serif; } #stDetail .warn { color:#ff9a9a; }
-  #stGo { width:100%; margin-top:10px; height:54px; border:0; border-radius:14px; background:var(--cyan); color:#00262c; font:900 22px sans-serif; box-shadow:0 0 18px rgba(63,240,255,.5); }
+  #stGo { position:sticky; bottom:0; z-index:3; width:100%; margin-top:10px; margin-bottom:12px; height:54px; border:0; border-radius:14px; background:var(--cyan); color:#00262c; font:900 22px sans-serif; box-shadow:0 -14px 18px 8px rgba(6,14,20,.96),0 0 18px rgba(63,240,255,.5); }
   #stGo.dim { opacity:.4; }
   #stageList h3 { margin:0 0 4px; font:900 22px sans-serif; color:var(--cyan); }
   #stageList p { margin:0 0 10px; font:700 13px sans-serif; color:var(--dim); }
   #nodes { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
   .node { text-align:center; font:900 13px sans-serif; color:#fff; cursor:pointer; }
-  .node img { width:62px; height:62px; object-fit:contain; display:block; margin:0 auto; }
+  .node img { width:50px; height:50px; object-fit:contain; display:block; margin:0 auto; }
   /* 車庫、設施、圖鑑共用格子 */
   .grid { position:absolute; left:16px; right:16px; top:84px; bottom:16px; overflow-y:auto; display:grid; gap:10px; align-content:start; }
   .card { background:rgba(4,12,16,.9); border:1.5px solid rgba(63,240,255,.5); border-radius:12px; padding:8px; text-align:center; font:800 14px sans-serif; color:var(--ink); position:relative; }
@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281138"></script>
-<script src="story/ch1.js?v=11281138"></script>
-<script src="story/intro.js?v=11281138"></script>
-<script src="story/story.js?v=11281138"></script>
-<script src="gear.js?v=11281138"></script>
-<script src="wide.js?v=11281138"></script>
+<script src="i18n.js?v=11281156"></script>
+<script src="story/ch1.js?v=11281156"></script>
+<script src="story/intro.js?v=11281156"></script>
+<script src="story/story.js?v=11281156"></script>
+<script src="gear.js?v=11281156"></script>
+<script src="wide.js?v=11281156"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -995,9 +995,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281138"></script>
-<script src="team.js?v=11281138"></script>
-<script src="puzzle.js?v=11281138"></script>
+<script src="extras.js?v=11281156"></script>
+<script src="team.js?v=11281156"></script>
+<script src="puzzle.js?v=11281156"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
