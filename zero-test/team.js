@@ -76,7 +76,7 @@
     car: ['戰力屬於車子', '攻擊從車上的砲塔打出去。主角、零、鐵鏽和裝備，都是在幫車子加成。點「查看計算」可以看到每一項怎麼算。'],
     hero: ['合成加成', '主角沒有戰鬥力。他的手能把東西接在一起：每多連擊 1 次，攻擊力就多一截。升級讓每次連擊加得更多，滿級時 5 連擊傷害翻倍。'],
     zero: ['大招：電磁脈衝', '能量集滿後點零，對所有敵人放出電磁脈衝。零沒有特殊能力，但嘴巴很毒。'],
-    dog: ['護車＋撿零件', '機械獵犬 H-01。原本被紅眼控制追殺你們，第 7 關打倒後被主角淨化，紅眼轉青，成了夥伴。點牠的頭像，這一回合的小攻擊牠會全部擋下（每關一次）；每關還會多叼回一份廢鐵。'],
+    dog: ['護車＋撿零件', '機械獵犬 H-01。原本被紅眼控制追殺你們，0-7 打倒後被主角淨化，紅眼轉青，成了夥伴。點牠的頭像，這一回合的小攻擊牠會全部擋下（每關一次）；每關還會多叼回一份廢鐵。'],
     he: ['特殊能力：改裝', '合成灰色零件幫她充能，充滿後點她，把一排灰色零件全部變成你選的顏色。'],
   };
   const ART = { car: ['img/v1.webp'], hero: ['img/full_hero.webp', 'img/face0.webp'], zero: ['img/zero_full.webp'], dog: ['img/full_dog.webp', 'img/story/i_dog.webp'], he: ['img/story/p_he_smile.webp'] };
@@ -102,7 +102,7 @@
             <div style="font:800 15px sans-serif;color:${on ? '#ffd23f' : '#9ff8ff'};white-space:nowrap">${on ? '穿著（點一下脫下）' : it.txt}</div></div>`; }).join('') : '<div style="color:#8fa0ae;margin-top:6px">這一格還沒有裝備。第一次打過每一關都會掉一件。</div>'}</div>`; }
     }
     let body;
-    if (!open(c)) body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" style="filter:brightness(0);opacity:.5"></div><div id="tmPanel"><h3>？？？</h3><div class="role">${c.id === 'he' ? '第二章會遇到' : `打過第 ${c.need} 關會遇到`}</div></div></div>`;
+    if (!open(c)) body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" style="filter:brightness(0);opacity:.5"></div><div id="tmPanel"><h3>？？？</h3><div class="role">${c.id === 'he' ? '第二章會遇到' : `打過 ${c.need <= 7 ? '0-' + c.need : '1-' + (c.need - 7)} 會遇到`}</div></div></div>`;
     else {
       const note = top ? (c.id === 'zero' && lv < Z.MAXLV ? '已到上限：升級「零的充電座」可以再升' : '已經最高等級') : '';
       body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" data-fb="${art[1] || ''}">${c.id === 'dog' ? '<b>寵物</b>' : ''}</div>

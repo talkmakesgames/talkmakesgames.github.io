@@ -156,7 +156,7 @@
   function flagsGet() { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (FLAG(k)) o[k] = localStorage.getItem(k); } return o; }
   function flagsClear() { Object.keys(flagsGet()).forEach(k => localStorage.removeItem(k)); }
   function flagsSet(o) { for (const k in (o || {})) localStorage.setItem(k, o[k]); }
-  function infoOf(S) { const c = (S.cleared && S.cleared.zero) || 0, d = new Date(); return `第一章 ${c}/6｜${S.hero || '?'} Lv.${(S.team && S.team.hero) || 1}｜第 ${S.tier} 階 +${S.sub || 0}｜${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+  function infoOf(S) { const c = (S.cleared && S.cleared.zero) || 0, d = new Date(); return `打到 ${c ? (c <= 7 ? '0-' + c : '1-' + (c - 7)) : '0-0'}｜${S.hero || '?'} Lv.${(S.team && S.team.hero) || 1}｜第 ${S.tier} 階 +${S.sub || 0}｜${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
   function sure(q, fn) { open(`<h3>確定嗎？</h3><div class="sub" style="font-size:15px;color:#e8f6f8">${q}</div><button class="m main" id="ok">確定</button><button class="m" id="no">取消</button>`); $('ok').onclick = fn; $('no').onclick = testTools; }
   const JUMPS = [['合成好三輪車', 0], ['1-1 打完（資源介紹＋食物機器人）', 1, true], ['1-3 前（救狗）', 2], ['1-4 前（倖存者）', 3], ['1-5 前（營地門口）', 4], ['頭目前', 5], ['第一章破關', 6]];   // 2026-11-27 第一章 v2
   const PRE = { 1: 'c1s1', 2: 'c1s1c', 3: 'c1s2', 4: 'c1s4', 5: 'c1s5', 6: 'c1s7' }, POST = { 1: 'c1s1b', 2: 'c1s1d', 3: 'c1s3', 4: 'c1s4b', 5: 'c1s6' };
@@ -178,7 +178,7 @@
   function report() {
     const S = getS();
     const info = [`版本：測試版 2026-11-26`, `裝置：${navigator.userAgent}`, `螢幕：${screen.width}x${screen.height} @${devicePixelRatio}`,
-      `進度：第一章 ${(S && S.cleared && S.cleared.zero) || 0}/6，載具第 ${(S && S.tier) || 1} 階`, `時間：${new Date().toLocaleString()}`].join('\n');
+      `進度：打到 ${(c => c ? (c <= 7 ? '0-' + c : '1-' + (c - 7)) : '0-0')((S && S.cleared && S.cleared.zero) || 0)}，載具第 ${(S && S.tier) || 1} 階`, `時間：${new Date().toLocaleString()}`].join('\n');
     open(`<h3>回報問題</h3><div class="sub">遇到 bug 或卡住？把下面的資訊複製起來，<br>連同「發生什麼事」一起在頻道留言或私訊告訴我們。<br>（裡面沒有你的名字、帳號或位置）</div>
       <textarea id="ri" readonly>${info}</textarea>
       <button class="m main" id="cp">複製資訊</button><button class="m" id="ch">前往動嘴做遊戲頻道首頁</button><button class="m" id="cx">關閉</button>`);

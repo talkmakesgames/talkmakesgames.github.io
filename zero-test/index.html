@@ -311,12 +311,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11282007"></script>
-<script src="story/ch1.js?v=11282007"></script>
-<script src="story/intro.js?v=11282007"></script>
-<script src="story/story.js?v=11282007"></script>
-<script src="gear.js?v=11282007"></script>
-<script src="wide.js?v=11282007"></script>
+<script src="i18n.js?v=11282022"></script>
+<script src="story/ch1.js?v=11282022"></script>
+<script src="story/intro.js?v=11282022"></script>
+<script src="story/story.js?v=11282022"></script>
+<script src="gear.js?v=11282022"></script>
+<script src="wide.js?v=11282022"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -355,7 +355,7 @@ function ask(title, text, buttons) {   // buttons: [[文字, 函式, 主按鈕?]
   $('modalBox').querySelectorAll('button').forEach(b => b.onclick = () => { $('modal').style.display = 'none'; const f = buttons[+b.dataset.i][1]; if (f) f(); });
 }
 const VEHN = ['廢鐵三輪車', '使命必達小貨車', '鐵網皮卡', '越野房車', '裝甲房車', '青晶房車', '履帶堡壘', '末日堡壘', '方舟'];
-const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜${((x.cleared && x.cleared.zero) || 0) > 7 ? '第一章 ' + (((x.cleared && x.cleared.zero) || 0) - 7) + '/10' : '第零章 ' + ((x.cleared && x.cleared.zero) || 0) + '/7'}`;
+const saveInfo = x => `${x.hero || '？'}｜第 ${Math.floor((NOW() - x.firstDay) / 86400000) + 1} 天｜${VEHN[(x.tier || 1) - 1]}｜打到 ${(c => c ? (c <= 7 ? '0-' + c : '1-' + (c - 7)) : '0-0')((x.cleared && x.cleared.zero) || 0)}`;
 // ═══ 帳號（Google 登入，只用來備份存檔；不存、不顯示 Email） ═══
 async function cloudLogin(fromNaming, already) {
   if (!window.Cloud || !Cloud.ready) { toast('帳號系統還沒設定好', 2200); return; }
@@ -534,10 +534,10 @@ function renderTop() {
 }
 // ═══ 設備＝機器人：一開始什麼都不會自動來；合成機器人以後才自動採集。所有設備都耗電，沒電就停工 ═══
 const DEV = [   // [代號, 名字, 說明, 圖（之後換成機器人的圖）, 最高等級, 開放條件（劇情）, 開放說明]
-  ['food', '食物機器人', '從空氣裡的水分和一些不明材料做出食物。味道不保證。', 'img/dev_food.webp', 1, () => S.story && (S.story.c0s1b || S.story.c1base1), '打完第 1 關開放'],
-  ['scrap', '廢鐵採集機器人', '自動去附近撿廢鐵。碎片：打關卡掉落（第 1 關第一次過關給 9 塊）', 'img/dev_scrap.webp', 5, () => S.dev.food && ((S.cleared && S.cleared.zero) || 0) >= 2, '合成食物機器人、打完第 2 關開放'],
-  ['oil', '石油收集器', '裝在車上，自動收集汽油。', 'img/dev_oil.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 10, '一號廢域第 3 關開放'],
-  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。', 'img/dev_power.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 11, '一號廢域第 4 關開放'],
+  ['food', '食物機器人', '從空氣裡的水分和一些不明材料做出食物。味道不保證。', 'img/dev_food.webp', 1, () => S.story && (S.story.c0s1b || S.story.c1base1), '打完 0-1 開放'],
+  ['scrap', '廢鐵採集機器人', '自動去附近撿廢鐵。碎片：打關卡掉落（0-1 第一次過關給 9 塊）', 'img/dev_scrap.webp', 5, () => S.dev.food && ((S.cleared && S.cleared.zero) || 0) >= 2, '合成食物機器人、打完 0-2 開放'],
+  ['oil', '石油收集器', '裝在車上，自動收集汽油。', 'img/dev_oil.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 10, '打完 1-3 開放'],
+  ['power', '電能機器人', '發電。有了它就不用一直靠腳踩。', 'img/dev_power.webp', 5, () => ((S.cleared && S.cleared.zero) || 0) >= 11, '打完 1-4 開放'],
 ];
 const PZ_SIZE = [0, 3, 4, 4, 5, 6];   // 合成＝3×3，升級越高拼圖越大
 const devUse = () => (S.dev.scrap ? 2 + S.dev.scrap : 0) + (S.dev.oil ? 2 + S.dev.oil : 0);   // 每小時耗電
@@ -749,7 +749,7 @@ function renderVehArrow() {   // 第一次改裝（打頭目前）：箭頭指�
 }
 function garageGuide() { if (firstUpGuide() && $('upSub')) guideOn($('upSub'), '點這裡改裝', () => $('upSub').onclick()); }
 $('goBtn').onclick = () => openScreen('map');
-const MENU_NEED = { garage: [1, '打過第 1 關開放'], store: [1, '打過第 1 關開放'], diary: [1, '打過第 1 關開放'], codex: [1, '打過第 1 關開放'], team: [1, '打過第 1 關開放'], facility: [1, '打過第 1 關開放'] };   // 2026-11-28 第零章
+const MENU_NEED = { garage: [1, '打過 0-1 開放'], store: [1, '打過 0-1 開放'], diary: [1, '打過 0-1 開放'], codex: [1, '打過 0-1 開放'], team: [1, '打過 0-1 開放'], facility: [1, '打過 0-1 開放'] };   // 2026-11-28 第零章
 const menuOpen = k => !MENU_NEED[k] || ((S.cleared && S.cleared.zero) || 0) >= MENU_NEED[k][0];
 function devNew() {   // 有沒有「已開放、還沒合成、材料和碎片都夠」的機器人
   try { return DEV.some(([k, , , , , need]) => need() && !S.dev[k] && fragHave(k) >= fragNeed(1, k) && afford(k === 'food' ? {} : devCost(1))); } catch (e) { return false; }
@@ -776,22 +776,22 @@ function openScreen(k) {
 const facSum = () => Object.values(S.fac).reduce((a, b) => a + b, 0);
 const starSum = () => Object.values(S.stars || {}).reduce((a, b) => a + b, 0);
 const QUESTS = [   // [id, 任務, 說明, 進度函式（回傳 [目前, 目標]）, 獎勵]　2026-11-28 第零章：獎勵只給已經出現的資源
-  ['q1', '第一次出門', '打過零號廢域第 1 關', () => [Math.min(S.cleared.zero || 0, 1), 1], { scrap: 60 }],
+  ['q1', '第一次出門', '打過 0-1', () => [Math.min(S.cleared.zero || 0, 1), 1], { scrap: 60 }],
   ['q6', '第一次合成', '到「設備」用拼圖合成任一台機器人', () => [Math.min(devSum(), 1), 1], { scrap: 60 }],
   ['q2', '看看日記', '打開日記本看一眼（零說你需要反省）', () => [S.flags && S.flags.diary ? 1 : 0, 1], { scrap: 40 }],
   ['q4', '連擊入門', '一次轉珠打出 5 連擊', () => [Math.min(S.stats.maxCombo || 0, 5), 5], { scrap: 100 }],
-  ['q13', '三輪車', '把腳踏車拼成三輪車（第 3 關）', () => [S.flags && S.flags.trike ? 1 : 0, 1], { scrap: 120 }],
-  ['q14', '還在上班的人', '打過第 4 關「殭屍店員」', () => [Math.min(S.cleared.zero || 0, 4), 4], { scrap: 150 }],
-  ['q15', '狗叫聲', '打過第 6 關', () => [Math.min(S.cleared.zero || 0, 6), 6], { coin: 200 }],
+  ['q13', '三輪車', '把腳踏車拼成三輪車（0-3）', () => [S.flags && S.flags.trike ? 1 : 0, 1], { scrap: 120 }],
+  ['q14', '還在上班的人', '打過 0-4「殭屍店員」', () => [Math.min(S.cleared.zero || 0, 4), 4], { scrap: 150 }],
+  ['q15', '狗叫聲', '打過 0-6', () => [Math.min(S.cleared.zero || 0, 6), 6], { coin: 200 }],
   ['q3', '改裝三輪車', '到「載具」把車改裝到 +2', () => [Math.min(S.sub + (S.tier - 1) * 5, 2), 2], { coin: 200, scrap: 100 }],
   ['q7', '收集情報', '在零的資料庫解鎖 3 種敵人（打倒才算）', () => [Math.min(Object.keys(S.codex.kills).length, 3), 3], { coin: 200 }],
-  ['q16', '使命必達', '打過第 5 關，拿到小貨車', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 300, fuel: 30 }],
+  ['q16', '使命必達', '打過 0-5，拿到小貨車', () => [Math.min(S.cleared.zero || 0, 5), 5], { coin: 300, fuel: 30 }],
   ['q9', '拿星星', '在第零章累積 12 顆星', () => [Math.min(starSum(), 12), 12], { coin: 500, scrap: 300 }],
   ['q12', '第一個', '打倒「機械獵犬」，把牠救回來', () => [(S.cleared.zero || 0) >= 7 ? 1 : 0, 1], { coin: 1000, scrap: 500 }],
-  ['q20', '不熟', '一號廢域第 1 關：遇見小禾', () => [(S.cleared.zero || 0) >= 8 ? 1 : 0, 1], { scrap: 300 }],
-  ['q21', '兩百個人', '打過一號廢域第 5 關「營門屍群」', () => [(S.cleared.zero || 0) >= 12 ? 1 : 0, 1], { coin: 600, chip: 20 }],
+  ['q20', '不熟', '打過 1-1：遇見小禾', () => [(S.cleared.zero || 0) >= 8 ? 1 : 0, 1], { scrap: 300 }],
+  ['q21', '兩百個人', '打過 1-5「營門屍群」', () => [(S.cleared.zero || 0) >= 12 ? 1 : 0, 1], { coin: 600, chip: 20 }],
   ['q22', '社畜一號', '把小貨車拼成房車', () => [S.tier >= 3 ? 1 : 0, 1], { coin: 800, scrap: 600 }],
-  ['q23', '今晚', '守住屍潮（一號廢域第 10 關）', () => [(S.cleared.zero || 0) >= 17 ? 1 : 0, 1], { coin: 1500, chip: 40 }],
+  ['q23', '今晚', '守住屍潮（1-10）', () => [(S.cleared.zero || 0) >= 17 ? 1 : 0, 1], { coin: 1500, chip: 40 }],
 ];
 // 2026-11-28 使用者：已領取、還不能做的任務都不顯示。這裡寫每個任務「什麼時候開始能做」
 const qcl = () => (S.cleared && S.cleared.zero) || 0;
@@ -863,7 +863,7 @@ function enterZone(i, autoOpen) {
   let h = '';
   for (let j = a; j < b; j++) { const [x, y] = P(j), boss = isBoss(j) || isMid(j), open = j <= cl, dn = j < cl, st = (S.stars || {})['zero-' + (j + 1)] || 0;
     const ic = dn ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
-    h += `<div class="rnode${open ? '' : ' lock'}${j === stSel ? ' sel' : ''}" data-s="${j}" style="left:${x}px;top:${y}px">${j === curJ && open ? `<img class="car" src="${vehImg()}" alt="">` : ''}<img class="ic" src="img/${ic}.webp" alt="">${isBoss(j) ? '頭目' : isMid(j) ? '中頭目' : '第 ' + localN(j) + ' 關'}<div class="st">${dn ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; }
+    h += `<div class="rnode${open ? '' : ' lock'}${j === stSel ? ' sel' : ''}" data-s="${j}" style="left:${x}px;top:${y}px">${j === curJ && open ? `<img class="car" src="${vehImg()}" alt="">` : ''}<img class="ic" src="img/${ic}.webp" alt="">${stageCode(j)}${isBoss(j) ? ' 頭目' : isMid(j) ? ' 中頭目' : ''}<div class="st">${dn ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; }
   const ex = R[b - a];
   if (i === 0 && cl >= 7) h += `<div class="rnode exit" id="zExit" style="left:${ex[0]}px;top:${ex[1]}px"><b>一號廢域 →</b></div>`;
   if (i === 1 && cl >= 17) h += `<div class="rnode exit" id="zExit" style="left:${ex[0]}px;top:${ex[1]}px"><b>二號廢域　製作中</b></div>`;
@@ -882,6 +882,7 @@ function openSheet(i) {   // 關卡詳細（從下方滑出）
 const ZR = [[0, 7], [7, 17]];
 const isBoss = j => j === 6 || j === 16, isMid = j => j === 3 || j === 11;
 const localN = j => j < 7 ? j + 1 : j - 6;
+const stageCode = j => (j < 7 ? '0-' : '1-') + localN(j);   // 2026-11-28 使用者：關卡編號寫成 0-1～0-7、1-1～1-10
 function openZone(i) {
   const z = ZONES[i]; $('stageList').style.display = 'block'; $('slTitle').textContent = z.n; $('slSub').textContent = z.sub;
   const cl = S.cleared.zero || 0;
@@ -903,7 +904,7 @@ function openZone(i) {
   const node = (j) => { const boss = isBoss(j) || isMid(j), open = j <= cl, done = j < cl;
     const ic = done ? 'n_clear' : !open ? 'n_lock' : boss ? 'n_boss' : 'n_normal';
     const st = (S.stars || {})['zero-' + (j + 1)] || 0;
-    return `<div class="node${j === stSel ? ' sel' : ''}" data-s="${j}"><img src="img/${ic}.webp" alt="">${isBoss(j) ? '頭目' : isMid(j) ? '中頭目' : '第 ' + localN(j) + ' 關'}<div style="color:#ffd23f;font-size:14px;height:13px">${done ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; };
+    return `<div class="node${j === stSel ? ' sel' : ''}" data-s="${j}"><img src="img/${ic}.webp" alt="">${stageCode(j)}${isBoss(j) ? ' 頭目' : isMid(j) ? ' 中頭目' : ''}<div style="color:#ffd23f;font-size:14px;height:13px">${done ? '★'.repeat(st) + '☆'.repeat(3 - st) : ''}</div></div>`; };
   const nav = (id, n, sub) => `<div class="node" id="${id}"><img src="img/n_lock.webp" alt="">${n}<div style="color:var(--cyan);font-size:14px;height:13px">${sub}</div></div>`;
   let h = ''; for (let j = a; j < b; j++) h += node(j);
   if (i === 0 && cl >= 7) h += nav('zNext', '一號廢域', '前往 →');
@@ -950,7 +951,7 @@ function renderStageDetail() {
   const ico = im => im.startsWith('@') ? `<b class="fr"><img src="img/dev_${im.slice(1)}.webp" alt=""><i>🧩</i></b>` : im.startsWith('img/') ? `<img src="${im}" alt="">` : `<b style="font-size:20px;width:28px;text-align:center">${im}</b>`;
   const chip = ([im, tx], cls) => `<span${cls ? ` class="${cls}"` : ''}>${ico(im)}${tx}</span>`;
   const firstItems = first.concat(gear ? [[GEAR_IC[gear.slot] || '🎒', '裝備：' + gear.n]] : []);
-  $('stDetail').innerHTML = `<h4>${j >= 7 ? '一號廢域　' : ''}第 ${localN(j)} 關　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
+  $('stDetail').innerHTML = `<h4>${stageCode(j)}　${t}<small>${'★'.repeat(st)}${'☆'.repeat(3 - st)}</small></h4>
     <div class="hint">${hint}</div>${note ? `<div class="hint" style="color:#ffd23f">⚠ ${note}</div>` : ''}
     <div class="lab">會遇到</div><div class="ens">${enHtml}</div>
     <div class="lab">可能掉落</div><div class="drops">${[['img/r_scrap.webp', '廢鐵']].concat(resSeen('coin') ? [['img/r_coin.webp', '金幣']] : []).concat(resSeen('fuel') ? [['img/r_fuel.webp', '汽油']] : []).concat(boss && done ? [['img/r_core.webp', '青晶核心 ×2～3']] : []).concat([['@' + fk, FRAG_N[fk] + '碎片 ×2～4']]).map(x => chip(x)).join('')}</div>
@@ -1027,7 +1028,7 @@ function bindTrade() {
 const GEAR_ICON = { badge: '🪪', wrench: '🔧', box: '📦', tag: '🏷️', keyring: '🔑', helmet: '⛑️', nailgun: '🔩' };
 // 2026-11-28 倉庫改版：資源不放這裡（點上方資源看）；放裝備、碎片、特殊道具、紀念品；沒有容量上限、不能擴建
 const MEMO = [   // 紀念品：劇情裡拿到的東西（說明用劇本原句）
-  ['nametag', '店員的名牌', 'img/i_nametag.webp', () => S.story && S.story.c0s5b, '名牌從她的制服上掉下來。他撿起來，放進口袋。', '第 4 關　殭屍店員'],
+  ['nametag', '店員的名牌', 'img/i_nametag.webp', () => S.story && S.story.c0s5b, '名牌從她的制服上掉下來。他撿起來，放進口袋。', '0-4　殭屍店員'],
 ];
 let storeSel = null;
 function renderStore() {
@@ -1127,19 +1128,19 @@ function renderDiary() {
     const ORDER = ['c0over', 'c0s1', 'c0s1b', 'c0food', 'c0m2', 'c0s3b', 'c0s2b', 'c0s4', 'c0s4b', 'c0s4c', 'c0s5', 'c0s5b', 'c0m4h', 'c0s8', 'c0s8b', 'c0m6', 'c0m6b', 'c0s10', 'c0s10b'];   // 2026-11-28 7 關   // 2026-11-28 第零章
     Object.keys(SC).forEach(k => { if (!ORDER.includes(k) && !['c0s2', 'c0s3', 'c0s6', 'c0s6b', 'c0s7', 'c0s7b', 'c0s9', 'c0s9b'].includes(k)) ORDER.push(k); });   // 併進 c0m* 的舊段落不重複列   // 之後新增的段落接在最後
     const row = (attr, n) => `<div class="vrow" ${attr}><span>▶</span>${n}</div>`;
-    const C0T = { c0m2: '第 2 關　當機', c0m4h: '收費亭', c0m6: '第 6 關　狗叫聲', c0m6b: '不要放棄', c0s10: '第 7 關　機械獵犬', c0s5: '第 4 關　殭屍店員', c0s1: '第 1 關　餓', c0s1b: '廢鐵', c0food: '食物機器人', c0s2: '第 2 關　彎腰', c0s2b: '撿廢鐵的機器人', c0s3: '第 3 關　當機', c0s3b: '電池', c0s4: '第 3 關　三輪車', c0s5b: '店員的名牌', c0s6: '第 6 關　收費亭', c0s6b: '金幣', c0s7: '第 7 關　狗叫聲', c0s7b: '不要放棄', c0s8: '第 5 關　使命必達', c0s8b: '小貨車', c0s9: '第 9 關　煙', c0s9b: '往東', c0name: '記下了' };
+    const C0T = { c0m2: '0-2　當機', c0m4h: '收費亭', c0m6: '0-6　狗叫聲', c0m6b: '不要放棄', c0s10: '0-7　機械獵犬', c0s5: '0-4　殭屍店員', c0s1: '0-1　餓', c0s1b: '廢鐵', c0food: '食物機器人', c0s2: '0-2　彎腰', c0s2b: '撿廢鐵的機器人', c0s3: '0-3　當機', c0s3b: '電池', c0s4: '0-3　三輪車', c0s5b: '店員的名牌', c0s6: '0-6　收費亭', c0s6b: '金幣', c0s7: '0-7　狗叫聲', c0s7b: '不要放棄', c0s8: '0-5　使命必達', c0s8b: '小貨車', c0s9: '0-9　煙', c0s9b: '往東', c0name: '記下了' };
     let h = '<div style="margin:0 0 6px;font-weight:900;color:#5a4423">序章</div>' + row('data-v="opening_v6"', '符合傳送資格（開場）');
     const c1 = ORDER.filter(k => k[0] === '@' ? seen('c1s8') : SC[k] && seen(k) && k.startsWith('c0'));
     if (c1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第零章　零號廢域</div>' + c1.map(k => k[0] === '@' ? row(`data-v="${k.slice(1)}"`, '🎬 章末：被丟掉的東西') : row(`data-s="${k}"`, SC[k].title || C0T[k] || k)).join('');
     { const K1 = ['k1s1', 'k1s1b', 'k1s2', 'k1s2b', 'k1s3', 'k1s3b', 'k1s4', 'k1s4b', 'k1s5', 'k1s5b', 'k1s6', 'k1s6b', 'k1s7', 'k1s7b', 'k1s8', 'k1s8x', 'k1s8b', 'k1s8xb', 'k1s9', 'k1s9b', 'k1s10', 'k1s10b', 'k1end', 'k1endx'].filter(k => SC[k] && seen(k));   // 2026-11-28 第一章
-      const K1T = { k1s1: '第 1 關　不熟', k1s1b: '小禾', k1s2: '第 2 關　狗', k1s2b: '改裝', k1s3: '第 3 關　拼', k1s3b: '什麼都不想做', k1s4: '第 4 關　照片', k1s4b: '青色的線條', k1s5b: '騎小貨車的瘋子', k1s6: '第 6 關　醫生', k1s6b: '來這裡以前', k1s7: '第 7 關　阿凱', k1s7b: '夜裡', k1s8b: '沒救到的', k1s8xb: '救到了', k1s9: '第 9 關　房車', k1s10b: '今晚' };
+      const K1T = { k1s1: '1-1　不熟', k1s1b: '小禾', k1s2: '1-2　狗', k1s2b: '改裝', k1s3: '1-3　拼', k1s3b: '什麼都不想做', k1s4: '1-4　照片', k1s4b: '青色的線條', k1s5b: '騎小貨車的瘋子', k1s6: '1-6　醫生', k1s6b: '來這裡以前', k1s7: '1-7　阿凱', k1s7b: '夜裡', k1s8b: '沒救到的', k1s8xb: '救到了', k1s9: '1-9　房車', k1s10b: '今晚' };
       if (K1.length) h += '<div style="margin:14px 0 6px;font-weight:900;color:#5a4423">第一章　一號廢域</div>' + K1.map(k => row(`data-s="${k}"`, SC[k].title || K1T[k] || k)).join(''); }
     h += '<div style="font-size:17px;color:#7a6440;margin-top:8px">' + (seen('c1s8') ? '下一章破解後，會再解鎖新的劇情' : '繼續往前走，劇情會一段一段解鎖') + '</div>';
     B.innerHTML = h;
     B.querySelectorAll('.vrow[data-v]').forEach(r => r.onclick = () => playVideo(`video/${r.dataset.v}.mp4`, () => { openScreen('diary'); $('openDiary').onclick(); }, { replay: true, ov: r.dataset.v === 'opening_v6' ? 'video/opening_v6.json' : null }));
     if (window.Story) B.querySelectorAll('.vrow[data-s]').forEach(r => r.onclick = () => Story.play(r.dataset.s, { name: S.hero, base: '' }));
   } else {
-    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['進度', (S.cleared.zero || 0) > 7 ? `第一章 ${(S.cleared.zero || 0) - 7} / 10 關` : `第零章 ${S.cleared.zero || 0} / 7 關`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
+    const st = S.stats, rows = [['遊玩天數', day() + ' 天'], ['載具', `${VEH[S.tier - 1]} Lv.${S.tier}`], ['破解廢域', `${(S.cleared.zero || 0) >= 6 ? 1 : 0} / 6`], ['進度', (S.cleared.zero || 0) > 7 ? `第一章 1-${(S.cleared.zero || 0) - 7}（共 10 關）` : `第零章 0-${S.cleared.zero || 0}（共 7 關）`], ['最高連擊', st.maxCombo], ['最高傷害', fmt(st.maxHit)], ['圖鑑', `${Object.keys(S.codex.kills).length} / ${CODEX.length}`]];
     B.innerHTML = rows.map(([k, v]) => `<div><b>${k}</b>　${v}</div>`).join('');
   }
 }
@@ -1220,9 +1221,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11282007"></script>
-<script src="team.js?v=11282007"></script>
-<script src="puzzle.js?v=11282007"></script>
+<script src="extras.js?v=11282022"></script>
+<script src="team.js?v=11282022"></script>
+<script src="puzzle.js?v=11282022"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
