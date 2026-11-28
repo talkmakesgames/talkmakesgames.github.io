@@ -311,12 +311,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281827"></script>
-<script src="story/ch1.js?v=11281827"></script>
-<script src="story/intro.js?v=11281827"></script>
-<script src="story/story.js?v=11281827"></script>
-<script src="gear.js?v=11281827"></script>
-<script src="wide.js?v=11281827"></script>
+<script src="i18n.js?v=11281918"></script>
+<script src="story/ch1.js?v=11281918"></script>
+<script src="story/intro.js?v=11281918"></script>
+<script src="story/story.js?v=11281918"></script>
+<script src="gear.js?v=11281918"></script>
+<script src="wide.js?v=11281918"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -925,16 +925,16 @@ const STAGES = [   // [標題, 提示, 敵人, 碎片, 第一次過關的劇情�
   ['狗叫聲', '遠方傳來機械的狗叫聲。有東西在追我們。', ['heavy', 'dasher', 'zombie'], 'scrap', [['🌫️', '看見遠方的煙']], '打 2 波'],
   ['機械獵犬', '一隻機械獵犬，一路聞著你的味道追來。', ['zombie', 'heavy', 'hound'], 'scrap', [['img/story/i_dog.webp', '淨化／鐵鏽加入']], '大頭目：打 3 波'],
   // 2026-11-28 第一章　一號廢域（全域第 8～17 關）
-  ['不熟', '往難民營的路上，遇到一支收物資的小車隊。', ['zombie', 'dasher', 'hemech'], 'scrap', [['img/story/p_he_smile.webp', '遇見小禾']], '打 2 波'],
-  ['狗', '小禾蹲下來，修鐵鏽卡住的腳。', ['zombie', 'dasher', 'heavy'], 'scrap', [['🔧', '小禾的改裝']], '打 2 波'],
+  ['不熟', '往難民營的路上，遇到一支收物資的小車隊。', ['drone', 'zombie', 'hemech'], 'scrap', [['img/story/p_he_smile.webp', '遇見小禾']], '打 2 波'],
+  ['狗', '小禾蹲下來，修鐵鏽卡住的腳。', ['zombie', 'drone', 'heavy'], 'scrap', [['🔧', '小禾的改裝']], '打 2 波'],
   ['拼', '「你們那邊的人，為什麼要那麼拼？」', ['zombie', 'dasher', 'heavy'], 'scrap', [['img/dev_oil.webp', '石油收集器']], '打 2 波'],
-  ['照片', '小禾的遮陽板上，夾著一張舊照片。', ['dasher', 'zombie', 'heavy'], 'scrap', [['img/dev_power.webp', '電能機器人']], '打 2 波'],
-  ['營門屍群', '難民營門口，被殭屍堵死了。', ['zombie', 'heavy', 'mech'], 'scrap', [['🏕️', '難民營（金幣兌換）']], '中型頭目：打 3 波'],
-  ['醫生', '營裡有人，用手在幫傷患縫合傷口。', ['zombie', 'heavy', 'dasher'], 'scrap', [['img/story/p_yeh.webp', '葉醫生的修補']], '打 2 波'],
+  ['照片', '小禾的遮陽板上，夾著一張舊照片。', ['drone', 'dasher', 'heavy'], 'scrap', [['img/dev_power.webp', '電能機器人']], '打 2 波'],
+  ['營門屍群', '難民營門口，被殭屍堵死了。', ['zombie', 'heavy', 'horde'], 'scrap', [['🏕️', '難民營（金幣兌換）']], '中型頭目：打 3 波'],
+  ['醫生', '營裡有人，用手在幫傷患縫合傷口。', ['zombie', 'heavy', 'drone'], 'scrap', [['img/story/p_yeh.webp', '葉醫生的修補']], '打 2 波'],
   ['阿凱', '守營門的年輕人，很愛開玩笑。', ['dasher', 'zombie', 'heavy'], 'scrap', [['img/story/p_kai.webp', '認識阿凱']], '打 2 波'],
-  ['放手', '夜裡，殭屍爬進了營地。', ['zombie', 'dasher', 'heavy'], 'scrap', [['🕯️', '……']], '打 2 波'],
+  ['放手', '夜裡，殭屍爬進了營地。', ['zombie', 'drone', 'heavy'], 'scrap', [['🕯️', '……']], '打 2 波'],
   ['房車', '營裡的人，把露營用品店的展示房車拖了出來。', ['heavy', 'dasher', 'zombie'], 'scrap', [['img/v3.webp', '房車（拼圖合成、取名）']], '打 2 波'],
-  ['屍潮', '所有殘破的螢幕，同時亮了起來。', ['zombie', 'heavy', 'mech'], 'scrap', [['🌙', '無盡模式']], '屍潮防守戰：打 4 波'],
+  ['屍潮', '所有殘破的螢幕，同時亮了起來。', ['drone', 'heavy', 'titan'], 'scrap', [['🌙', '無盡模式']], '屍潮防守戰：打 4 波'],
 ];
 const FRAG_N = { scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' };
 const BOSS_J = 6, MID_J = 3;   // （舊；現在用 isBoss／isMid）   // 2026-11-28 7 關   // 2026-11-28 第零章：第 10 關大頭目、第 5 關中型頭目
@@ -1151,7 +1151,10 @@ const CODEX = [
   ['bomber', 'e_bomber', '自爆型', '機械屍群', '零號廢域', '走到面前會自爆，對房車造成大傷害。', '在它走近之前打爆它。不然換你被打爆。'],
   ['clerk', 'e_clerk', '殭屍店員', '中型頭目', '零號廢域', '便利商店的店員。一直說歡迎光臨，一直沒有下班。', '那不是記得。是被留下來的工作程式。'],
   ['hound', 'e_wolf', '機械獵犬', '頭目', '零號廢域', '聞著味道追人的機械狗。左耳只剩一半，項圈上有編號。', '牠還記得什麼。還記得，就還會痛。'],
-  ['hemech', 'b_mech', '小禾的改裝機', '頭目', '一號廢域', '小禾用廢料自己改裝的機器。她以為零是紅眼的偵察機。', '我剛剛還救了你。'],
+  ['drone', 'e_drone', '偵察無人機', '紅眼的眼睛', '一號廢域', '紅眼的偵察機。飛得低、血少，但會一直啄車子。', '它在看你。你最好也看它。'],
+  ['horde', 'e_horde', '屍群首領', '中型頭目', '一號廢域', '堵在難民營門口的那一大隻。屍群跟著它走。', '大，不等於聰明。這點你們很像。'],
+  ['titan', 'e_titan', '屍潮巨獸', '頭目', '一號廢域', '屍潮裡最大的那一隻。倒下時，胸口掉出一塊碎片。', '……那塊碎片，給我。'],
+  ['hemech', 'e_hemech', '小禾的改裝機', '頭目', '一號廢域', '小禾用廢料自己改裝的機器。她以為零是紅眼的偵察機。', '我剛剛還救了你。'],
   ['mech', 'b_mech', '巨型機甲', '頭目', '零號廢域', '零號廢域的頭目。血量一半以下會暴走，攻擊變頻繁。', '存活機率 3%。不過你的運氣一向很差。'],
   ['scout', 'e_scout', '偵察機', '無人機群', '一號廢域', '飛在空中，只有機槍和閃電打得到。', '它在看你。我也在看你。差別是我比較嫌棄。'],
   ['bombdrone', 'e_bombdrone', '轟炸機', '無人機群', '一號廢域', '從空中丟炸彈，會打亂你的零件。', '炸彈的準度比你的轉珠好。'],
@@ -1217,9 +1220,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281827"></script>
-<script src="team.js?v=11281827"></script>
-<script src="puzzle.js?v=11281827"></script>
+<script src="extras.js?v=11281918"></script>
+<script src="team.js?v=11281918"></script>
+<script src="puzzle.js?v=11281918"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });

@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11281827"></script>
-<script src="../story/ch1.js?v=11281827"></script>
-<script src="../story/story.js?v=11281827"></script>
-<script src="../gear.js?v=11281827"></script>
-<script src="../wide.js?v=11281827"></script>
+<script src="../i18n.js?v=11281918"></script>
+<script src="../story/ch1.js?v=11281918"></script>
+<script src="../story/story.js?v=11281918"></script>
+<script src="../gear.js?v=11281918"></script>
+<script src="../wide.js?v=11281918"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -67,7 +67,7 @@ const SAVE_KEY = /zero-test/.test(location.pathname) ? 'zw-save-test' : 'zw-save
 let SV = null;
 if (STAGE) { try { SV = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {} if (!SV) location.href = '../'; }
 const OT = !STAGE && /[?&]ot=1/.test(location.search);
-const BOSS_IMG = OS === 5 ? '../img/e_clerk.webp' : OS === 10 ? '../img/e_wolf.webp' : '';   // 2026-11-28 第零章：第 5 關殭屍店員、第 10 關機械獵犬
+const BOSS_IMG = OS === 101 ? '../img/e_hemech.webp' : OS === 105 ? '../img/e_horde.webp' : OS === 110 ? '../img/e_titan.webp' : OS === 5 ? '../img/e_clerk.webp' : OS === 10 ? '../img/e_wolf.webp' : '';   // 2026-11-28 第零章：第 5 關殭屍店員、第 10 關機械獵犬
 const DS = STAGE ? 0.03 : 1, HPK = STAGE ? 0.48 : 1;   // HPK：2026-11-28 新連擊規則（倍率比較平緩）→ 敵人血量跟著調低
 //   // 2026-11-28 正式關卡數字縮小約 33 倍（前期傷害幾十到幾百）；試玩維持大數字   // 加班模式：每天同一個盤面、無限波次、能力統一
 const OT_DAY = (d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)(new Date()), OT_SEED = +OT_DAY.replace(/-/g, '') % 100000;
@@ -96,6 +96,7 @@ for (const [k, src] of Object.entries(ASSETS)) {
 function setRV(im) { IMG.rv = im; const w = RV_W[TIER] || 300; RV.w = w; RV.x = 104 + (300 - w) / 2; RV.h = Math.round(w * im.height / im.width); RV.y = 388 - RV.h; }
 const BIKE = !!(STAGE && SV && !(SV.flags && SV.flags.trike));   // 還沒合成三輪車＝騎腳踏車
 if (TIER !== 6) { const im = new Image(); im.onload = () => setRV(im); im.src = '../img/v' + (BIKE ? 0 : TIER) + '.webp'; }
+{ const im = new Image(); im.onload = () => { IMG.drone = im; TINT.drone_w = tintCanvas(im, 'rgba(255,255,255,0.8)'); TINT.drone_c = tintCanvas(im, 'rgba(63,240,255,0.9)'); }; im.src = '../img/e_drone.webp'; }   // 2026-11-28 一號廢域：紅眼偵察無人機
 if (BOSS_IMG) { const im = new Image(); im.onload = () => { IMG.boss = im; TINT.boss_w = tintCanvas(im, 'rgba(255,255,255,0.8)'); TINT.boss_c = tintCanvas(im, 'rgba(63,240,255,0.9)'); }; im.src = BOSS_IMG; }
 const SPRITE_ON = Object.keys(ASSETS).length > 0;
 // 動畫幀：敵人 8 格（0-3 待機／走路循環，4-7 攻擊），主角合成 12 格（0-7 伸手到蓄力、8-11 推出光球）
@@ -127,10 +128,11 @@ const KINDS = {
   zombie: { name: '機械殭屍', hp: 11500, cd: 2, atk: 900, s: 1.0 },
   dasher: { name: '衝刺型', hp: 6200, cd: 1, atk: 600, s: 0.9 },
   heavy: { name: '重裝型', hp: 26000, cd: 3, atk: 1600, s: 1.15 },
+  drone: { name: '偵察無人機', hp: 5200, cd: 1, atk: 430, s: 0.9 },   // 2026-11-28 一號廢域
   boss: { name: '巨型機甲', hp: 125000, cd: 3, atk: 2200, s: 1.0 },
 };
 if (OS === 5) KINDS.boss = { name: '殭屍店員', hp: 36000, cd: 2, atk: 950, s: 1.0 };
-if (OS === 101) KINDS.boss = { name: '小禾的改裝機', hp: 30000, cd: 2, atk: 900, s: 0.9 };   // 2026-11-28 第一章
+if (OS === 101) KINDS.boss = { name: '小禾的改裝機', hp: 24000, cd: 2, atk: 700, s: 0.9 };   // 2026-11-28 第一章
 if (OS === 105) KINDS.boss = { name: '屍群首領', hp: 62000, cd: 3, atk: 1500, s: 1.0 };
 if (OS === 110) KINDS.boss = { name: '屍潮巨獸', hp: 105000, cd: 3, atk: 1800, s: 1.05 };
 if (OS === 10) KINDS.boss = { name: '機械獵犬', hp: 95000, cd: 2, atk: 1600, s: 1.0 };
@@ -156,19 +158,19 @@ const STAGE_WAVES = {   // 2026-11-28 第零章：小關 1 波、第 5 關 2 波
   9: [['dasher', 'dasher', 'zombie'], ['heavy', 'dasher', 'zombie', 'dasher']],   // 新第 6 關（狗叫聲＋煙）2 波
   10: [['zombie', 'dasher'], ['heavy', 'dasher'], ['boss']],
   // 2026-11-28 第一章：小關 2 波、第 5 關（105）中型頭目、第 10 關（110）屍潮防守 4 波
-  101: [['zombie', 'dasher'], ['boss']],
-  102: [['zombie', 'dasher', 'zombie'], ['dasher', 'heavy']],
+  101: [['drone', 'zombie', 'drone'], ['boss']],
+  102: [['zombie', 'drone', 'zombie'], ['dasher', 'heavy']],
   103: [['zombie', 'zombie', 'dasher'], ['heavy', 'dasher', 'zombie']],
-  104: [['dasher', 'dasher', 'zombie'], ['heavy', 'zombie', 'heavy']],
+  104: [['drone', 'dasher', 'drone'], ['heavy', 'zombie', 'heavy']],
   105: [['zombie', 'dasher', 'zombie'], ['heavy', 'dasher'], ['boss']],
-  106: [['zombie', 'heavy', 'dasher'], ['heavy', 'dasher', 'zombie', 'dasher']],
+  106: [['zombie', 'heavy', 'drone'], ['heavy', 'drone', 'zombie', 'dasher']],
   107: [['dasher', 'zombie', 'dasher'], ['heavy', 'heavy', 'zombie']],
-  108: [['zombie', 'zombie', 'dasher', 'dasher'], ['heavy', 'dasher', 'heavy']],
+  108: [['zombie', 'drone', 'dasher', 'drone'], ['heavy', 'dasher', 'heavy']],
   109: [['heavy', 'dasher', 'zombie'], ['heavy', 'heavy', 'dasher', 'zombie']],
-  110: [['zombie', 'dasher', 'zombie', 'dasher'], ['heavy', 'dasher', 'zombie', 'heavy'], ['dasher', 'dasher', 'heavy', 'zombie', 'dasher'], ['boss', 'heavy']],
+  110: [['zombie', 'drone', 'zombie', 'dasher'], ['heavy', 'drone', 'zombie', 'heavy'], ['drone', 'dasher', 'heavy', 'zombie', 'drone'], ['boss', 'heavy']],
 };
 const CHASE = 0;          // 追逐：撐過 6 回合就到地下入口
-const DOG_ON = false;                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
+const DOG_ON = STAGE >= 8;   // 2026-11-28 鐵鏽（第零章最後淨化）第一章起上場：點頭像擋一次小攻擊、每關多撿廢鐵                  // 鐵鏽（1-2 之後加入）：每關多撿零件、擋一次小攻擊
 const HE_ON = STAGE >= 9;   // 2026-11-28 第一章第 2 關起：小禾的改裝                     // 2026-11-26 第一章 v2：小禾搬到第二章（之後第二章再打開）
 const RUST_ON = false;               // 頭目會把零件鏽掉
 const RUST = 9;                             // 鏽塊的零件種類（不會被合成）
@@ -765,7 +767,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
   for (const key in r) { /* 2026-11-28 資源沒有上限 */ S0.res[key] = (S0.res[key] || 0) + r[key]; }
   S0.codex = S0.codex || { seen: {}, kills: {} };
-  for (const kk in G.kills) { const id = kk === 'boss' ? (OS === 5 ? 'clerk' : OS === 10 ? 'hound' : OS === 101 ? 'hemech' : 'mech') : kk; S0.codex.kills[id] = (S0.codex.kills[id] || 0) + G.kills[kk]; S0.codex.seen[id] = 1; }
+  for (const kk in G.kills) { const id = kk === 'boss' ? (OS === 5 ? 'clerk' : OS === 10 ? 'hound' : OS === 101 ? 'hemech' : OS === 105 ? 'horde' : OS === 110 ? 'titan' : 'mech') : kk; S0.codex.kills[id] = (S0.codex.kills[id] || 0) + G.kills[kk]; S0.codex.seen[id] = 1; }
   S0.stats.maxCombo = Math.max(S0.stats.maxCombo || 0, G.maxCombo); S0.stats.maxHit = Math.max(S0.stats.maxHit || 0, G.maxHit); S0.stats.clears = (S0.stats.clears || 0) + (win ? 1 : 0);
   S0.stars = S0.stars || {}; S0.stars['zero-' + STAGE] = Math.max(S0.stars['zero-' + STAGE] || 0, stars);
   const d = Math.floor((Date.now() - S0.firstDay) / 86400000) + 1;
@@ -1184,7 +1186,8 @@ function drawEnemy(e) {
   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(0, 4, boss ? 80 : 26, boss ? 12 : 6, 0, 0, 7); ctx.fill();
   const fk = enemyFrame(e);
   if (fk || IMG[e.k]) {
-    const im = IMG[fk] || IMG[e.k], SH = { zombie: 112, dasher: 108, heavy: 122, boss: OS === 5 ? 170 : 205 }[e.k], k = SH / im.height, w = im.width * k;
+    const im = IMG[fk] || IMG[e.k], SH = { zombie: 112, dasher: 108, heavy: 122, drone: 84, boss: OS === 5 ? 170 : OS === 101 ? 185 : 205 }[e.k], k = SH / im.height, w = im.width * k;
+    if (e.k === 'drone') ctx.translate(0, -58 + 7 * Math.sin(G.t * 3 + (e.bob || 0)));   // 無人機飄在空中
     const tw = TINT[(fk || e.k) + '_w'], tc = TINT[(fk || e.k) + '_c'];
     const squash = e.lunge > 0 ? 1 + 0.12 * Math.sin((1 - e.lunge) * Math.PI) : 1;
     ctx.scale(1 / squash, squash);
