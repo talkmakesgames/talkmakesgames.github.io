@@ -23,11 +23,11 @@ canvas{display:block;margin:0 auto;touch-action:none;position:relative;z-index:1
 </head>
 <body>
 <canvas id="c"></canvas>
-<script src="../i18n.js?v=11281135"></script>
-<script src="../story/ch1.js?v=11281135"></script>
-<script src="../story/story.js?v=11281135"></script>
-<script src="../gear.js?v=11281135"></script>
-<script src="../wide.js?v=11281135"></script>
+<script src="../i18n.js?v=11281138"></script>
+<script src="../story/ch1.js?v=11281138"></script>
+<script src="../story/story.js?v=11281138"></script>
+<script src="../gear.js?v=11281138"></script>
+<script src="../wide.js?v=11281138"></script>
 <script>
 "use strict";
 // ═══════════════ 零號廢域：戰鬥原型（回合制轉珠合成） ═══════════════
@@ -743,7 +743,7 @@ function stageSave(win) {   // 資源、圖鑑、星星、過關進度寫回手�
   if (window.ZW_GEAR) ZW_GEAR.ensure(S0);   // 先補好裝備欄，才不會把這次要掉的裝備當成舊的
   const k = win ? 1 : 0.3, pt = G.ptype, nk = Object.values(G.kills).reduce((a, b) => a + b, 0);
   const before = (S0.cleared && S0.cleared.zero) || 0, hiw = Math.max(before, win ? STAGE : 0);
-  const r = { coin: hiw >= 6 ? Math.round((80 + 20 * STAGE) * k) : 0, scrap: Math.round((pt[3] * 4 + 30 + 6 * STAGE) * k), chip: 0, fuel: (S0.tier || 1) >= 2 ? Math.round((8 + pt[1] / 6) * k) : 0, core: 0, blueprint: 0 };   // 2026-11-28 資源用到才出現
+  const r = { coin: hiw >= 6 ? Math.round((80 + 20 * STAGE) * k) : 0, scrap: Math.round((pt[3] * 4 + 30 + 6 * STAGE) * k), chip: 0, fuel: (S0.tier || 1) >= 2 ? Math.round((8 + pt[1] / 6) * k) : 0, core: win && STAGE === ZN && before >= ZN ? 2 + (rnd() < 0.5 ? 1 : 0) : 0, blueprint: 0 };   // 2026-11-28 青晶核心：只有大頭目重打才掉   // 2026-11-28 資源用到才出現
   if (DOG_ON) r.scrap += GE.dogScrap;   // 鐵鏽多撿的一份   // 打輸退一半燃料
   const stars = win ? 1 + (G.armor >= G.armorMax * 0.5 ? 1 : 0) + (G.maxCombo >= STAR_COMBO ? 1 : 0) : 0;
   const cap = 2000 * ((S0.fac && S0.fac.store) || 1);
@@ -1468,7 +1468,7 @@ function drawResult() {
     ctx.fillStyle = 'rgba(4,14,18,0.92)'; ctx.strokeStyle = CYAN; ctx.lineWidth = 1.5; roundRect(W / 2 - qw / 2, 380, qw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#c8fbff'; ctx.fillText('零：' + q, W / 2, 400);
     ctx.font = '800 15px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#8fa0ae'; ctx.fillText(`最高連擊 ${G.maxCombo}　｜　回合 ${G.turns + (win ? 1 : 0)}`, W / 2, 456);
-    rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]].filter(([n]) => n !== '電路板' || R.chip).filter(([n]) => n !== '金幣' || R.coin);   // 用到才出現
+    rows = [['最高傷害', fmt(G.maxHit)], ['金幣', '+' + fmt(R.coin)], ['廢鐵', '+' + fmt(R.scrap)], ['電路板', '+' + fmt(R.chip)]].concat(R.core ? [['青晶核心', '+' + R.core]] : []).filter(([n]) => n !== '電路板' || R.chip).filter(([n]) => n !== '金幣' || R.coin);   // 用到才出現
     const extra = [R.fuel ? `汽油 +${R.fuel}` : '', R.core ? `青晶核心 +${R.core}` : '', R.blueprint ? '載具藍圖 +1！' : '', G.reward.item ? `裝備：${ZW_GEAR.ITEMS[G.reward.item].n}！` : '', G.reward.frag ? `🧩${{ scrap: '廢鐵採集機器人', oil: '石油收集器', power: '電能機器人' }[G.reward.frag.k]}碎片 ×${G.reward.frag.n}` : ''].filter(Boolean).join('　');
     if (extra) { ctx.font = '800 16px "Microsoft JhengHei",sans-serif'; ctx.fillStyle = '#9ff8ff'; ctx.fillText(extra, W / 2, 688); }
   }

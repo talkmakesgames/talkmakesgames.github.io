@@ -1818,22 +1818,29 @@ window.STORY_C1={
 "cg": "story/c0_hound.webp"
 },
 {
+"w": "sys",
+"t": "【得到】青晶核心 ×10（從獵犬身上掉出來的）",
+"sfx": "join",
+"pop": "r_core.webp",
+"popT": "青晶核心 ×10"
+},
+{
 "w": "zero",
 "t": "淨化需要的能量，是你目前的全部。",
 "e": "n",
-"v": "voice/c1/c0s10b_1.mp3"
+"v": "voice/c1/c0s10b_2.mp3"
 },
 {
 "w": "hero",
 "t": "牠剛剛停下來看我的那一下……跟我家樓下那隻狗很像。",
 "e": "2",
-"v": "voice/c1/c0s10b_2.mp3"
+"v": "voice/c1/c0s10b_3.mp3"
 },
 {
 "w": "zero",
 "t": "牠還記得什麼。還記得，就還會痛。",
 "e": "s",
-"v": "voice/c1/c0s10b_3.mp3"
+"v": "voice/c1/c0s10b_4.mp3"
 },
 {
 "w": "narr",
@@ -1847,16 +1854,22 @@ window.STORY_C1={
 "sfx": "join"
 },
 {
+"w": "sys",
+"t": "青晶核心 10 → 0（淨化用掉了）",
+"pop": "r_core.webp",
+"popT": "10 → 0"
+},
+{
 "w": "zero",
 "t": "項圈上寫著 H-01。你救回來的第一個。",
 "e": "n",
-"v": "voice/c1/c0s10b_6.mp3"
+"v": "voice/c1/c0s10b_8.mp3"
 },
 {
 "w": "hero",
 "t": "叫你鐵鏽好了。",
 "e": "3",
-"v": "voice/c1/c0s10b_7.mp3"
+"v": "voice/c1/c0s10b_9.mp3"
 },
 {
 "w": "narr",
@@ -1871,7 +1884,7 @@ window.STORY_C1={
 "w": "hero",
 "t": "走吧，往有煙的地方。",
 "e": "1",
-"v": "voice/c1/c0s10b_10.mp3"
+"v": "voice/c1/c0s10b_12.mp3"
 },
 {
 "w": "narr",

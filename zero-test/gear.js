@@ -14,7 +14,7 @@
   const DROP = {}; for (const k in ITEMS) if (ITEMS[k].from) DROP[ITEMS[k].from] = k;   // 第一次打過這一關掉的裝備
   const CHARS = [
     { id: 'hero', img: 'img/face0.webp', role: '專長：合成加成', eff: l => `每連擊 +${pctS(SYNTH(l))}`, cost: l => ({ scrap: 80 * l }), need: 0 },   // 2026-11-28 主角沒有戰鬥力，只有合成加成（連擊）
-    { id: 'zero', img: 'img/story/p_zero_n.webp', role: '專長：大招電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ scrap: 60 * l, coin: 80 * l }), need: 0 },
+    { id: 'zero', img: 'img/story/p_zero_n.webp', role: '專長：大招電磁脈衝', eff: l => `大招傷害 +${15 * (l - 1)}%｜充能速度 +${5 * (l - 1)}%`, cost: l => ({ core: [0, 3, 5, 8, 12][l] || 15 }), need: 0 },   // 2026-11-28 零只能用青晶核心升級
     { id: 'dog', name: '鐵鏽', img: 'img/story/i_dog.webp', role: '專長：護車＋撿零件', eff: l => `耐久 +${5 * l}%｜每關多撿廢鐵 +${20 + 10 * (l - 1)}`, cost: l => ({ scrap: 60 * l, coin: 60 * l }), need: 10 },
     { id: 'he', name: '小禾', img: 'img/story/p_he_smile.webp', role: '改裝：灰零件變色', eff: l => `充能速度 +${12 * (l - 1)}%`, cost: l => ({ coin: 100 * l, scrap: 40 * l }), need: 99 },   // 2026-11-26 小禾搬到第二章
   ];
@@ -29,7 +29,7 @@
     for (let i = 1; i <= c; i++) if (DROP[i] && !S.gear.own.includes(DROP[i])) { S.gear.own.push(DROP[i]); const sl = ITEMS[DROP[i]].slot; if (!S.gear.eq[sl]) S.gear.eq[sl] = DROP[i]; }   // 補發時，空的那一格直接穿上
     return S;
   }
-  function maxLv(S, id) { return id === 'zero' ? Math.min(MAXLV, 2 * ((S.fac && S.fac.dock) || 1)) : MAXLV; }   // 零的上限看「零的充電座」
+  function maxLv(S, id) { return MAXLV; }   // 2026-11-28 全部角色上限 Lv.5
   function eff(S) {   // 戰鬥用的加成
     S = ensure(S); const t = S.team, e = { atk: 1, hp: 1, emp: 1, energy: 1, start: 0, crit: 0, critDmg: 1, dogScrap: 20, he: 1, synth: 0.1 };   // critDmg：暴擊多出的傷害（1＝+100%，也就是兩倍）
     e.synth = SYNTH(t.hero);   // 2026-11-28 攻擊、暴擊、暴擊傷害只來自車子和裝備；角色只升專長

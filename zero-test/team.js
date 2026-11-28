@@ -108,11 +108,12 @@
       body = `<div id="tmBody"><div id="tmArt"><img src="${art[0]}" alt="" data-fb="${art[1] || ''}">${c.id === 'dog' ? '<b>寵物</b>' : ''}</div>
         <div id="tmPanel"><div style="font:800 12px sans-serif;color:#ffd23f;margin-bottom:4px">🚗 車子戰力 ${Z.power(S).total.toLocaleString()}</div><h3>${nameOf(c)}<span>Lv.${lv}</span></h3><div class="role">${c.role}</div>${st}
           <div class="lab">${ab[0]}</div><div class="ab">${ab[1]}</div>${gear}
-          ${top ? `<div class="lab" style="color:#ffd23f">${note}</div>` : `<button class="upb${afford(cost) ? '' : ' dim'}" data-up="${c.id}">升級 → Lv.${lv + 1}<br>${costText(cost)}</button>`}</div></div>${pick}`;
+          ${top ? `<div class="lab" style="color:#ffd23f">${note}</div>` : c.id === 'zero' && !(S.seenRes && S.seenRes.core) ? `<button class="upb dim" data-lock="1">🔒 需要青晶核心<br><span style="font-size:11px">打倒大頭目才會拿到</span></button>` : `<button class="upb${afford(cost) ? '' : ' dim'}" data-up="${c.id}">升級 → Lv.${lv + 1}<br>${costText(cost)}</button>`}</div></div>${pick}`;
     }
     $('teamGrid').innerHTML = `<div id="tmTabs">${tabs}</div>${body}`;
     $('teamGrid').querySelectorAll('img[data-fb]').forEach(im => { if (im.dataset.fb) im.onerror = () => { im.onerror = null; im.src = im.dataset.fb; }; });
     $('teamGrid').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { sel = b.dataset.tab; pickSlot = null; renderTeam(); });
+    $('teamGrid').querySelectorAll('[data-lock]').forEach(b => b.onclick = () => toast('零只能用青晶核心升級。打倒大頭目才會掉。', 2600));
     $('teamGrid').querySelectorAll('[data-up]').forEach(b => b.onclick = () => {
       const cc = Z.CHARS.find(x => x.id === b.dataset.up), cs = cc.cost(S.team[cc.id]);
       if (!afford(cs)) { toast('資源不夠：' + costText(cs)); return; }
