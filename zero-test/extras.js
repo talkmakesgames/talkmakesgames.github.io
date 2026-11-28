@@ -102,7 +102,7 @@
 
   // ═══ 2. 加班模式入口 ═══
   const otBtn = btn('otBtn', 286, '🌙', '加班模式');
-  if (cleared() < 4) otBtn.style.display = 'none';
+  if (cleared() < 8) otBtn.style.display = 'none';   // 2026-11-28 使用者：加班模式第零章還沒登場（一號廢域開始才出現）
   otBtn.onclick = () => {
     let best = null; try { best = JSON.parse(localStorage.getItem('zw-ot-best')); } catch (e) {}
     const d0 = new Date(), today = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
