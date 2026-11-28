@@ -282,12 +282,12 @@
   <div id="toast"></div>
 </div>
 
-<script src="i18n.js?v=11281502"></script>
-<script src="story/ch1.js?v=11281502"></script>
-<script src="story/intro.js?v=11281502"></script>
-<script src="story/story.js?v=11281502"></script>
-<script src="gear.js?v=11281502"></script>
-<script src="wide.js?v=11281502"></script>
+<script src="i18n.js?v=11281512"></script>
+<script src="story/ch1.js?v=11281512"></script>
+<script src="story/intro.js?v=11281512"></script>
+<script src="story/story.js?v=11281512"></script>
+<script src="gear.js?v=11281512"></script>
+<script src="wide.js?v=11281512"></script>
 <script>
 // ═══ 畫面縮放：540×960 等比放大，置中 ═══
 const stage = document.getElementById('stage');
@@ -357,6 +357,16 @@ function addDiary(text) { S.diary.push({ day: day(), text }); save(); }
 
 // ═══ 第一次開遊戲的流程：開場影片 → 試玩 → 解說 A → 取名 → 腳踏車劇情 → 首頁（只跑一次） ═══
 const params = new URLSearchParams(location.search);
+// 2026-11-28 測試版捷徑：網址加 ?ch1=1 → 直接變成「第零章打完」的存檔（保留名字），從第一章開始玩
+if (KEY === 'zw-save-test' && params.get('ch1') === '1') {
+  S.intro = 'done'; S.hero = S.hero || '阿哲'; S.c0v = 7; S.cleared = S.cleared || {}; S.cleared.zero = 7; S.tier = 2; S.sub = Math.max(S.sub || 0, 2); S.pedalSeen = 7;
+  S.flags = Object.assign(S.flags || {}, { trike: 1, turret1: 1, m_team: 1, m_facility: 1, firstUp: 1 }); delete S.flags.kai;
+  S.dev = Object.assign(S.dev || {}, { food: 1, scrap: Math.max((S.dev && S.dev.scrap) || 0, 1) });
+  S.res = Object.assign(S.res || {}, { scrap: Math.max(S.res.scrap || 0, 800), coin: Math.max(S.res.coin || 0, 600), fuel: Math.max(S.res.fuel || 0, 120), power: Math.max(S.res.power || 0, 60) });
+  S.seenRes = Object.assign(S.seenRes || {}, { scrap: 1, power: 1, coin: 1, fuel: 1, core: 1 });
+  S.story = S.story || {}; ['c0over', 'c0name', 'c0s1', 'c0s1b', 'c0food', 'c0m2', 'c0s2b', 'c0s3b', 'c0s4', 'c0s4b', 'c0s4c', 'c0s5', 'c0s5b', 'c0m4h', 'c0s6', 'c0s6b', 'c0s8', 'c0s8b', 'c0m6', 'c0m6b', 'c0s10', 'c0s10b'].forEach(k => S.story[k] = 1);
+  save(); history.replaceState(null, '', location.pathname);
+}
 if (params.get('from') === 'trial' && S.intro === 'trial') { S.intro = 'explainA'; save(); history.replaceState(null, '', location.pathname); }
 let vidNext = null, vidReplay = false;
 let vidOv = null;   // 2026-11-28 影片疊字（字幕、手機訊息、彈窗不燒進影片）
@@ -1125,9 +1135,9 @@ if (window.ZW_WIDE) {
   setInterval(wideTick, 1000); wideTick();
 }
 </script>
-<script src="extras.js?v=11281502"></script>
-<script src="team.js?v=11281502"></script>
-<script src="puzzle.js?v=11281502"></script>
+<script src="extras.js?v=11281512"></script>
+<script src="team.js?v=11281512"></script>
+<script src="puzzle.js?v=11281512"></script>
 <script>   // 2026-11-26 拼圖試玩：網址加 ?puzzle=3（3～6）直接打開合成拼圖，不影響存檔
 (() => { const m = location.search.match(/[?&]puzzle=([3-6])/); if (!m) return;
   const go = n => Puzzle.open({ img: 'img/v1.webp', size: n, title: '合成：三輪車', onDone: r => { toast('合成成功！用了 ' + r.moves + ' 步', 2400); setTimeout(() => go(Math.min(6, n + 1)), 2500); }, onCancel: () => toast('離開拼圖') });
